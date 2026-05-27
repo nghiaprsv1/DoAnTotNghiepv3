@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#ffedeb",
+                    "surface-container-highest": "#ffd2d0",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed-dim": "#ffafac",
+                    "on-primary-fixed": "#000000",
+                    "primary-container": "#ff7851",
+                    "on-secondary": "#ffefee",
+                    "on-background": "#4e2120",
+                    "outline": "#a26765",
+                    "outline-variant": "#e09c99",
+                    "primary-fixed-dim": "#ff5d2b",
+                    "on-secondary-fixed-variant": "#922d2f",
+                    "inverse-surface": "#240304",
+                    "on-surface": "#4e2120",
+                    "on-secondary-fixed": "#6a0e16",
+                    "on-tertiary": "#ffedfe",
+                    "tertiary-fixed": "#e699fd",
+                    "surface-variant": "#ffd2d0",
+                    "error-dim": "#9f0519",
+                    "tertiary-container": "#e699fd",
+                    "on-primary": "#ffefeb",
+                    "inverse-on-surface": "#ce8c89",
+                    "surface-tint": "#ab2d00",
+                    "background": "#fff4f3",
+                    "primary-dim": "#962700",
+                    "secondary-container": "#ffc3c0",
+                    "error": "#b31b25",
+                    "on-primary-container": "#470e00",
+                    "on-secondary-container": "#852327",
+                    "surface-container": "#ffe1e0",
+                    "secondary-dim": "#902c2e",
+                    "error-container": "#fb5151",
+                    "on-error-container": "#570008",
+                    "primary": "#ab2d00",
+                    "on-tertiary-fixed": "#360049",
+                    "tertiary": "#833e9a",
+                    "secondary-fixed": "#ffc3c0",
+                    "tertiary-dim": "#76318d",
+                    "on-tertiary-container": "#570e6f",
+                    "on-primary-fixed-variant": "#581300",
+                    "on-surface-variant": "#834c4b",
+                    "on-error": "#ffefee",
+                    "surface-dim": "#ffc7c4",
+                    "surface-bright": "#fff4f3",
+                    "tertiary-fixed-dim": "#d88cee",
+                    "surface-container-high": "#ffdad8",
+                    "inverse-primary": "#ff5722",
+                    "surface": "#fff4f3",
+                    "secondary": "#a03739",
+                    "on-tertiary-fixed-variant": "#611b79",
+                    "primary-fixed": "#ff7851"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #ab2d00 0%, #ff7851 100%);
+        }
+        .editorial-shadow {
+            box-shadow: 0 12px 40px rgba(78, 33, 32, 0.06);
+        }
+        .glass-header {
+            backdrop-filter: blur(24px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-[#fff4f3] dark:bg-stone-950 backdrop-blur-xl bg-opacity-70 shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center px-6 py-3 max-w-screen-2xl mx-auto relative">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-bold tracking-tight text-[#ab2d00] dark:text-[#ff7851] font-headline">ViệtVibe</span>
+<div class="hidden md:flex items-center space-x-6 font-headline font-semibold">
+<a class="text-[#ab2d00] border-b-2 border-[#ab2d00] pb-1 transition-colors" href="#">Home</a>
+<a class="text-[#4e2120] dark:text-stone-300 hover:bg-[#ffedeb] dark:hover:bg-stone-800 transition-colors px-3 py-1 rounded-lg" href="#">Destinations</a>
+<a class="text-[#4e2120] dark:text-stone-300 hover:bg-[#ffedeb] dark:hover:bg-stone-800 transition-colors px-3 py-1 rounded-lg" href="#">Guides</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center bg-surface-container-highest px-4 py-2 rounded-full gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 placeholder-on-surface-variant/50" placeholder="Search experiences..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-[#ab2d00] hover:bg-[#ffedeb] rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-[#ab2d00] hover:bg-[#ffedeb] rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined">explore</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-surface-container-high ml-2 cursor-pointer active:scale-95 duration-200">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="close-up portrait of a smiling young man in sunlit outdoor setting with warm golden tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbdoTB3mG2A1MKKTCFwUfvks4DAsH9IKdO7YX2KD0iuPxRAp9_q4raexiOuqu2Upeie1pwe4ew4z028yUqXyPonrG9ISTFnxXVshtwkrErAM8GvcK99M6Ge6YfSJGFdik1fuJ622NTedtu7cUwxWnqQgzoZXvvBlU51HJ6OdvANS9edZ0Fzqy7cKDZMpk_uUN-RL9a3pY6T-e8nhh0ldjN1jj75Hk-5BZHhowpcDjnMAnsLFjfPhIy8enk4s10c77r7_oKYFEbGmI"/>
+</div>
+</div>
+</div>
+<div class="bg-[#ffedeb] dark:bg-stone-900 h-[1px] w-full absolute bottom-0 left-0"></div>
+</div>
+</nav>
+<main class="pt-20">
+<!-- Hero Section -->
+<section class="px-6 py-12 md:py-24 max-w-screen-2xl mx-auto">
+<div class="relative rounded-[2.5rem] overflow-hidden min-h-[600px] flex items-center">
+<div class="absolute inset-0">
+<img alt="Vietnam Landscape" class="w-full h-full object-cover" data-alt="wide cinematic shot of Ha Long Bay limestone karsts rising from emerald water at sunrise with soft morning mist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9SOZaU_gWG5zURnoa28qiePwYV9M1dIrFcBw658bcsp_MELcx3SwV0hbipOx5ECByHMAbcE1k6-FtW1Ke-eOPZzOp99GSkR4wvxfhmgK5CRI6-2ivGoZjwMFzn2TQ_wRAF1Y5Dvcwp1Jut3MR4siMZ3pUXdJ8NHaCYc0jMPjFq6tAGE_3WBijljM0tvp6vKOS1x6wANGAndog-1UD8KBT_tLy9EG26lyqs9pGuwc_c2r5AFeNvF9vSbaHlptYRfkGd-ZuyS7CH8k"/>
+<div class="absolute inset-0 bg-gradient-to-r from-on-surface/60 to-transparent"></div>
+</div>
+<div class="relative z-10 px-8 md:px-16 max-w-3xl">
+<span class="inline-block px-4 py-1 rounded-full bg-primary/20 backdrop-blur-md text-primary-container font-headline font-bold text-xs tracking-widest mb-6 border border-primary-container/30">DISCOVER VIETNAM</span>
+<h1 class="text-5xl md:text-7xl font-headline font-extrabold text-white leading-tight mb-8">
+                        The Soul of <br/><span class="text-primary-container">Modern Journey.</span>
+</h1>
+<div class="flex flex-col md:flex-row gap-4 p-2 bg-surface-container-lowest/90 backdrop-blur-xl rounded-3xl editorial-shadow max-w-2xl">
+<div class="flex-1 flex items-center px-4 py-3 gap-3 border-r-0 md:border-r border-surface-container">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Destination</span>
+<input class="bg-transparent border-none p-0 focus:ring-0 text-on-surface font-semibold placeholder-on-surface/40" placeholder="Where to?" type="text"/>
+</div>
+</div>
+<div class="flex-1 flex items-center px-4 py-3 gap-3">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">When</span>
+<input class="bg-transparent border-none p-0 focus:ring-0 text-on-surface font-semibold placeholder-on-surface/40" placeholder="Add dates" type="text"/>
+</div>
+</div>
+<button class="hero-gradient text-on-primary font-headline font-bold px-8 py-4 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95">
+                            Search
+                        </button>
+</div>
+<!-- Travel Stats -->
+<div class="mt-12 flex gap-12 text-white">
+<div>
+<div class="text-3xl font-headline font-bold">12k+</div>
+<div class="text-xs text-white/70 font-medium uppercase tracking-widest mt-1">Experiences</div>
+</div>
+<div>
+<div class="text-3xl font-headline font-bold">450+</div>
+<div class="text-xs text-white/70 font-medium uppercase tracking-widest mt-1">Local Guides</div>
+</div>
+<div>
+<div class="text-3xl font-headline font-bold">4.9/5</div>
+<div class="text-xs text-white/70 font-medium uppercase tracking-widest mt-1">Traveler Rating</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Featured Trips - Bento Style -->
+<section class="px-6 py-16 max-w-screen-2xl mx-auto">
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="text-4xl font-headline font-extrabold tracking-tight text-on-surface">Curated Collections</h2>
+<p class="text-on-surface-variant mt-2 font-medium">Expert-picked destinations for the modern explorer.</p>
+</div>
+<button class="text-primary font-headline font-bold flex items-center gap-2 group">
+                    View all <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 h-[600px]">
+<div class="md:col-span-8 relative rounded-[2rem] overflow-hidden group cursor-pointer">
+<img alt="Phu Quoc" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="vibrant tropical beach in Phu Quoc with turquoise water white sand and leaning palm trees under a bright blue sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxYkGpljp8mMUad-IgW4sqfDq59oEzId-IatCWJy_kE5sZiPTcn655VXax_WaLr1op935EvVvEUXtX9TShAqdFHaGkPCpGYkVa3BlGBpXltlGbtVEXIuPE0MWeLzcdGeU0b0z_TQExsyeTO2qevwFirZv6mwnOKalkv6jjKR77fSxG8Zqsi_Pzx1I-sEyvAqPT2K_B6o_MhHjkVA1crkF_C_672KqbB4U4eHVaDPq8juJ4fKc-SbJsi9GPg-8V1brV9szNgBQrFW8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-10">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold mb-4 inline-block">ISLAND ESCAPE</span>
+<h3 class="text-4xl font-headline font-bold text-white mb-2">Phu Quoc Island</h3>
+<p class="text-white/80 max-w-md">The Pearl Island of Vietnam, where golden sunsets meet crystal waters and luxury retreats.</p>
+</div>
+</div>
+<div class="md:col-span-4 grid grid-rows-2 gap-6">
+<div class="relative rounded-[2rem] overflow-hidden group cursor-pointer">
+<img alt="Da Lat" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="misty morning in Da Lat pine forests with colonial architecture and colorful flowers in soft focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArOCFWAguGcnRrldryoEs2FxYs6qEqmHQ0s1ZJQOQTWfpzWonn0HRrbBgOSD0Ro7glpG-Za0fpw_Xjhpq8bx7ClYdRJCdWwTvXNF-Qcvz3a5vkxbRaQSL0aq0Rgj6LRddn8uQ42mFrjsEeHEhFfGH7qLGFg5fcLgFZEB0BO6_L1k3Vzy3qJHFvyoAsQLcLR0XXyZmnJRWGkjtakx5Vro0Pwexl0lSbG10jI8r0KCEdjxPYzjzEbqJb8U3bYfHGz5p8cvMnqfLG498"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-6">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold mb-2 inline-block">HIGHLANDS</span>
+<h3 class="text-2xl font-headline font-bold text-white">Da Lat</h3>
+</div>
+</div>
+<div class="relative rounded-[2rem] overflow-hidden group cursor-pointer">
+<img alt="Sapa" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="cascading rice terraces of Sapa valley under soft dramatic lighting with minority villages in the distance" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXVLu_TvMU1QreNpNH1xEw4ysl_YU7xGjF4CRE80Nfhn9uOD1iGzDR2yYfvFms3maAfcOogyMoTF-p6CxRrh0W9RrDJL4EDyjJ0Sya9M2mtMLg6QMcmmB4aku1ULa4ntX2vWgObzJPqdmKM13Dw5sQp0acI9rE2kdexVQ1esEp5R2qNGJqKnOm78BaBPwIdUoemKmvFEVxTzmiAimqJOWn1VB26do7fsyeLanuiBKtHg8J91vtTIrKXh8ztQuwzGnfdGapCFJ7Wk0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-6">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold mb-2 inline-block">CULTURAL</span>
+<h3 class="text-2xl font-headline font-bold text-white">Sapa Valley</h3>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Recently Posted - Feed Style -->
+<section class="bg-surface-container-low py-20 px-6">
+<div class="max-w-7xl mx-auto">
+<div class="flex flex-col items-center mb-16 text-center">
+<h2 class="text-4xl font-headline font-extrabold text-on-surface">Live from the Community</h2>
+<p class="text-on-surface-variant max-w-xl mt-4">Discover hidden gems and authentic stories shared by travelers across the country.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+<!-- Post 1 -->
+<div class="bg-surface-container-lowest rounded-3xl overflow-hidden editorial-shadow flex flex-col group">
+<div class="p-4 flex items-center gap-3">
+<img alt="User" class="w-10 h-10 rounded-full object-cover" data-alt="portrait of a traveler with sunglasses smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1i6IWMJQcquRE5WdfM5xHgunKc8aucgl859zkVPgzsneYmHQO-neXnbZ9BJ-Xs5psN1aXaZ453T_--EBhC_9ExqhiOHf-dHe9vOxkKFAQi18ONQCTKJj7ILz8WtrnZ_CMEcwNXW0A9rgH_Ws7kX9hGDQUI6rkJhUoQcvTGBJCX1moLDQn6a6Irt6zO3xnZZM9gG1AAaHGutzaUA9IaB-U1wUQK060_XWE7fIlzBQnw3M2nsKvca_Buo93v0C9aOI21i_1UO426-0"/>
+<div>
+<h4 class="font-headline font-bold text-sm text-on-surface leading-tight">Alex Nguyen</h4>
+<span class="text-[10px] text-on-surface-variant">2 hours ago • Hoi An</span>
+</div>
+</div>
+<div class="aspect-[4/5] overflow-hidden">
+<img alt="Hoi An" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="ancient yellow streets of Hoi An at night illuminated by hundreds of colorful silk lanterns" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARZ3XqHjnZtA-_tkQlqPLDBtDymTp0gnIx3ci_cBXB8JtbEVdJTow9zG6G0Nnqt5bVFX8XWVAUGn-bnolUg5ZL6T310YWMiF7wxN2EvrGHRIGQIjp_GFePRONmeWPggx7QvKSJFIAioK3bIa5F6AhEXoZ4msFdVbhkAB0sqGWGL4swiNbdWW1Y_udgGJ7cMsUPNhtEw42lbR5ILhxQVMX-XrvjTUCYAUpWQWRrL0Qv5tNBVa6WgA4zb2VgBIPPNfYXY0X9YU74D_A"/>
+</div>
+<div class="p-6">
+<h3 class="font-headline font-bold text-xl mb-2 text-on-surface">Midnight in the Lantern City</h3>
+<p class="text-on-surface-variant text-sm line-clamp-2">Found a quiet alley away from the crowds. The lanterns hit different when the streets are empty...</p>
+<div class="mt-6 pt-6 border-t border-surface-container flex items-center justify-between">
+<div class="flex gap-4 text-on-surface-variant">
+<button class="flex items-center gap-1.5 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+<span class="text-xs font-bold">1.2k</span>
+</button>
+<button class="flex items-center gap-1.5 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+<span class="text-xs font-bold">84</span>
+</button>
+</div>
+<button class="text-primary">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Post 2 -->
+<div class="bg-surface-container-lowest rounded-3xl overflow-hidden editorial-shadow flex flex-col group">
+<div class="p-4 flex items-center gap-3">
+<img alt="User" class="w-10 h-10 rounded-full object-cover" data-alt="portrait of a woman in a sun hat" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCvg1n9uou1rfeSooFAYfppZxucjVE1XjFo27mDChx-ulXsFAkrImS5ThZ7IsKKmT1pG7KhEFAmAFHoBvUtN8iKoowdgNn_LS-53jcvxBiBNCNT3dOlHO92-05cpJvU0bbQHe-QC4-GLbn514gop9XltK6Q3cCHD1nLVvu7ZKTmKd8UfOxjiutZGw_Nf3mN0Z5GcHSjohRMc_nWkZIQ32vMaT-SCwxbMgMuHs0YmWYwx8rZ40ZY0jxT2TRgJzfyC85SCEFQBVUUDo"/>
+<div>
+<h4 class="font-headline font-bold text-sm text-on-surface leading-tight">Elena Tran</h4>
+<span class="text-[10px] text-on-surface-variant">5 hours ago • Ha Giang</span>
+</div>
+</div>
+<div class="aspect-[4/5] overflow-hidden">
+<img alt="Ha Giang" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="rugged limestone mountains of Ha Giang loop with winding road and spectacular vertical drops" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJvvdXaqhot5uDy-GYduTsDxqMZoxT4Vj5mKl8Ss67EBqu4e33MeTW7Cmc68gtQpljegFl7S0TcRQD51n9Ch8tZAym_iKZWzRaymzaUNC_h32AjKiPMNobWh6e0eYw4LyJAs0Li42WhrzfpMIDFvys9Zuj4t6qxyCuXLeVWMM0mvHIIJUOxfnslxnusE_Fl0qp3OAqhiCjDw1Y_41O_p5yiNbmN5segtiDjA4JXNXhV15dHFP5AZgaW0cvu9aFt537_i-3ioOZkO4"/>
+</div>
+<div class="p-6">
+<h3 class="font-headline font-bold text-xl mb-2 text-on-surface">The Loop that Changes You</h3>
+<p class="text-on-surface-variant text-sm line-clamp-2">Finally conquered the Ma Pi Leng pass. Words can't describe the scale of these mountains.</p>
+<div class="mt-6 pt-6 border-t border-surface-container flex items-center justify-between">
+<div class="flex gap-4 text-on-surface-variant">
+<button class="flex items-center gap-1.5 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+<span class="text-xs font-bold">3.4k</span>
+</button>
+<button class="flex items-center gap-1.5 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+<span class="text-xs font-bold">120</span>
+</button>
+</div>
+<button class="text-primary">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Post 3 -->
+<div class="bg-surface-container-lowest rounded-3xl overflow-hidden editorial-shadow flex flex-col group">
+<div class="p-4 flex items-center gap-3">
+<img alt="User" class="w-10 h-10 rounded-full object-cover" data-alt="portrait of a young woman smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyeWZfl6fpGZxzbOCOnXXcaRXzWiSoO8VoGvP3mxjK-clbNVFgj9cd4arNnpIKPhCqY3pEQpbGEQkXj61l9k2IRmq4_dqvnEu_PM3dp6ABcMHstE4N5S2yhLJdsIFkEWvLNf7-Y_0OkSSMRnsrMRyYZOsA0YomxOKG8BlkqN5GPNbVFTV1Ev0w5selU6UzFV4sgbY0UbjEweze-QOU_T2EpC2x4C6PovUzrd6EPZUri--TRc_1jEVy365rX9FsGut5AqTwQ6lzKAo"/>
+<div>
+<h4 class="font-headline font-bold text-sm text-on-surface leading-tight">Maya Lee</h4>
+<span class="text-[10px] text-on-surface-variant">Yesterday • Hue</span>
+</div>
+</div>
+<div class="aspect-[4/5] overflow-hidden">
+<img alt="Hue" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="imperial architecture of Hue Citadel with ornate red and gold details in soft afternoon light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBD9ylvhOmXgWljUS4AfWNnf2KCYP38SU8nEemkWyYkKI2LFZDD7ePSFEV1YeWrAiTQg_wXtGTXvp-FtDbeGKSQkWloyaO8zhUFEuQ6N8GwXDLyYvPaPvuagnDSooWNAo_p-bpnhoJhCwwj10BSsxXyNtSKxFzay_3yKZBQDqtAN-3Bm44jgIrc2_qsbrbzbe-Av3D9aMsWsCcu7Zz0uR2MZEvGx7k85xUfKnGWqPljcc7XvYCTcNxEygND0PUKifpUBoP1SusdGiQ"/>
+</div>
+<div class="p-6">
+<h3 class="font-headline font-bold text-xl mb-2 text-on-surface">Imperial Echoes</h3>
+<p class="text-on-surface-variant text-sm line-clamp-2">Walking through the Forbidden Purple City felt like stepping through time. The detail is insane.</p>
+<div class="mt-6 pt-6 border-t border-surface-container flex items-center justify-between">
+<div class="flex gap-4 text-on-surface-variant">
+<button class="flex items-center gap-1.5 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+<span class="text-xs font-bold">2.1k</span>
+</button>
+<button class="flex items-center gap-1.5 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+<span class="text-xs font-bold">45</span>
+</button>
+</div>
+<button class="text-primary">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 mt-auto bg-[#ffedeb] dark:bg-stone-900 border-t border-surface-container">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-7xl mx-auto">
+<div class="col-span-2 md:col-span-1">
+<span class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-[#4e2120] dark:text-stone-100 block mb-4">ViệtVibe</span>
+<p class="font-['Inter'] text-sm tracking-wide text-[#4e2120]/70 dark:text-stone-400 mb-6">Redefining the way you discover and experience the beauty of Vietnam.</p>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer hover:opacity-70 transition-opacity">public</span>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:opacity-70 transition-opacity">share</span>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:opacity-70 transition-opacity">favorite</span>
+</div>
+</div>
+<div>
+<h5 class="font-headline font-bold text-on-surface mb-4">Explore</h5>
+<ul class="space-y-3">
+<li><a class="font-['Inter'] text-sm tracking-wide text-[#4e2120]/70 dark:text-stone-400 hover:text-[#ab2d00] transition-all duration-300" href="#">About Vietnam</a></li>
+<li><a class="font-['Inter'] text-sm tracking-wide text-[#4e2120]/70 dark:text-stone-400 hover:text-[#ab2d00] transition-all duration-300" href="#">Destinations</a></li>
+<li><a class="font-['Inter'] text-sm tracking-wide text-[#4e2120]/70 dark:text-stone-400 hover:text-[#ab2d00] transition-all duration-300" href="#">Travel Guides</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-headline font-bold text-on-surface mb-4">Resources</h5>
+<ul class="space-y-3">
+<li><a class="font-['Inter'] text-sm tracking-wide text-[#4e2120]/70 dark:text-stone-400 hover:text-[#ab2d00] transition-all duration-300" href="#">Safety Tips</a></li>
+<li><a class="font-['Inter'] text-sm tracking-wide text-[#4e2120]/70 dark:text-stone-400 hover:text-[#ab2d00] transition-all duration-300" href="#">Contact Support</a></li>
+<li><a class="font-['Inter'] text-sm tracking-wide text-[#4e2120]/70 dark:text-stone-400 hover:text-[#ab2d00] transition-all duration-300" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-headline font-bold text-on-surface mb-4">Newsletter</h5>
+<div class="bg-surface-container-highest/50 p-2 rounded-2xl flex">
+<input class="bg-transparent border-none focus:ring-0 text-sm px-3 w-full" placeholder="Your email" type="email"/>
+<button class="bg-primary text-white p-2 rounded-xl">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto pt-12 border-t border-surface-container mt-12 flex flex-col md:flex-row justify-between items-center gap-4">
+<span class="font-['Inter'] text-sm tracking-wide text-[#4e2120]/70 dark:text-stone-400">© 2024 ViệtVibe Travel. The Digital Concierge.</span>
+<div class="flex gap-6">
+<a class="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors" href="#">Facebook</a>
+<a class="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors" href="#">Instagram</a>
+<a class="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors" href="#">Twitter</a>
+</div>
+</div>
+</footer>
+<!-- Mobile Bottom Navigation -->
+<div class="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-lowest/80 glass-header px-6 py-4 flex justify-between items-center z-50">
+<button class="flex flex-col items-center gap-1 text-[#ab2d00]">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-bold">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-[#4e2120]/70">
+<span class="material-symbols-outlined">explore</span>
+<span class="text-[10px] font-bold">Explore</span>
+</button>
+<button class="hero-gradient p-3 rounded-full text-white -mt-10 editorial-shadow">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-[#4e2120]/70">
+<span class="material-symbols-outlined">favorite</span>
+<span class="text-[10px] font-bold">Wishlist</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-[#4e2120]/70">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-bold">Profile</span>
+</button>
+</div>
+</body></html>

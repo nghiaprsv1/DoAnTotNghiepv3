@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Chỉnh sửa thông tin cá nhân - Concierge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, .brand-font {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .editorial-blur {
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#ffd2d0",
+                        "primary-fixed": "#ff7851",
+                        "secondary-dim": "#902c2e",
+                        "surface-tint": "#ab2d00",
+                        "on-surface": "#4e2120",
+                        "surface-dim": "#ffc7c4",
+                        "on-tertiary-fixed-variant": "#611b79",
+                        "error": "#b31b25",
+                        "tertiary": "#833e9a",
+                        "inverse-on-surface": "#ce8c89",
+                        "surface-bright": "#fff4f3",
+                        "secondary-container": "#ffc3c0",
+                        "primary-fixed-dim": "#ff5d2b",
+                        "on-tertiary": "#ffedfe",
+                        "error-dim": "#9f0519",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#a26765",
+                        "surface-container-low": "#ffedeb",
+                        "on-tertiary-fixed": "#360049",
+                        "on-primary-container": "#470e00",
+                        "tertiary-fixed-dim": "#d88cee",
+                        "on-primary-fixed": "#000000",
+                        "secondary-fixed-dim": "#ffafac",
+                        "surface": "#fff4f3",
+                        "tertiary-container": "#e699fd",
+                        "surface-container-high": "#ffdad8",
+                        "primary": "#ab2d00",
+                        "on-primary-fixed-variant": "#581300",
+                        "tertiary-fixed": "#e699fd",
+                        "secondary": "#a03739",
+                        "primary-dim": "#962700",
+                        "on-secondary-fixed-variant": "#922d2f",
+                        "tertiary-dim": "#76318d",
+                        "on-error": "#ffefee",
+                        "outline-variant": "#e09c99",
+                        "on-primary": "#ffefeb",
+                        "inverse-surface": "#240304",
+                        "on-tertiary-container": "#570e6f",
+                        "on-secondary-fixed": "#6a0e16",
+                        "inverse-primary": "#ff5722",
+                        "on-error-container": "#570008",
+                        "error-container": "#fb5151",
+                        "secondary-fixed": "#ffc3c0",
+                        "on-surface-variant": "#834c4b",
+                        "surface-container-highest": "#ffd2d0",
+                        "on-background": "#4e2120",
+                        "surface-container": "#ffe1e0",
+                        "on-secondary-container": "#852327",
+                        "primary-container": "#ff7851",
+                        "on-secondary": "#ffefee",
+                        "background": "#fff4f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-24 md:pb-0">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-[#fff4f3]/70 backdrop-blur-xl text-[#ab2d00] docked full-width top-0 sticky z-40 shadow-sm shadow-[#4e2120]/5">
+<div class="flex justify-between items-center w-full px-6 py-3 max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="md:hidden active:scale-95 duration-200">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="text-xl font-extrabold text-[#4e2120] italic">Concierge</div>
+</div>
+<nav class="hidden md:flex items-center gap-8 font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-lg">
+<a class="text-[#4e2120]/60 hover:text-[#ab2d00] transition-colors" href="#">Discover</a>
+<a class="text-[#4e2120]/60 hover:text-[#ab2d00] transition-colors" href="#">Trips</a>
+<a class="text-[#ab2d00] font-bold" href="#">Profile</a>
+</nav>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#4e2120]/60 hover:bg-[#ffd2d0] p-2 rounded-full cursor-pointer transition-colors">notifications</span>
+<span class="material-symbols-outlined text-[#ab2d00] font-bold hover:bg-[#ffd2d0] p-2 rounded-full cursor-pointer transition-colors">settings</span>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container shadow-sm">
+<img alt="User profile" data-alt="close-up portrait of a young woman with a friendly smile, warm cinematic lighting, soft focus travel background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFh5o3gPlsteuPpCdncz6icavk5kh0_MlHfU7PfTuKp9-si_Ty--AkFAEbRhKBY3g77uLSpPRaWRLn_6BtrmXLJGd7IIV5ZPyVpPBqxE2XhWTi8ZAgWeGD_3DXHL6WQP2oIiEXYwnGpCwwRHaWfFSRlgcPNsKjjvFJ4Es2rFGzm4ZV0-xgWcNOpPCy2s1ikcIL93TJ4zI5mCoz3fH_RX4Uan8bsfYa7YovPJUmKGO7dCwokwALZOfWuzof1sSGpUd9OpY_cPC1Yyc"/>
+</div>
+</div>
+</div>
+<div class="bg-[#ffedeb] h-[2px] w-full absolute bottom-0"></div>
+</header>
+<main class="max-w-4xl mx-auto px-4 py-8 md:py-12">
+<div class="mb-10 text-center md:text-left">
+<h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">Chỉnh sửa hồ sơ</h1>
+<p class="text-on-surface-variant font-medium">Cập nhật thông tin của bạn để bắt đầu những hành trình mới.</p>
+</div>
+<form class="space-y-8">
+<!-- Media Section (Asymmetric Editorial Style) -->
+<section class="relative">
+<!-- Cover Photo -->
+<div class="relative h-48 md:h-64 w-full rounded-xl overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="scenic mountain lake at sunrise with misty peaks and calm turquoise water, editorial travel photography style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrUa_VjpRWeR9bDtHAtaD6kMNjJn2-TvM9mE0w3WGLV_i7vLxyLVHUrx66KfAoTKevOom9xMPPj63GoScGFi8esZis6Pcy-koUmJo8H0nCa2OOwQpE4vF-s4pzxNSG-UshG5A-ZIXbKZ5IdU-cA9o5SIdrOGD72NgI7Nw8re74IsNAx6O4-aIhESRxSmegd0y7N4CfH7FWzjvAfnxJUlcic5Q3WSgYPXTySgIy6Z4O2ipou6Rq-PTH6a-qudGnSK286Qx2ggDvsfk"/>
+<div class="absolute inset-0 bg-black/20 group cursor-pointer flex items-center justify-center transition-all hover:bg-black/40">
+<div class="flex items-center gap-2 bg-white/20 editorial-blur px-4 py-2 rounded-full text-white border border-white/30 backdrop-blur-md">
+<span class="material-symbols-outlined">photo_camera</span>
+<span class="text-sm font-semibold">Thay đổi ảnh bìa</span>
+</div>
+</div>
+</div>
+<!-- Avatar Overlay -->
+<div class="absolute -bottom-12 left-8 md:left-12 flex items-end gap-6">
+<div class="relative w-28 h-28 md:w-36 md:h-36 rounded-2xl overflow-hidden border-4 border-surface shadow-xl bg-surface-container-lowest">
+<img class="w-full h-full object-cover" data-alt="modern lifestyle portrait of a woman in natural light, high contrast editorial aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDb7jwMm6V4ZJ61usdw082O0hi8GGpqa9aDfeZ0uEkcQDYebvQGmVosu6FrZYhxL_AhriX7lpcGpVT2GBhk8QdzPpPqgZB1o62bIMaa3XAxnBjrrCJfXBKuiUfhQOFKXZ3wkDcFwUrf4XkIXPhDx4Z7WdyuVQHTAi89S8jr4wMuDUuhuQ0hQiRKbP2PUYfyw5JlndSEgzNbfp338BlvG5io4jb0N_7wG58hqvc-hmYcT5B2E3UoWRrbSJDOS0dbtJlXZVGjo_S8khU"/>
+<div class="absolute inset-0 bg-black/30 flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-3xl">add_a_photo</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Form Body (Tonal Layering) -->
+<div class="mt-20 grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Primary Info -->
+<div class="md:col-span-8 space-y-6">
+<div class="bg-surface-container-low p-6 md:p-8 rounded-2xl space-y-6">
+<h2 class="text-xl font-bold flex items-center gap-2">
+<span class="w-2 h-6 bg-primary rounded-full"></span>
+                            Thông tin cơ bản
+                        </h2>
+<div class="space-y-4">
+<div class="space-y-2">
+<label class="text-sm font-bold text-on-surface uppercase tracking-wider px-1">Tên hiển thị</label>
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/40 transition-all text-on-surface font-medium" type="text" value="Linh Nguyễn"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-bold text-on-surface uppercase tracking-wider px-1">Tiểu sử (Bio)</label>
+<textarea class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/40 transition-all text-on-surface font-medium resize-none" rows="4">Yêu du lịch và nhiếp ảnh. Đang trên hành trình khám phá vẻ đẹp tiềm ẩn của Việt Nam. Cùng đi nhé! 🇻🇳✨</textarea>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 md:p-8 rounded-2xl space-y-6">
+<h2 class="text-xl font-bold flex items-center gap-2">
+<span class="w-2 h-6 bg-primary rounded-full"></span>
+                            Liên lạc &amp; Địa điểm
+                        </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-sm font-bold text-on-surface uppercase tracking-wider px-1">Email</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">mail</span>
+<input class="w-full bg-surface-container-highest border-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/40 transition-all text-on-surface font-medium" type="email" value="linh.nguyen@travel.com"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-bold text-on-surface uppercase tracking-wider px-1">Số điện thoại</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">call</span>
+<input class="w-full bg-surface-container-highest border-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/40 transition-all text-on-surface font-medium" type="tel" value="+84 901 234 567"/>
+</div>
+</div>
+<div class="md:col-span-2 space-y-2">
+<label class="text-sm font-bold text-on-surface uppercase tracking-wider px-1">Địa điểm</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">location_on</span>
+<input class="w-full bg-surface-container-highest border-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/40 transition-all text-on-surface font-medium" type="text" value="Thành phố Hồ Chí Minh, Việt Nam"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Sidebar Actions -->
+<div class="md:col-span-4 space-y-6">
+<div class="bg-surface-container-high p-6 rounded-2xl">
+<h3 class="font-bold mb-4">Mẹo nhỏ</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                            Hình ảnh rõ ràng và một đoạn tiểu sử ấn tượng giúp bạn kết nối với nhiều người cùng sở thích du lịch hơn.
+                        </p>
+<div class="mt-6 flex flex-col gap-2">
+<div class="flex items-center gap-3 p-3 bg-surface/50 rounded-xl">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="text-xs font-bold uppercase tracking-tight">Xác minh tài khoản</span>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<button class="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-all" type="submit">
+                            Lưu thay đổi
+                        </button>
+<button class="w-full py-4 text-primary font-bold hover:bg-surface-container-high rounded-full transition-all" type="button">
+                            Hủy bỏ
+                        </button>
+</div>
+</div>
+</div>
+</form>
+</main>
+<!-- BottomNavBar (Shared Component - Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full h-20 flex justify-around items-center px-4 pb-4 bg-white/80 backdrop-blur-2xl shadow-[0_-12px_40px_rgba(78,33,32,0.06)] z-50 rounded-t-3xl">
+<div class="flex flex-col items-center justify-center text-[#4e2120]/50 hover:text-[#ab2d00] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider">Discover</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#4e2120]/50 hover:text-[#ab2d00] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">travel</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider">Trips</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#4e2120]/50 hover:text-[#ab2d00] active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-3xl text-primary">add_circle</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#4e2120]/50 hover:text-[#ab2d00] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider">Inbox</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#ffd2d0] text-[#852327] rounded-full px-4 py-1.5 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider">Profile</span>
+</div>
+</nav>
+</body></html>

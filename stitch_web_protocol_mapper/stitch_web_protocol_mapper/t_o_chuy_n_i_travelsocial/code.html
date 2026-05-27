@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViệtVibe - Create Your Journey</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#ffedeb",
+                    "surface-container-highest": "#ffd2d0",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed-dim": "#ffafac",
+                    "on-primary-fixed": "#000000",
+                    "primary-container": "#ff7851",
+                    "on-secondary": "#ffefee",
+                    "on-background": "#4e2120",
+                    "outline": "#a26765",
+                    "outline-variant": "#e09c99",
+                    "primary-fixed-dim": "#ff5d2b",
+                    "on-secondary-fixed-variant": "#922d2f",
+                    "inverse-surface": "#240304",
+                    "on-surface": "#4e2120",
+                    "on-secondary-fixed": "#6a0e16",
+                    "on-tertiary": "#ffedfe",
+                    "tertiary-fixed": "#e699fd",
+                    "surface-variant": "#ffd2d0",
+                    "error-dim": "#9f0519",
+                    "tertiary-container": "#e699fd",
+                    "on-primary": "#ffefeb",
+                    "inverse-on-surface": "#ce8c89",
+                    "surface-tint": "#ab2d00",
+                    "background": "#fff4f3",
+                    "primary-dim": "#962700",
+                    "secondary-container": "#ffc3c0",
+                    "error": "#b31b25",
+                    "on-primary-container": "#470e00",
+                    "on-secondary-container": "#852327",
+                    "surface-container": "#ffe1e0",
+                    "secondary-dim": "#902c2e",
+                    "error-container": "#fb5151",
+                    "on-error-container": "#570008",
+                    "primary": "#ab2d00",
+                    "on-tertiary-fixed": "#360049",
+                    "tertiary": "#833e9a",
+                    "secondary-fixed": "#ffc3c0",
+                    "tertiary-dim": "#76318d",
+                    "on-tertiary-container": "#570e6f",
+                    "on-primary-fixed-variant": "#581300",
+                    "on-surface-variant": "#834c4b",
+                    "on-error": "#ffefee",
+                    "surface-dim": "#ffc7c4",
+                    "surface-bright": "#fff4f3",
+                    "tertiary-fixed-dim": "#d88cee",
+                    "surface-container-high": "#ffdad8",
+                    "inverse-primary": "#ff5722",
+                    "surface": "#fff4f3",
+                    "secondary": "#a03739",
+                    "on-tertiary-fixed-variant": "#611b79",
+                    "primary-fixed": "#ff7851"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .editorial-gradient {
+            background: linear-gradient(135deg, #ab2d00 0%, #ff7851 100%);
+        }
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#fff4f3] dark:bg-stone-950 backdrop-blur-xl bg-opacity-70 shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center px-6 py-3 max-w-screen-2xl mx-auto relative">
+<div class="flex items-center gap-8">
+<a class="text-2xl font-bold tracking-tight text-[#ab2d00] dark:text-[#ff7851] font-headline" href="#">ViệtVibe</a>
+<nav class="hidden md:flex gap-6 items-center font-headline font-semibold">
+<a class="text-[#4e2120] dark:text-stone-300 hover:bg-[#ffedeb] dark:hover:bg-stone-800 transition-colors px-3 py-1 rounded-lg" href="#">Explore</a>
+<a class="text-[#4e2120] dark:text-stone-300 hover:bg-[#ffedeb] dark:hover:bg-stone-800 transition-colors px-3 py-1 rounded-lg" href="#">Destinations</a>
+<a class="text-[#ab2d00] border-b-2 border-[#ab2d00] pb-1" href="#">Create Trip</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#ab2d00] hover:bg-[#ffedeb] rounded-full transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="close-up portrait of a smiling young traveler with warm natural lighting and soft blurred outdoor background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAk9qVU0hA83YrQKbMr7Q5q6953EZWWmGeq7canTEo3wm5GzKq5urkpDXJGS8Z-EIyB7QD5WOayBxlu0FITjKBsGhgVNizXrExPHou2OMKS1uHeTK9cmnRojJ6d3PruZcSGkvi_iISbfptdAkR9jME_iE_WgbldtXWL0lX7V7ZZdwW1xAx_-wZ6MqYyBonG3ORUKzxHgbhUgokEh7j40DlLf6whp874nvBZAOFSKeRiAyH9czIfkoZixNFjKyiqf1ol-wsxs4kckZU"/>
+</div>
+</div>
+<div class="bg-[#ffedeb] dark:bg-stone-900 h-[1px] w-full absolute bottom-0 left-0"></div>
+</div>
+</header>
+<main class="pt-24 pb-20 px-6 max-w-5xl mx-auto">
+<!-- Hero Section -->
+<div class="mb-12 relative overflow-hidden rounded-xl h-64 flex items-end p-8">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover" data-alt="panoramic landscape of misty mountains in Sapa Vietnam at dawn with soft violet and golden light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtv1Rjx1krhwCln6X8596wWe4kM_KwhodcQ_mLIznDwXgP5-M9OO9QT5VY_x83Cw96hHIBFHsLfMOutDyuR2krCw3E8WdUkvfekUM4XgzDX74PVq5PQQmv5JsnOKywlNuAQgrRoQR2tp2Ifrpt2a8C7maq7rLr0UyTRC5GMUxg3RPtqYWQe5TO5SAcbp0AqEu_AT-t5vKDY1uSe8Dra8BzpU_AQNtzYT1qL5Ob45g-HFh1wvTYLBDbZH25_1vVLAZ2vosliF0b0-M"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+</div>
+<div class="relative z-10 text-on-primary">
+<h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight mb-2">Design Your Journey</h1>
+<p class="text-on-primary/90 max-w-xl">Curate a unique Vietnamese experience. Fill in the details below to share your vision with the community.</p>
+</div>
+</div>
+<!-- Multi-Step Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Left Column: Form -->
+<div class="lg:col-span-8 space-y-12">
+<!-- Section 1: Core Details -->
+<section class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 rounded-full editorial-gradient flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">edit_note</span>
+</div>
+<h2 class="font-headline text-2xl font-bold">The Basics</h2>
+</div>
+<div class="space-y-6">
+<div class="group">
+<label class="block text-xs font-bold tracking-widest text-on-surface-variant uppercase mb-2 ml-1">Trip Title</label>
+<input class="w-full px-6 py-4 rounded-xl bg-surface-container-highest/30 border-none focus:ring-2 focus:ring-primary/40 text-on-surface transition-all placeholder:text-on-surface-variant/50 font-medium" placeholder="e.g., Hidden Gems of Ninh Binh" type="text"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<label class="block text-xs font-bold tracking-widest text-on-surface-variant uppercase mb-2 ml-1">Destination</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">location_on</span>
+<input class="w-full pl-12 pr-6 py-4 rounded-xl bg-surface-container-highest/30 border-none focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" placeholder="Where to?" type="text"/>
+</div>
+</div>
+<div class="flex gap-2">
+<div class="flex-1">
+<label class="block text-xs font-bold tracking-widest text-on-surface-variant uppercase mb-2 ml-1">Dates</label>
+<input class="w-full px-4 py-4 rounded-xl bg-surface-container-highest/30 border-none focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" type="date"/>
+</div>
+<div class="flex-1">
+<label class="block text-xs font-bold tracking-widest text-on-surface-variant uppercase mb-2 ml-1"> </label>
+<input class="w-full px-4 py-4 rounded-xl bg-surface-container-highest/30 border-none focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" type="date"/>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+<label class="block text-xs font-bold tracking-widest text-on-surface-variant uppercase mb-2 ml-1">Max Travelers</label>
+<input class="w-full px-6 py-4 rounded-xl bg-surface-container-highest/30 border-none focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" placeholder="8" type="number"/>
+</div>
+<div>
+<label class="block text-xs font-bold tracking-widest text-on-surface-variant uppercase mb-2 ml-1">Est. Price (USD)</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-primary">$</span>
+<input class="w-full pl-8 pr-6 py-4 rounded-xl bg-surface-container-highest/30 border-none focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" placeholder="1200" type="number"/>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-xs font-bold tracking-widest text-on-surface-variant uppercase mb-2 ml-1">Story &amp; Description</label>
+<textarea class="w-full px-6 py-4 rounded-xl bg-surface-container-highest/30 border-none focus:ring-2 focus:ring-primary/40 text-on-surface transition-all resize-none" placeholder="Tell the community about the vibe of this trip..." rows="4"></textarea>
+</div>
+</div>
+</section>
+<!-- Section 2: Itinerary Builder -->
+<section class="space-y-6">
+<div class="flex justify-between items-center px-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full editorial-gradient flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">calendar_today</span>
+</div>
+<h2 class="font-headline text-2xl font-bold">The Itinerary</h2>
+</div>
+<button class="flex items-center gap-2 text-primary font-bold px-4 py-2 hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined">add_circle</span>
+                            Add Day
+                        </button>
+</div>
+<!-- Day 1 Card -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<div class="bg-surface-container-low px-8 py-4 flex justify-between items-center border-b border-outline-variant/10">
+<h3 class="font-headline font-bold text-lg">Day 1: Arrival &amp; Welcome Dinner</h3>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<div class="p-8 space-y-6">
+<!-- Activity 1 -->
+<div class="flex gap-6 items-start">
+<div class="flex flex-col items-center pt-2">
+<div class="w-3 h-3 rounded-full bg-primary ring-4 ring-primary/20"></div>
+<div class="w-0.5 h-16 bg-outline-variant/30 mt-2"></div>
+</div>
+<div class="flex-1 bg-surface-container-low/50 p-4 rounded-xl border border-outline-variant/10">
+<div class="flex justify-between items-start mb-2">
+<input class="bg-transparent border-none p-0 focus:ring-0 font-bold text-on-surface w-full" type="text" value="Pick up at Noi Bai International Airport"/>
+<span class="text-xs font-bold text-primary px-2 py-1 bg-primary-container/20 rounded">14:00</span>
+</div>
+<textarea class="bg-transparent border-none p-0 focus:ring-0 text-sm text-on-surface-variant w-full resize-none">Our private van will meet you at arrivals with a ViệtVibe sign.</textarea>
+</div>
+</div>
+<!-- Activity 2 -->
+<div class="flex gap-6 items-start">
+<div class="flex flex-col items-center pt-2">
+<div class="w-3 h-3 rounded-full bg-primary/40"></div>
+</div>
+<div class="flex-1 border-2 border-dashed border-outline-variant/30 p-4 rounded-xl hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex items-center justify-center gap-2 text-on-surface-variant/60 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">add</span>
+<span class="font-bold text-sm uppercase tracking-widest">Add Activity</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Day 2 (Placeholder) -->
+<div class="bg-surface-container-lowest/50 rounded-xl border border-outline-variant/20 p-8 flex items-center justify-center">
+<div class="text-center py-4">
+<p class="text-on-surface-variant font-medium mb-4">You haven't detailed Day 2 yet.</p>
+<button class="bg-surface-container-high px-6 py-2 rounded-full text-primary font-bold text-sm hover:bg-surface-container-highest transition-all">Start Drafting Day 2</button>
+</div>
+</div>
+</section>
+<!-- Section 3: Gallery -->
+<section class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 rounded-full editorial-gradient flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">image</span>
+</div>
+<h2 class="font-headline text-2xl font-bold">Visual Soul</h2>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="aspect-square rounded-xl overflow-hidden group relative">
+<img class="w-full h-full object-cover" data-alt="vibrant street food stall in Hanoi with steam rising and colorful bowls of noodles in evening light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwinkYOiFAr44zHoPd34N9zRJJGc-WuYHIrgbd_MobuNUBtWSPlLwrJZc-o4_8BqLyZMa-kDRYhGx4mpBr5ZZOH30bkxkATeiMu_8Io7c0WcUW0lGWj83mCD1LyPSRk8VyP-kpUxHgj3KR01xX0H93wWbuznKV4hC7ByNjpyw_oJKGb2FI7GetmJbapocHKaoUU2RjMOQWu77VRwoMZkSylSksu_II4JRgmB7mlvGA0Wk-UzLQLn_pmB--MQhhQfIiWSe6gi2tbEU"/>
+<button class="absolute top-2 right-2 bg-black/40 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-sm">close</span></button>
+</div>
+<div class="aspect-square rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center gap-2 hover:bg-surface-container-low transition-all cursor-pointer">
+<span class="material-symbols-outlined text-primary scale-125">cloud_upload</span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Upload Photo</span>
+</div>
+</div>
+</section>
+<!-- Action Bar Mobile -->
+<div class="flex items-center gap-4 py-8">
+<button class="flex-1 bg-surface-container-high text-on-surface font-bold py-4 rounded-full hover:bg-surface-container-highest transition-all">Save Draft</button>
+<button class="flex-[2] editorial-gradient text-on-primary font-bold py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">Publish Trip</button>
+</div>
+</div>
+<!-- Right Column: Context/Sidebar -->
+<div class="lg:col-span-4 space-y-8">
+<div class="sticky top-28 space-y-8">
+<!-- Progress Card -->
+<div class="bg-surface-container-low p-6 rounded-xl">
+<h4 class="font-headline font-bold mb-4">Trip Completion</h4>
+<div class="w-full bg-surface-container-highest rounded-full h-2 mb-6">
+<div class="editorial-gradient h-2 rounded-full w-[45%]"></div>
+</div>
+<ul class="space-y-4">
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-medium">Basic Info</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-medium">Upload Hero Image</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-on-surface-variant/50">
+<span class="material-symbols-outlined text-xl">radio_button_unchecked</span>
+<span class="font-medium">Detailed Itinerary (Min 3 days)</span>
+</li>
+<li class="flex items-center gap-3 text-sm text-on-surface-variant/50">
+<span class="material-symbols-outlined text-xl">radio_button_unchecked</span>
+<span class="font-medium">Estimated Budgeting</span>
+</li>
+</ul>
+</div>
+<!-- Concierge Tip -->
+<div class="glass-panel p-6 rounded-xl border border-white/40 shadow-sm relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 opacity-5">
+<span class="material-symbols-outlined text-8xl">lightbulb</span>
+</div>
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+<h4 class="font-headline font-bold">Concierge Insight</h4>
+</div>
+<p class="text-sm leading-relaxed text-on-surface-variant">
+                            "Trips with at least **5 high-quality photos** and a **detailed Day 1 schedule** get 4x more engagement from the community. Make your first impression count!"
+                        </p>
+</div>
+<!-- Preview Card -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm group">
+<div class="h-40 overflow-hidden relative">
+<div class="absolute top-3 left-3 z-10">
+<span class="bg-primary/90 text-on-primary text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Preview</span>
+</div>
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="aerial view of traditional wooden boats on a calm turquoise bay in Ha Long at sunset" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVeCzp82WDUzHhaR0ilAXrqd88zUstMqzbkyEiz8KlSXKHnwVX2buOahzrEzc_AJhFzJegJH4FrNf2zW4xt0ud9gKbkDtCJS_ILLCmykpfXYprTdMnS4ah4wCCiPZWX7SnFLNyKQIHeJrJkg6PSmcAPlWRj7g7_CCeWqtdChrrYfMby31reMiXqmyU701CbYeMPQLRjPCWVfMC7Bb7ojJVoOuN1jo_sThU3m5wOSi5Ntyeos7mJfJiN-_uYy6pReKND63m_JIotIw"/>
+</div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-2">
+<h5 class="font-headline font-bold text-on-surface leading-tight">Untitled Trip Journey</h5>
+<span class="text-xs font-bold text-primary">$1,200</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="portrait of a young traveler" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ0x-dtDDCWd9dO0MZOwDw100I87wH7mQn4U9qZBGB8jwJuiNTtjmt-Gqg2Qssc0ZPWjbZuKJwRVEArycnirliiDGNphC6gMztwFl_0BiiTt0CpGPjrYj1xF_xYPqLWa4HqdtRv6D25d2SO-Nk2NeepuCun5wX6HMSm-Lrmb8pgCA9HelCu8NusmKdQaTKl_FVFY_mr1_gQYof-9i1H1e_9UfwTuivSYmpmYKtq5gk0iGsJH466R7kv9GFxSAgF9vBpk394H0myg0"/>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">By Alexander T.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-[#ffedeb] dark:bg-stone-900 w-full py-12 px-8 mt-auto">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-7xl mx-auto">
+<div class="col-span-2 md:col-span-1">
+<span class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-[#4e2120] dark:text-stone-100">ViệtVibe</span>
+<p class="mt-4 text-[#4e2120]/70 dark:text-stone-400 font-['Inter'] text-sm leading-relaxed">Designing authentic Vietnamese memories through local connections and curated travel experiences.</p>
+</div>
+<div>
+<h5 class="text-[#ab2d00] font-bold mb-4 font-['Inter'] text-sm tracking-wide">Explore</h5>
+<ul class="space-y-2">
+<li><a class="text-[#4e2120]/70 dark:text-stone-400 font-['Inter'] text-sm hover:text-[#ab2d00] underline-offset-4 hover:underline transition-all" href="#">About Vietnam</a></li>
+<li><a class="text-[#4e2120]/70 dark:text-stone-400 font-['Inter'] text-sm hover:text-[#ab2d00] underline-offset-4 hover:underline transition-all" href="#">Destinations</a></li>
+<li><a class="text-[#4e2120]/70 dark:text-stone-400 font-['Inter'] text-sm hover:text-[#ab2d00] underline-offset-4 hover:underline transition-all" href="#">Travel Guides</a></li>
+</ul>
+</div>
+<div>
+<h5 class="text-[#ab2d00] font-bold mb-4 font-['Inter'] text-sm tracking-wide">Support</h5>
+<ul class="space-y-2">
+<li><a class="text-[#4e2120]/70 dark:text-stone-400 font-['Inter'] text-sm hover:text-[#ab2d00] underline-offset-4 hover:underline transition-all" href="#">Safety Tips</a></li>
+<li><a class="text-[#4e2120]/70 dark:text-stone-400 font-['Inter'] text-sm hover:text-[#ab2d00] underline-offset-4 hover:underline transition-all" href="#">Contact Support</a></li>
+<li><a class="text-[#4e2120]/70 dark:text-stone-400 font-['Inter'] text-sm hover:text-[#ab2d00] underline-offset-4 hover:underline transition-all" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+<div class="col-span-2 md:col-span-1 border-t md:border-t-0 border-outline-variant/20 pt-8 md:pt-0">
+<p class="text-[#4e2120]/70 dark:text-stone-400 font-['Inter'] text-sm leading-tight">© 2024 ViệtVibe Travel. The Digital Concierge.</p>
+</div>
+</div>
+</footer>
+</body></html>

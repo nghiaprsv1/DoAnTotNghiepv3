@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .editorial-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#ffd2d0",
+                    "primary-fixed": "#ff7851",
+                    "secondary-dim": "#902c2e",
+                    "surface-tint": "#ab2d00",
+                    "on-surface": "#4e2120",
+                    "surface-dim": "#ffc7c4",
+                    "on-tertiary-fixed-variant": "#611b79",
+                    "error": "#b31b25",
+                    "tertiary": "#833e9a",
+                    "inverse-on-surface": "#ce8c89",
+                    "surface-bright": "#fff4f3",
+                    "secondary-container": "#ffc3c0",
+                    "primary-fixed-dim": "#ff5d2b",
+                    "on-tertiary": "#ffedfe",
+                    "error-dim": "#9f0519",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#a26765",
+                    "surface-container-low": "#ffedeb",
+                    "on-tertiary-fixed": "#360049",
+                    "on-primary-container": "#470e00",
+                    "tertiary-fixed-dim": "#d88cee",
+                    "on-primary-fixed": "#000000",
+                    "secondary-fixed-dim": "#ffafac",
+                    "surface": "#fff4f3",
+                    "tertiary-container": "#e699fd",
+                    "surface-container-high": "#ffdad8",
+                    "primary": "#ab2d00",
+                    "on-primary-fixed-variant": "#581300",
+                    "tertiary-fixed": "#e699fd",
+                    "secondary": "#a03739",
+                    "primary-dim": "#962700",
+                    "on-secondary-fixed-variant": "#922d2f",
+                    "tertiary-dim": "#76318d",
+                    "on-error": "#ffefee",
+                    "outline-variant": "#e09c99",
+                    "on-primary": "#ffefeb",
+                    "inverse-surface": "#240304",
+                    "on-tertiary-container": "#570e6f",
+                    "on-secondary-fixed": "#6a0e16",
+                    "inverse-primary": "#ff5722",
+                    "on-error-container": "#570008",
+                    "error-container": "#fb5151",
+                    "secondary-fixed": "#ffc3c0",
+                    "on-surface-variant": "#834c4b",
+                    "surface-container-highest": "#ffd2d0",
+                    "on-background": "#4e2120",
+                    "surface-container": "#ffe1e0",
+                    "on-secondary-container": "#852327",
+                    "primary-container": "#ff7851",
+                    "on-secondary": "#ffefee",
+                    "background": "#fff4f3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex items-center justify-center p-4">
+<!-- Background Layer -->
+<div class="fixed inset-0 z-0">
+<img alt="Ha Long Bay" class="w-full h-full object-cover brightness-[0.85] blur-[2px]" data-alt="stunning cinematic aerial view of limestone karsts in Ha Long Bay Vietnam at sunrise with soft golden mist and calm turquoise water" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIIiiS_GIbxE_wgpYRvN-w-eqEbdh-5XPXvuMWN2QFTiGPFttPB1EmE_TPHK3MdZO8BQd1rTkFDfHCTb7ZuwysXm_HkfEKu7OvTCzllmfkgSO5hh5inqQp_9wpyWwFpSM3UKAPoz2pGc1JsmCZ6NozTE5PMXDw9rM21SBdWDXLVsfq8ShHKHsroHG6j46c1NXab9h56xGGVeTDqfPduly1UCVBXyNIpjJM7IV-hdOg12mzX_XKyb0WAlX3y8x-pAHDNomfKpTkcYs"/>
+<div class="absolute inset-0 bg-gradient-to-tr from-on-surface/40 via-transparent to-primary/10"></div>
+</div>
+<!-- Main Content Canvas (Login Box) -->
+<main class="relative z-10 w-full max-w-[1100px] grid md:grid-cols-2 bg-surface-container-lowest/90 backdrop-blur-md rounded-[2rem] overflow-hidden shadow-[0_12px_40px_rgba(78,33,32,0.12)]">
+<!-- Editorial Side (Left) -->
+<div class="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-primary to-primary-container relative overflow-hidden text-on-primary">
+<!-- Decorative circle -->
+<div class="absolute -top-24 -left-24 w-64 h-64 bg-surface-variant/20 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-24 -right-24 w-80 h-80 bg-on-primary-container/10 rounded-full blur-3xl"></div>
+<div class="relative z-20">
+<div class="flex items-center gap-2 mb-8">
+<span class="material-symbols-outlined text-4xl" data-icon="explore">explore</span>
+<span class="font-headline font-extrabold text-2xl italic tracking-tighter">Concierge</span>
+</div>
+<h1 class="text-4xl lg:text-5xl font-headline font-bold leading-tight mb-6">
+                    Khám phá <br/>
+<span class="text-on-primary-fixed">Việt Nam</span> <br/>
+                    theo cách riêng.
+                </h1>
+<p class="text-on-primary/80 max-w-sm font-body leading-relaxed">
+                    Tham gia cộng đồng du lịch hàng đầu để cùng chia sẻ những hành trình tuyệt vời và tìm kiếm cảm hứng cho chuyến đi tiếp theo.
+                </p>
+</div>
+<div class="relative z-20 mt-12">
+<div class="flex -space-x-3 mb-4">
+<img class="w-10 h-10 rounded-full border-2 border-primary object-cover" data-alt="portrait of a young woman traveler with mountains in background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXv7VsDQeKy2fRcnwPljnzUfEbRxSfS-72qqrHaNPo99XEA9D2x9OtfXK3smCkiz_y3i2VuM4w1untxQXcnMFVAr45Z5sbRI9AQKnCyVHx0kU9rpJKR0KhsnBAwBG2Jpb7RftxNUkcon9YqYudanIemmvhEE8guaOXME9jT9ulBoJ7piET8VAj8JrcBZyk7APsbsL12xQMJCMTmArmvUiXm5ZGN2wFQvTSfJDvnmxlfqBJ_OWYiELd9na5vgTTLtK1p58x9kfVntc"/>
+<img class="w-10 h-10 rounded-full border-2 border-primary object-cover" data-alt="portrait of a young man smiling outdoors in an urban setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0wgDspJG8_9eXFzqkR0SKf6tN_upcVssROzrmj9qjIKSKZi_ZsxijVn_HV6gBU5JL0oAiZT44k-FezyzzQeUw6vPGXTJX7yVvb13x1Da5uSVzRwFNVQ-vR38gnUvdXdkDpQq0BDv8eyrRnTgmPBoB25bFbDM59SplfqxQDijZtmtWzUcHixGWDDmONcSMW65R6e4N8imydP28a5wOO_LwQzZ7JBDRAPipJIX2F-awLVFDDQXDF9hJ0MrmkjPjaNFaLDU-HnXMzdE"/>
+<img class="w-10 h-10 rounded-full border-2 border-primary object-cover" data-alt="portrait of a woman with curly hair laughing" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAM6Jjrz4rQRvByRLoOdH8S1X6dZW7b3_gs0qvt74ZI0KFUiNRqoL0nieUtCaP0juTCD5NQgwXVYIrESClTLaDsmt1BCQVzm7D-CXC7L-w9EmYDJQmt5y0guYg6blZRXkonHqyiK0wiPZnh5X6sck80TRQxDN69ivynKjacsg1uW74kpl82x4E-0678qeBljVKIeTNqa0e_yW-cYrUUvcr8cpKcJlTJhi7R_bqCjiEtnWZbSF3izRjxBD8Bb8Y6MQb99_ndsCRp0l0"/>
+<div class="w-10 h-10 rounded-full border-2 border-primary bg-primary-fixed-dim flex items-center justify-center text-[10px] font-bold">+10k</div>
+</div>
+<p class="text-sm font-label font-medium opacity-90 uppercase tracking-widest">Đang chờ bạn khám phá</p>
+</div>
+</div>
+<!-- Form Side (Right) -->
+<div class="p-8 md:p-16 flex flex-col justify-center">
+<header class="mb-10">
+<h2 class="text-3xl font-headline font-extrabold text-on-surface mb-2 tracking-tight">Chào mừng trở lại</h2>
+<p class="text-on-surface-variant font-body">Đăng nhập vào tài khoản TravelSocial của bạn</p>
+</header>
+<form class="space-y-6">
+<!-- Email Input -->
+<div class="space-y-2">
+<label class="text-xs font-label font-bold uppercase tracking-wider text-on-surface-variant ml-1" for="email">Email</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl group-focus-within:text-primary transition-colors" data-icon="mail">mail</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/40 transition-all font-body" id="email" placeholder="example@gmail.com" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<label class="text-xs font-label font-bold uppercase tracking-wider text-on-surface-variant" for="password">Mật khẩu</label>
+<a class="text-xs font-label font-semibold text-primary hover:text-primary-dim transition-colors" href="#">Quên mật khẩu?</a>
+</div>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl group-focus-within:text-primary transition-colors" data-icon="lock">lock</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/40 transition-all font-body" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember Me -->
+<div class="flex items-center gap-2 px-1">
+<input class="w-5 h-5 rounded-lg border-outline-variant text-primary focus:ring-primary/20 bg-surface-container-low" id="remember" type="checkbox"/>
+<label class="text-sm font-body text-on-surface-variant select-none" for="remember">Ghi nhớ đăng nhập</label>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold py-4 rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-lg" type="submit">
+<span>Đăng nhập</span>
+<span class="material-symbols-outlined text-xl" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<!-- Divider -->
+<div class="flex items-center gap-4 my-10">
+<div class="h-[2px] flex-1 bg-surface-container-low"></div>
+<span class="text-xs font-label font-bold text-on-surface-variant/60 uppercase tracking-widest">Hoặc đăng nhập với</span>
+<div class="h-[2px] flex-1 bg-surface-container-low"></div>
+</div>
+<!-- Social Login -->
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-3 py-3 px-4 bg-surface-container-lowest border border-outline-variant/20 rounded-xl hover:bg-surface-container-low transition-colors active:scale-[0.98]">
+<svg class="w-5 h-5" viewbox="0 0 24 24">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1.01.68-2.33 1.09-3.71 1.09-2.85 0-5.27-1.92-6.13-4.51H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.87 14.15c-.22-.68-.35-1.4-.35-2.15s.13-1.47.35-2.15V7.01H2.18C1.4 8.58 1 10.27 1 12s.4 3.42 1.18 4.99l3.69-2.84z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.01l3.69 2.84c.86-2.59 3.28-4.51 12-4.51z" fill="#EA4335"></path>
+</svg>
+<span class="text-sm font-semibold text-on-surface">Google</span>
+</button>
+<button class="flex items-center justify-center gap-3 py-3 px-4 bg-surface-container-lowest border border-outline-variant/20 rounded-xl hover:bg-surface-container-low transition-colors active:scale-[0.98]">
+<svg class="w-5 h-5" fill="#1877F2" viewbox="0 0 24 24">
+<path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
+</svg>
+<span class="text-sm font-semibold text-on-surface">Facebook</span>
+</button>
+</div>
+<footer class="mt-12 text-center">
+<p class="text-on-surface-variant font-body">
+                    Chưa có tài khoản? 
+                    <a class="font-bold text-primary hover:underline underline-offset-4 decoration-2" href="#">Tham gia ngay</a>
+</p>
+</footer>
+</div>
+</main>
+<!-- Contextual Support Info -->
+<div class="fixed bottom-6 right-6 z-20 flex gap-4 md:gap-6">
+<div class="editorial-glass rounded-full px-5 py-2.5 flex items-center gap-3 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+<span class="text-xs font-label font-bold text-on-surface/70 uppercase tracking-widest">Hỗ trợ 24/7</span>
+</div>
+</div>
+</body></html>
