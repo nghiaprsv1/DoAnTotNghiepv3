@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { MainLayout } from '@layouts/MainLayout'
 import { AuthLayout } from '@layouts/AuthLayout'
+import { ProtectedRoute } from '@components/common/ProtectedRoute'
 import { ROUTES } from '@constants/routes'
 
 // Lazy-loaded pages
@@ -19,6 +20,9 @@ const TripDetailPage = lazy(() =>
 )
 const CreateTripPage = lazy(() =>
   import('@pages/CreateTrip').then((m) => ({ default: m.CreateTripPage }))
+)
+const EditTripPage = lazy(() =>
+  import('@pages/EditTrip').then((m) => ({ default: m.EditTripPage }))
 )
 const ProfilePage = lazy(() => import('@pages/Profile').then((m) => ({ default: m.ProfilePage })))
 const EditProfilePage = lazy(() =>
@@ -60,11 +64,47 @@ const PlaceDetailPage = lazy(() =>
 const MyBookingsPage = lazy(() =>
   import('@pages/MyBookings').then((m) => ({ default: m.MyBookingsPage }))
 )
+const BookingDetailPage = lazy(() =>
+  import('@pages/BookingDetail').then((m) => ({ default: m.BookingDetailPage }))
+)
+const WalletPage = lazy(() =>
+  import('@pages/Wallet').then((m) => ({ default: m.WalletPage }))
+)
 const UserProfilePage = lazy(() =>
   import('@pages/UserProfile').then((m) => ({ default: m.UserProfilePage }))
 )
 const FollowListPage = lazy(() =>
   import('@pages/UserProfile').then((m) => ({ default: m.FollowListPage }))
+)
+const AdminLayout = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminLayout }))
+)
+const AdminOverviewPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminOverviewPage }))
+)
+const AdminUsersPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminUsersPage }))
+)
+const AdminGuidesPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminGuidesPage }))
+)
+const AdminWithdrawalsPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminWithdrawalsPage }))
+)
+const AdminRevenuePage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminRevenuePage }))
+)
+const AdminNotificationsPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminNotificationsPage }))
+)
+const AdminPostsPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminPostsPage }))
+)
+const AdminTripsPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminTripsPage }))
+)
+const AdminPlacesPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminPlacesPage }))
 )
 
 const PageLoader = () => (
@@ -83,24 +123,15 @@ export const router = createBrowserRouter([
   {
     element: <MainLayout />,
     children: [
+      // ── Public routes (khách chưa đăng nhập vẫn xem được) ──
       { path: ROUTES.HOME, element: withSuspense(HomePage) },
       { path: ROUTES.TRIPS, element: withSuspense(TripsPage) },
-      { path: ROUTES.TRIP_CREATE, element: withSuspense(CreateTripPage) },
       { path: ROUTES.TRIP_DETAIL, element: withSuspense(TripDetailPage) },
-      { path: ROUTES.PROFILE, element: withSuspense(ProfilePage) },
-      { path: ROUTES.PROFILE_EDIT, element: withSuspense(EditProfilePage) },
-      { path: ROUTES.MESSAGES, element: withSuspense(MessagesPage) },
-      { path: ROUTES.MESSAGE_THREAD, element: withSuspense(MessagesPage) },
       { path: ROUTES.SOCIAL, element: withSuspense(SocialPage) },
       { path: ROUTES.GUIDES, element: withSuspense(GuidesPage) },
-      { path: ROUTES.GUIDE_APPLY, element: withSuspense(GuideApplyPage) },
       { path: ROUTES.GUIDE_DETAIL, element: withSuspense(GuideDetailPage) },
-      { path: ROUTES.GUIDE_DASHBOARD, element: withSuspense(GuideDashboardPage) },
-      { path: ROUTES.NOTIFICATIONS, element: withSuspense(NotificationsPage) },
-      { path: ROUTES.NOTIFICATION_DETAIL, element: withSuspense(NotificationDetailPage) },
       { path: ROUTES.PLACES, element: withSuspense(PlacesPage) },
       { path: ROUTES.PLACE_DETAIL, element: withSuspense(PlaceDetailPage) },
-      { path: ROUTES.MY_BOOKINGS, element: withSuspense(MyBookingsPage) },
       { path: ROUTES.USER_PROFILE, element: withSuspense(UserProfilePage) },
       {
         path: ROUTES.USER_FOLLOWERS,
@@ -118,6 +149,25 @@ export const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      // ── Protected routes (yêu cầu đăng nhập) ──
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: ROUTES.TRIP_CREATE, element: withSuspense(CreateTripPage) },
+          { path: ROUTES.TRIP_EDIT, element: withSuspense(EditTripPage) },
+          { path: ROUTES.PROFILE, element: withSuspense(ProfilePage) },
+          { path: ROUTES.PROFILE_EDIT, element: withSuspense(EditProfilePage) },
+          { path: ROUTES.MESSAGES, element: withSuspense(MessagesPage) },
+          { path: ROUTES.MESSAGE_THREAD, element: withSuspense(MessagesPage) },
+          { path: ROUTES.GUIDE_APPLY, element: withSuspense(GuideApplyPage) },
+          { path: ROUTES.GUIDE_DASHBOARD, element: withSuspense(GuideDashboardPage) },
+          { path: ROUTES.NOTIFICATIONS, element: withSuspense(NotificationsPage) },
+          { path: ROUTES.NOTIFICATION_DETAIL, element: withSuspense(NotificationDetailPage) },
+          { path: ROUTES.MY_BOOKINGS, element: withSuspense(MyBookingsPage) },
+          { path: ROUTES.BOOKING_DETAIL, element: withSuspense(BookingDetailPage) },
+          { path: ROUTES.WALLET, element: withSuspense(WalletPage) },
+        ],
+      },
     ],
   },
   {
@@ -129,7 +179,34 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    // Admin Dashboard — its own chrome (sidebar) instead of the public TopNav.
+    // Guarded by role: chỉ user role 'admin' mới vào được, còn lại bị đẩy về Home.
+    element: <ProtectedRoute roles={['admin']} />,
+    children: [
+      {
+        element: withSuspense(AdminLayout),
+        children: [
+          { path: ROUTES.ADMIN, element: withSuspense(AdminOverviewPage) },
+          { path: ROUTES.ADMIN_USERS, element: withSuspense(AdminUsersPage) },
+          { path: ROUTES.ADMIN_GUIDES, element: withSuspense(AdminGuidesPage) },
+          { path: ROUTES.ADMIN_WITHDRAWALS, element: withSuspense(AdminWithdrawalsPage) },
+          { path: ROUTES.ADMIN_REVENUE, element: withSuspense(AdminRevenuePage) },
+          { path: ROUTES.ADMIN_NOTIFICATIONS, element: withSuspense(AdminNotificationsPage) },
+          { path: ROUTES.ADMIN_POSTS, element: withSuspense(AdminPostsPage) },
+          { path: ROUTES.ADMIN_TRIPS, element: withSuspense(AdminTripsPage) },
+          { path: ROUTES.ADMIN_PLACES, element: withSuspense(AdminPlacesPage) },
+        ],
+      },
+    ],
+  },
+  {
     path: ROUTES.NOT_FOUND,
     element: withSuspense(NotFoundPage),
   },
-])
+], {
+  // Opt in to React Router v7 behaviour early to silence the upgrade warnings.
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+  },
+})

@@ -13,6 +13,10 @@ export type NotificationType =
   | 'system'
   | 'guide_application'
   | 'trip_update'
+  | 'trip_join_request'
+  | 'trip_join_accepted'
+  | 'trip_join_rejected'
+  | 'trip_cancelled'
 
 export interface NotificationActor {
   id: string

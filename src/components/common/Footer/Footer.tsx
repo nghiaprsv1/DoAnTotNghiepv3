@@ -6,7 +6,7 @@ export function Footer() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-7xl mx-auto">
         <div className="col-span-2 md:col-span-1">
           <span className="font-headline font-bold text-lg text-on-surface block mb-4">
-            ViệtVibe
+            TripMate
           </span>
           <p className="font-body text-sm tracking-wide text-on-surface/70 mb-6">
             Redefining the way you discover and experience the beauty of Vietnam.
@@ -71,7 +71,7 @@ export function Footer() {
 
       <div className="max-w-7xl mx-auto pt-12 border-t border-surface-container mt-12 flex flex-col md:flex-row justify-between items-center gap-4">
         <span className="font-body text-sm tracking-wide text-on-surface/70">
-          © {new Date().getFullYear()} ViệtVibe Travel. The Digital Concierge.
+          © {new Date().getFullYear()} TripMate Travel. The Digital Concierge.
         </span>
         <div className="flex gap-6">
           {['Facebook', 'Instagram', 'Twitter'].map((label) => (

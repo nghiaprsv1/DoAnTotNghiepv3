@@ -8,8 +8,16 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false,
+      // Dữ liệu "tươi" trong 30s. Hết 30s coi là stale → khi component mount lại
+      // (chuyển trang) hoặc focus lại tab, React Query tự refetch NGẦM: vẫn hiện
+      // data cache ngay lập tức rồi cập nhật khi API trả về (không loading toàn trang).
+      staleTime: 3 * 1000,
+      // Refetch khi component mount lại — đây là thứ làm "chuyển trang là cập nhật".
+      refetchOnMount: true,
+      // Refetch khi quay lại tab trình duyệt (vd vừa tạo/sửa ở tab khác).
+      refetchOnWindowFocus: true,
+      // Refetch khi mạng kết nối lại.
+      refetchOnReconnect: true,
     },
   },
 })

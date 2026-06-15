@@ -1,21 +1,148 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
+import { Input } from '@components/ui/Input'
 import { Button } from '@components/ui/Button'
+import { ImageUpload } from '@components/common/ImageUpload'
 import { ROUTES } from '@constants/routes'
-import { STEP_INFO, TOTAL_STEPS } from './components/options'
-import { Step1Personal, Step2Identity, Step3Experience } from './components/Steps'
-import { Step4Coverage, Step5Portfolio, Step6Submit } from './components/StepsTail'
+import { ChipSelect } from '../EditProfile/components/ChipSelect'
+import { StepCard } from './components/StepCard'
+import {
+  LANGUAGES,
+  REGIONS,
+  SPECIALTIES,
+  STEP_INFO,
+  TOTAL_STEPS,
+  TOUR_TYPES,
+} from './components/options'
+import { guideService } from '@services/guideService'
+import { useCurrentUserStore } from '@store/currentUserStore'
 import { cn } from '@utils/cn'
 
+interface FormState {
+  fullName: string
+  phone: string
+  email: string
+  address: string
+  idCardNumber: string
+  idCardImage: string
+  yearsExperience: string
+  languages: string[]
+  region: string
+  regionKeys: string[]
+  categoryKeys: string[]
+  tourTypes: string[]
+  pricePerDay: string
+  bio: string
+}
+
+const EMPTY: FormState = {
+  fullName: '',
+  phone: '',
+  email: '',
+  address: '',
+  idCardNumber: '',
+  idCardImage: '',
+  yearsExperience: '',
+  languages: ['vi'],
+  region: '',
+  regionKeys: [],
+  categoryKeys: [],
+  tourTypes: [],
+  pricePerDay: '',
+  bio: '',
+}
+
 export function GuideApplyPage() {
+  const navigate = useNavigate()
+  const currentUser = useCurrentUserStore()
   const [step, setStep] = useState(1)
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState<FormState>(() => ({
+    ...EMPTY,
+    fullName: currentUser.name ?? '',
+    email: currentUser.email ?? '',
+  }))
+
+  const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
+    setForm((f) => ({ ...f, [key]: val }))
 
   const next = () => setStep((s) => Math.min(TOTAL_STEPS, s + 1))
   const prev = () => setStep((s) => Math.max(1, s - 1))
 
+  /** Per-step input validation. Returns null if OK, otherwise an error string. */
+  const validateStep = (n: number): string | null => {
+    if (n === 1) {
+      if (!form.fullName.trim()) return 'Vui lòng nhập họ và tên.'
+      if (!form.phone.trim()) return 'Vui lòng nhập số điện thoại.'
+      if (!form.email.trim()) return 'Vui lòng nhập email.'
+    }
+    if (n === 2) {
+      if (!form.idCardNumber.trim()) return 'Vui lòng nhập số CCCD/CMND.'
+    }
+    if (n === 3) {
+      const yrs = Number(form.yearsExperience)
+      if (!Number.isFinite(yrs) || yrs < 0) return 'Năm kinh nghiệm không hợp lệ.'
+      if (form.languages.length === 0) return 'Chọn ít nhất 1 ngôn ngữ.'
+    }
+    if (n === 4) {
+      if (form.regionKeys.length === 0) return 'Chọn ít nhất 1 vùng phụ trách.'
+      if (form.categoryKeys.length === 0) return 'Chọn ít nhất 1 lĩnh vực.'
+      const price = Number(form.pricePerDay)
+      if (!Number.isFinite(price) || price <= 0) return 'Giá / ngày không hợp lệ.'
+    }
+    return null
+  }
+
+  const submit = async () => {
+    setError(null)
+    for (let i = 1; i <= TOTAL_STEPS; i += 1) {
+      const e = validateStep(i)
+      if (e) {
+        setError(e)
+        setStep(i)
+        return
+      }
+    }
+    setSubmitting(true)
+    try {
+      await guideService.apply({
+        region: form.region.trim() || REGIONS.find((r) => r.value === form.regionKeys[0])?.label || 'Việt Nam',
+        regionKeys: form.regionKeys,
+        categoryKeys: form.categoryKeys,
+        languages: form.languages,
+        specialties: form.tourTypes,
+        bio: form.bio.trim() || undefined,
+        yearsExperience: Number(form.yearsExperience) || 0,
+        pricePerDay: Number(form.pricePerDay) || 0,
+        currency: 'VND',
+        idCardNumber: form.idCardNumber.trim(),
+        idCardImage: form.idCardImage.trim() || undefined,
+      })
+      setSubmitted(true)
+    } catch (err) {
+      const e = err as { response?: { data?: { message?: string } } }
+      setError(e.response?.data?.message ?? 'Không gửi được hồ sơ. Hãy thử lại.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   if (submitted) return <SubmittedView />
+
+  const onSubmitForm = (e: React.FormEvent) => {
+    e.preventDefault()
+    const err = validateStep(step)
+    if (err) {
+      setError(err)
+      return
+    }
+    setError(null)
+    if (step === TOTAL_STEPS) submit()
+    else next()
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
@@ -81,20 +208,235 @@ export function GuideApplyPage() {
         </ol>
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (step === TOTAL_STEPS) setSubmitted(true)
-          else next()
-        }}
-        className="space-y-6"
-      >
-        {step === 1 && <Step1Personal />}
-        {step === 2 && <Step2Identity />}
-        {step === 3 && <Step3Experience />}
-        {step === 4 && <Step4Coverage />}
-        {step === 5 && <Step5Portfolio />}
-        {step === 6 && <Step6Submit />}
+      <form onSubmit={onSubmitForm} className="space-y-6">
+        {step === 1 && (
+          <StepCard
+            step={1}
+            totalSteps={TOTAL_STEPS}
+            icon={STEP_INFO[0].icon}
+            title={STEP_INFO[0].title}
+            description="Thông tin sẽ chỉ hiển thị trên hồ sơ HDV của bạn nếu được duyệt."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Họ và tên"
+                placeholder="Nguyễn Văn A"
+                iconLeft="person"
+                tone="highest"
+                value={form.fullName}
+                onChange={(e) => set('fullName', e.target.value)}
+              />
+              <Input
+                label="Số điện thoại"
+                type="tel"
+                placeholder="+84 901 234 567"
+                iconLeft="call"
+                tone="highest"
+                value={form.phone}
+                onChange={(e) => set('phone', e.target.value)}
+              />
+              <Input
+                label="Email"
+                type="email"
+                iconLeft="mail"
+                tone="highest"
+                value={form.email}
+                onChange={(e) => set('email', e.target.value)}
+              />
+              <Input
+                label="Địa chỉ thường trú"
+                placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh"
+                iconLeft="home"
+                tone="highest"
+                value={form.address}
+                onChange={(e) => set('address', e.target.value)}
+              />
+            </div>
+          </StepCard>
+        )}
+
+        {step === 2 && (
+          <StepCard
+            step={2}
+            totalSteps={TOTAL_STEPS}
+            icon={STEP_INFO[1].icon}
+            title={STEP_INFO[1].title}
+            description="Cần ít nhất CCCD hoặc Hộ chiếu. Ảnh chụp rõ, không che thông tin."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Số CCCD / CMND"
+                placeholder="12 chữ số"
+                iconLeft="badge"
+                tone="highest"
+                value={form.idCardNumber}
+                onChange={(e) => set('idCardNumber', e.target.value)}
+              />
+              <ImageUpload
+                label="Ảnh CCCD"
+                hint="Chọn ảnh từ máy của bạn. Ảnh chụp rõ, không che thông tin."
+                value={form.idCardImage || null}
+                onChange={(url) => set('idCardImage', url ?? '')}
+                aspect="aspect-[4/3]"
+              />
+            </div>
+          </StepCard>
+        )}
+
+        {step === 3 && (
+          <StepCard
+            step={3}
+            totalSteps={TOTAL_STEPS}
+            icon={STEP_INFO[2].icon}
+            title={STEP_INFO[2].title}
+            description="Số năm kinh nghiệm và ngôn ngữ giao tiếp với khách."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Số năm kinh nghiệm"
+                type="number"
+                min={0}
+                max={60}
+                iconLeft="schedule"
+                tone="highest"
+                value={form.yearsExperience}
+                onChange={(e) => set('yearsExperience', e.target.value)}
+              />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 ml-1">
+                Ngôn ngữ giao tiếp
+              </p>
+              <ChipSelect
+                options={LANGUAGES}
+                value={form.languages}
+                onChange={(v) => set('languages', v)}
+              />
+            </div>
+          </StepCard>
+        )}
+
+        {step === 4 && (
+          <StepCard
+            step={4}
+            totalSteps={TOTAL_STEPS}
+            icon={STEP_INFO[3].icon}
+            title={STEP_INFO[3].title}
+            description="Vùng nào bạn dẫn được, làm tour kiểu gì, giá bao nhiêu?"
+          >
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 ml-1">
+                Vùng phụ trách (chọn nhiều)
+              </p>
+              <ChipSelect
+                options={REGIONS}
+                value={form.regionKeys}
+                onChange={(v) => set('regionKeys', v)}
+              />
+            </div>
+            <Input
+              label="Khu vực cụ thể"
+              placeholder="VD: Sapa, Y Tý, Hà Giang, Mộc Châu..."
+              iconLeft="location_on"
+              tone="highest"
+              value={form.region}
+              onChange={(e) => set('region', e.target.value)}
+            />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 ml-1">
+                Chuyên môn / Lĩnh vực
+              </p>
+              <ChipSelect
+                options={SPECIALTIES}
+                value={form.categoryKeys}
+                onChange={(v) => set('categoryKeys', v)}
+              />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 ml-1">
+                Loại tour cung cấp
+              </p>
+              <ChipSelect
+                options={TOUR_TYPES}
+                value={form.tourTypes}
+                onChange={(v) => set('tourTypes', v)}
+              />
+            </div>
+            <Input
+              label="Giá đề xuất / ngày (VND)"
+              type="number"
+              min={0}
+              placeholder="850000"
+              iconLeft="payments"
+              tone="highest"
+              value={form.pricePerDay}
+              onChange={(e) => set('pricePerDay', e.target.value)}
+            />
+          </StepCard>
+        )}
+
+        {step === 5 && (
+          <StepCard
+            step={5}
+            totalSteps={TOTAL_STEPS}
+            icon={STEP_INFO[4].icon}
+            title={STEP_INFO[4].title}
+            description="Giới thiệu bản thân — sẽ hiển thị công khai trên hồ sơ HDV của bạn."
+          >
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
+                Giới thiệu bản thân
+              </label>
+              <textarea
+                rows={6}
+                maxLength={1000}
+                value={form.bio}
+                onChange={(e) => set('bio', e.target.value)}
+                placeholder="Kể về bạn — bạn là ai, lý do bạn yêu công việc dẫn tour, điều khiến bạn khác biệt..."
+                className="w-full bg-surface-container-highest border-none rounded-2xl px-4 py-3 text-on-surface font-medium resize-none outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <p className="text-[11px] text-on-surface-variant mt-1 ml-1">
+                {form.bio.length} / 1000 ký tự.
+              </p>
+            </div>
+          </StepCard>
+        )}
+
+        {step === 6 && (
+          <StepCard
+            step={6}
+            totalSteps={TOTAL_STEPS}
+            icon={STEP_INFO[5].icon}
+            title={STEP_INFO[5].title}
+            description="Đọc kỹ và xác nhận trước khi gửi hồ sơ cho đội ngũ duyệt."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <ReviewRow label="Họ và tên" value={form.fullName} />
+              <ReviewRow label="SĐT" value={form.phone} />
+              <ReviewRow label="Email" value={form.email} />
+              <ReviewRow label="CCCD" value={form.idCardNumber} />
+              <ReviewRow label="Kinh nghiệm" value={`${form.yearsExperience || 0} năm`} />
+              <ReviewRow label="Giá / ngày" value={`${Number(form.pricePerDay || 0).toLocaleString('vi-VN')} VND`} />
+              <ReviewRow label="Vùng" value={form.regionKeys.join(', ') || '—'} />
+              <ReviewRow label="Lĩnh vực" value={form.categoryKeys.join(', ') || '—'} />
+              <ReviewRow label="Loại tour" value={form.tourTypes.join(', ') || '—'} />
+              <ReviewRow label="Ngôn ngữ" value={form.languages.join(', ') || '—'} />
+            </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-start gap-3">
+              <Icon name="schedule" className="text-primary mt-0.5" />
+              <div className="text-sm text-on-surface/85 leading-relaxed">
+                Hồ sơ sẽ được duyệt trong <strong>3–5 ngày làm việc</strong>. Bạn sẽ nhận thông
+                báo qua email và trên trang Hồ sơ.
+              </div>
+            </div>
+          </StepCard>
+        )}
+
+        {error && (
+          <div className="rounded-2xl bg-error/10 border border-error/20 px-4 py-3 text-error text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="sticky bottom-4 z-30">
@@ -102,7 +444,7 @@ export function GuideApplyPage() {
             <button
               type="button"
               onClick={prev}
-              disabled={step === 1}
+              disabled={step === 1 || submitting}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-headline font-bold text-on-surface hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <Icon name="arrow_back" size={18} />
@@ -119,14 +461,25 @@ export function GuideApplyPage() {
                 <Icon name="arrow_forward" />
               </Button>
             ) : (
-              <Button type="submit" size="md" rounded="full">
+              <Button type="submit" size="md" rounded="full" disabled={submitting}>
                 <Icon name="send" />
-                Gửi hồ sơ
+                {submitting ? 'Đang gửi…' : 'Gửi hồ sơ'}
               </Button>
             )}
           </div>
         </div>
       </form>
+    </div>
+  )
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-surface-container-low rounded-2xl px-3 py-2">
+      <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">{label}</p>
+      <p className="font-headline font-bold text-on-surface text-sm truncate">
+        {value || '—'}
+      </p>
     </div>
   )
 }

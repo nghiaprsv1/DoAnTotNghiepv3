@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { cn } from '@utils/cn'
-import { NOTIFICATION_ICON, NOTIFICATION_TONE } from '@constants/mockNotifications'
+import { NOTIFICATION_ICON, NOTIFICATION_TONE } from '@constants/notifications'
 import { notificationDetailPath } from '@constants/routes'
-import { useNotificationStore } from '@store/notificationStore'
+import { useDeleteNotification, useMarkNotificationRead } from '@hooks/useNotifications'
 import type { Notification } from '@types/notification'
 
 interface Props {
@@ -15,11 +15,11 @@ interface Props {
 }
 
 export function NotificationItem({ notification, compact, onClick }: Props) {
-  const markAsRead = useNotificationStore((s) => s.markAsRead)
-  const remove = useNotificationStore((s) => s.remove)
+  const markRead = useMarkNotificationRead()
+  const removeMut = useDeleteNotification()
 
   const handleClick = () => {
-    if (!notification.read) markAsRead(notification.id)
+    if (!notification.read) markRead.mutate(notification.id)
     onClick?.()
   }
 
@@ -92,7 +92,7 @@ export function NotificationItem({ notification, compact, onClick }: Props) {
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              remove(notification.id)
+              removeMut.mutate(notification.id)
             }}
             aria-label="Xoá thông báo"
             className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-error/10 hover:text-error text-on-surface-variant flex items-center justify-center transition"

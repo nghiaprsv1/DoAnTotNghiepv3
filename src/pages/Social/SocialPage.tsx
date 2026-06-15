@@ -1,8 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
-import { mockFeedPosts, mockStories } from '@constants/mockFeed'
-import { StoryBar } from './components/StoryBar'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
+import { usePosts } from '@hooks/usePosts'
+import { useCurrentUserStore } from '@store/currentUserStore'
+import { useAuthStore } from '@store/authStore'
+import { postService } from '@services/postService'
 import { PostComposer } from './components/PostComposer'
 import { FeedPostCard } from './components/FeedPostCard'
 import { SuggestedPeople } from './components/SuggestedPeople'
@@ -17,65 +22,86 @@ const FEED_TABS = [
 
 type TabKey = (typeof FEED_TABS)[number]['key']
 
-const CURRENT_AVATAR =
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80'
-
 export function SocialPage() {
   const [tab, setTab] = useState<TabKey>('foryou')
-  const [posts, setPosts] = useState<Post[]>(mockFeedPosts)
+  const { data: apiPosts, isLoading } = usePosts({ feed: tab })
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const currentUser = useCurrentUserStore()
+  const queryClient = useQueryClient()
+  const [composeError, setComposeError] = useState<string | null>(null)
 
-  const visiblePosts = useMemo(() => {
-    if (tab === 'trending') {
-      return [...posts].sort((a, b) => b.likes - a.likes)
-    }
-    if (tab === 'following') {
-      return posts.filter((p) => p.authorVerified)
-    }
-    return posts
-  }, [posts, tab])
+  // Optimistic state — populated when API returns; mutated by like/delete callbacks.
+  const [posts, setPosts] = useState<Post[]>([])
+  useEffect(() => {
+    setPosts(apiPosts ?? [])
+  }, [apiPosts])
 
-  const handleCreate = (text: string, image?: string) => {
+  const handleCreate = async (
+    text: string,
+    images: string[],
+    visibility: 'public' | 'friends',
+  ) => {
     if (!text.trim()) return
-    const newPost: Post = {
-      id: `local-${Date.now()}`,
-      authorId: 'me',
-      authorName: 'Bạn',
-      authorAvatar: CURRENT_AVATAR,
-      location: 'Việt Nam',
-      postedAt: 'vừa xong',
-      title: text.split('\n')[0].slice(0, 80) || 'Khoảnh khắc mới',
-      excerpt: text,
-      body: text,
-      image:
-        image ??
-        'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
-      tags: [],
-      likes: 0,
-      comments: 0,
-      shares: 0,
+    setComposeError(null)
+    try {
+      // First image is the cover; the rest go to the gallery (max 3 total).
+      const cover =
+        images[0] ??
+        'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80'
+      const gallery = images.slice(1)
+      const created = await postService.create({
+        title: text.split('\n')[0].slice(0, 80) || 'Khoảnh khắc mới',
+        excerpt: text.slice(0, 500),
+        body: text,
+        location: 'Việt Nam',
+        image: cover,
+        galleryUrls: gallery.length ? gallery : undefined,
+        visibility,
+      })
+      setPosts((prev) => [created, ...prev])
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+    } catch (err) {
+      const e = err as { response?: { data?: { message?: string } } }
+      setComposeError(e.response?.data?.message ?? 'Không đăng được bài.')
     }
-    setPosts((prev) => [newPost, ...prev])
   }
 
   const updatePost = (id: string, updater: (p: Post) => Post) =>
     setPosts((prev) => prev.map((p) => (p.id === id ? updater(p) : p)))
 
-  const deletePost = (id: string) =>
+  const deletePost = async (id: string) => {
+    // Optimistic remove; rollback on error.
+    const snapshot = posts
     setPosts((prev) => prev.filter((p) => p.id !== id))
+    try {
+      await postService.remove(id)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+    } catch {
+      setPosts(snapshot)
+    }
+  }
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_320px] gap-6">
+    <div className="max-w-screen-2xl mx-auto container-page py-4 md:py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_320px] gap-4 md:gap-6">
         {/* Left rail */}
         <aside className="hidden lg:block">
           <LeftRail />
         </aside>
 
         {/* Feed center */}
-        <main className="space-y-6 max-w-2xl mx-auto w-full">
-          <StoryBar stories={mockStories} />
-
-          <PostComposer avatar={CURRENT_AVATAR} onPost={handleCreate} />
+        <main className="space-y-4 md:space-y-6 max-w-2xl mx-auto w-full">
+          {isAuthenticated && (
+            <PostComposer
+              avatar={currentUser.avatar || ''}
+              onPost={handleCreate}
+            />
+          )}
+          {composeError && (
+            <div className="rounded-2xl bg-error/10 border border-error/20 px-4 py-3 text-error text-sm">
+              {composeError}
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="bg-surface-container-lowest rounded-3xl shadow-editorial p-1 flex">
@@ -100,19 +126,32 @@ export function SocialPage() {
           </div>
 
           {/* Feed */}
-          {visiblePosts.length === 0 ? (
-            <div className="text-center py-16 px-6 bg-surface-container-low rounded-3xl">
-              <Icon name="inbox" className="text-3xl text-on-surface-variant mb-2" />
-              <p className="text-on-surface-variant">Chưa có bài viết nào trong mục này.</p>
-            </div>
+          {isLoading ? (
+            <LoadingState count={3} />
+          ) : posts.length === 0 ? (
+            <EmptyState
+              icon="auto_stories"
+              title="Chưa có bài viết"
+              description={
+                tab === 'following'
+                  ? 'Hãy theo dõi thêm người dùng để xem bài viết của họ ở đây.'
+                  : 'Cộng đồng đang chuẩn bị nội dung — hãy quay lại sau.'
+              }
+            />
           ) : (
-            visiblePosts.map((p) => (
+            posts.map((p) => (
               <FeedPostCard
                 key={p.id}
                 post={p}
                 onChange={updatePost}
                 onDelete={deletePost}
-                currentUserId="me"
+                currentUserId={currentUser.id ?? 'me'}
+                onToggleLike={async (id) => {
+                  await postService.toggleLike(id)
+                }}
+                onAddComment={async (id, content, parentId) => {
+                  await postService.addComment(id, content, parentId)
+                }}
               />
             ))
           )}
@@ -129,10 +168,11 @@ export function SocialPage() {
 }
 
 function LeftRail() {
+  const { name, avatar } = useCurrentUserStore()
   const items = [
     { icon: 'home', label: 'Trang chủ', active: true },
     { icon: 'explore', label: 'Khám phá' },
-    { icon: 'notifications', label: 'Thông báo', badge: 3 },
+    { icon: 'notifications', label: 'Thông báo' },
     { icon: 'bookmark', label: 'Đã lưu' },
     { icon: 'flight_takeoff', label: 'Chuyến đi' },
     { icon: 'settings', label: 'Cài đặt' },
@@ -140,10 +180,14 @@ function LeftRail() {
   return (
     <div className="sticky top-24 bg-surface-container-lowest rounded-3xl shadow-editorial p-3 space-y-1">
       <div className="flex items-center gap-3 p-3 mb-2">
-        <Avatar src={CURRENT_AVATAR} size="md" ring />
+        <Avatar src={avatar} size="md" ring />
         <div className="min-w-0">
-          <p className="font-headline font-extrabold text-on-surface truncate">Bạn</p>
-          <p className="text-xs text-on-surface-variant truncate">@traveler.vn</p>
+          <p className="font-headline font-extrabold text-on-surface truncate">
+            {name || 'Khách'}
+          </p>
+          <p className="text-xs text-on-surface-variant truncate">
+            {name ? '@traveler.vn' : 'Chưa đăng nhập'}
+          </p>
         </div>
       </div>
       {items.map((it) => (
@@ -158,11 +202,6 @@ function LeftRail() {
         >
           <Icon name={it.icon} />
           <span className="flex-1">{it.label}</span>
-          {it.badge && (
-            <span className="min-w-5 h-5 px-1.5 rounded-full bg-primary text-on-primary text-[10px] font-bold flex items-center justify-center">
-              {it.badge}
-            </span>
-          )}
         </button>
       ))}
     </div>

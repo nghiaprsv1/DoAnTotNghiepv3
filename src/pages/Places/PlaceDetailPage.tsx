@@ -1,13 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { Button } from '@components/ui/Button'
 import { ReviewModal } from '@components/features/ReviewModal'
-import { mockPlaces } from '@constants/mockPlaces'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
 import { ROUTES } from '@constants/routes'
+import { usePlace } from '@hooks/usePlaces'
+import { reviewService } from '@services/reviewService'
 import { Rating } from '../GuideDetail/components/Rating'
-import { PlaceCard } from './components/PlaceCard'
 
 const TABS = [
   { key: 'overview', label: 'Tổng quan', icon: 'info' },
@@ -20,26 +23,41 @@ const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 
 export function PlaceDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const place = mockPlaces.find((p) => p.id === id) ?? mockPlaces[0]
+  const { data: place, isLoading } = usePlace(id)
   const [tab, setTab] = useState<TabKey>('overview')
   const [galleryIdx, setGalleryIdx] = useState(0)
   const [openReview, setOpenReview] = useState(false)
 
-  const similar = useMemo(
-    () =>
-      (place.relatedIds ?? [])
-        .map((rid) => mockPlaces.find((p) => p.id === rid))
-        .filter((p): p is NonNullable<typeof p> => !!p),
-    [place]
-  )
+  // Reviews come from /api/reviews?targetType=place&targetId=...
+  const { data: reviews } = useQuery({
+    queryKey: ['reviews', 'place', id],
+    queryFn: () => reviewService.list('place', id as string),
+    enabled: Boolean(id),
+  })
 
-  const gallery = place.gallery && place.gallery.length > 0 ? place.gallery : [place.coverImage]
+  if (isLoading) {
+    return (
+      <div className="max-w-screen-2xl mx-auto px-6 py-16">
+        <LoadingState label="Đang tải địa điểm..." />
+      </div>
+    )
+  }
 
   if (!place) {
     return (
-      <div className="text-center py-32 text-on-surface-variant">Không tìm thấy địa điểm.</div>
+      <div className="max-w-screen-2xl mx-auto px-6 py-16">
+        <EmptyState
+          icon="explore_off"
+          title="Không tìm thấy địa điểm"
+          description="Địa điểm này có thể đã bị xoá hoặc đường dẫn không đúng."
+          action={{ label: 'Quay lại danh sách', to: ROUTES.PLACES }}
+        />
+      </div>
     )
   }
+
+  // Gallery from images returned by the BE (falls back to cover image only).
+  const gallery = place.gallery && place.gallery.length > 0 ? place.gallery : [place.coverImage]
 
   return (
     <div className="flex-grow">
@@ -209,38 +227,50 @@ export function PlaceDetailPage() {
                 </div>
               </div>
 
-              {(place.reviews ?? []).map((r) => (
-                <article
-                  key={r.id}
-                  className="bg-surface-container-lowest rounded-3xl p-5 md:p-6 shadow-editorial space-y-3"
-                >
-                  <header className="flex items-start gap-3">
-                    <Avatar src={r.authorAvatar} alt={r.authorName} size="md" ring />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-headline font-extrabold text-on-surface">
-                          {r.authorName}
+              {!reviews || reviews.length === 0 ? (
+                <EmptyState
+                  icon="reviews"
+                  title="Chưa có đánh giá"
+                  description="Hãy là người đầu tiên chia sẻ trải nghiệm của bạn."
+                />
+              ) : (
+                reviews.map((r) => (
+                  <article
+                    key={r.id}
+                    className="bg-surface-container-lowest rounded-3xl p-5 md:p-6 shadow-editorial space-y-3"
+                  >
+                    <header className="flex items-start gap-3">
+                      <Avatar src={r.author.avatar ?? ''} alt={r.author.name} size="md" ring />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-headline font-extrabold text-on-surface">
+                            {r.author.name}
+                          </p>
+                          <Rating rating={r.rating} size={14} />
+                        </div>
+                        <p className="text-xs text-on-surface-variant mt-0.5">
+                          {new Date(r.createdAt).toLocaleDateString('vi-VN')}
                         </p>
-                        <Rating rating={r.rating} size={14} />
                       </div>
-                      <p className="text-xs text-on-surface-variant mt-0.5">{r.date}</p>
-                    </div>
-                  </header>
-                  <p className="text-sm text-on-surface/85 leading-relaxed">{r.content}</p>
-                  <footer className="flex items-center gap-4 pt-2 border-t border-outline-variant/15">
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-primary font-bold"
-                    >
-                      <Icon name="thumb_up" size={16} />
-                      Hữu ích
-                      {r.helpfulCount && (
-                        <span className="text-on-surface-variant/70">({r.helpfulCount})</span>
-                      )}
-                    </button>
-                  </footer>
-                </article>
-              ))}
+                    </header>
+                    {r.comment && (
+                      <p className="text-sm text-on-surface/85 leading-relaxed">{r.comment}</p>
+                    )}
+                    <footer className="flex items-center gap-4 pt-2 border-t border-outline-variant/15">
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-primary font-bold"
+                      >
+                        <Icon name="thumb_up" size={16} />
+                        Hữu ích
+                        {r.helpfulCount > 0 && (
+                          <span className="text-on-surface-variant/70">({r.helpfulCount})</span>
+                        )}
+                      </button>
+                    </footer>
+                  </article>
+                ))
+              )}
             </section>
           )}
 
@@ -249,18 +279,11 @@ export function PlaceDetailPage() {
               <h2 className="font-headline font-extrabold text-2xl text-on-surface">
                 Địa điểm tương tự
               </h2>
-              {similar.length === 0 ? (
-                <div className="bg-surface-container-low rounded-3xl p-10 text-center">
-                  <Icon name="explore_off" className="text-3xl text-on-surface-variant mb-2" />
-                  <p className="text-on-surface-variant">Chưa có gợi ý tương tự.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {similar.map((p) => (
-                    <PlaceCard key={p.id} place={p} />
-                  ))}
-                </div>
-              )}
+              <EmptyState
+                icon="travel_explore"
+                title="Chưa có gợi ý tương tự"
+                description="Tính năng đang được hoàn thiện. Quay lại sau nhé."
+              />
             </section>
           )}
         </div>

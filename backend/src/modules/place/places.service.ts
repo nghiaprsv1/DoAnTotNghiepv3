@@ -1,0 +1,119 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Brackets, Repository } from 'typeorm';
+import { Place } from './entities/place.entity';
+import { PlaceImage } from './entities/place-image.entity';
+import { Category } from './entities/category.entity';
+import { Province } from './entities/province.entity';
+import { CreatePlaceDto, QueryPlacesDto, UpdatePlaceDto } from './dto/place.dto';
+import { PaginatedResponse } from '@/common/types/api-response.type';
+
+@Injectable()
+export class PlacesService {
+  constructor(
+    @InjectRepository(Place) private readonly places: Repository<Place>,
+    @InjectRepository(PlaceImage) private readonly images: Repository<PlaceImage>,
+    @InjectRepository(Category) private readonly categories: Repository<Category>,
+    @InjectRepository(Province) private readonly provinces: Repository<Province>,
+  ) {}
+
+  async list(q: QueryPlacesDto): Promise<PaginatedResponse<Place>> {
+    const page = q.page ?? 1;
+    const pageSize = q.pageSize ?? 20;
+
+    const qb = this.places
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.category', 'cat')
+      .leftJoinAndSelect('p.province', 'prov')
+      .leftJoinAndSelect('p.gallery', 'img')
+      .leftJoinAndSelect('p.openingHours', 'oh');
+
+    if (q.category) qb.andWhere('cat.key = :cat', { cat: q.category });
+    if (q.province) {
+      qb.andWhere(
+        new Brackets((b) =>
+          b.where('prov.slug = :prov', { prov: q.province }).orWhere('prov.id = :prov', {
+            prov: q.province,
+          }),
+        ),
+      );
+    }
+    if (q.keyword) {
+      qb.andWhere(
+        new Brackets((b) =>
+          b
+            .where('p.name ILIKE :kw', { kw: `%${q.keyword}%` })
+            .orWhere('p.description ILIKE :kw', { kw: `%${q.keyword}%` }),
+        ),
+      );
+    }
+
+    const sortBy = q.sortBy ?? 'rating';
+    const order = (q.sortOrder ?? 'desc').toUpperCase() as 'ASC' | 'DESC';
+    qb.orderBy(`p.${sortBy}`, order);
+
+    const [data, total] = await qb
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  async findById(id: string): Promise<Place> {
+    const place = await this.places.findOne({
+      where: { id },
+      relations: ['category', 'province', 'gallery', 'openingHours'],
+    });
+    if (!place) throw new NotFoundException('Place not found');
+    return place;
+  }
+
+  async findBySlug(slug: string): Promise<Place> {
+    const place = await this.places.findOne({
+      where: { slug },
+      relations: ['category', 'province', 'gallery', 'openingHours'],
+    });
+    if (!place) throw new NotFoundException('Place not found');
+    return place;
+  }
+
+  listCategories() {
+    return this.categories.find({ order: { label: 'ASC' } });
+  }
+
+  listProvinces() {
+    return this.provinces.find({ order: { name: 'ASC' } });
+  }
+
+  async create(dto: CreatePlaceDto): Promise<Place> {
+    const place = this.places.create({
+      ...dto,
+      gallery: (dto.gallery ?? []).map((url, sortOrder) =>
+        this.images.create({ url, sortOrder }),
+      ),
+    });
+    return this.places.save(place);
+  }
+
+  async update(id: string, dto: UpdatePlaceDto): Promise<Place> {
+    const existing = await this.findById(id);
+    Object.assign(existing, dto);
+    if (dto.gallery) {
+      existing.gallery = dto.gallery.map((url, sortOrder) =>
+        this.images.create({ url, sortOrder }),
+      );
+    }
+    return this.places.save(existing);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.places.delete({ id });
+  }
+}

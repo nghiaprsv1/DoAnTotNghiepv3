@@ -5,9 +5,20 @@ import type { Conversation } from '@types/message'
 interface Props {
   conversation: Conversation
   onBack?: () => void
+  /** Toggle the search input above the message list. */
+  onToggleSearch?: () => void
+  searchActive?: boolean
+  /** Open the members panel (group conversations only). */
+  onOpenMembers?: () => void
 }
 
-export function ChatHeader({ conversation, onBack }: Props) {
+export function ChatHeader({
+  conversation,
+  onBack,
+  onToggleSearch,
+  searchActive,
+  onOpenMembers,
+}: Props) {
   const isGroup = conversation.kind === 'group'
   const name = isGroup ? (conversation.groupName ?? 'Nhóm chat') : conversation.peer.name
   const avatar = isGroup
@@ -66,24 +77,32 @@ export function ChatHeader({ conversation, onBack }: Props) {
       <div className="flex items-center gap-1 text-on-surface-variant">
         <button
           type="button"
-          aria-label="Gọi thoại"
-          className="w-10 h-10 rounded-full hover:bg-surface-container-low flex items-center justify-center transition active:scale-95"
+          aria-label="Tìm trong cuộc trò chuyện"
+          aria-pressed={searchActive}
+          onClick={onToggleSearch}
+          className={
+            'w-10 h-10 rounded-full hover:bg-surface-container-low flex items-center justify-center transition active:scale-95 ' +
+            (searchActive ? 'text-primary bg-primary/10' : '')
+          }
         >
-          <Icon name="call" />
+          <Icon name="search" />
         </button>
-        <button
-          type="button"
-          aria-label="Gọi video"
-          className="w-10 h-10 rounded-full hover:bg-surface-container-low flex items-center justify-center transition active:scale-95"
-        >
-          <Icon name="videocam" />
-        </button>
+        {isGroup && (
+          <button
+            type="button"
+            aria-label="Thành viên nhóm"
+            onClick={onOpenMembers}
+            className="w-10 h-10 rounded-full hover:bg-surface-container-low flex items-center justify-center transition active:scale-95"
+          >
+            <Icon name="groups" />
+          </button>
+        )}
         <button
           type="button"
           aria-label={isGroup ? 'Thông tin nhóm' : 'Thông tin'}
           className="w-10 h-10 rounded-full hover:bg-surface-container-low flex items-center justify-center transition active:scale-95"
         >
-          <Icon name={isGroup ? 'groups' : 'info'} />
+          <Icon name="info" />
         </button>
       </div>
     </header>

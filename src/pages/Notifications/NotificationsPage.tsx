@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Icon } from '@components/ui/Icon'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
 import { useNotificationStore } from '@store/notificationStore'
+import { useAuthStore } from '@store/authStore'
+import {
+  useMarkAllNotificationsRead,
+  useNotifications,
+} from '@hooks/useNotifications'
 import { NotificationItem } from '@components/common/NotificationBell/NotificationItem'
+import { ROUTES } from '@constants/routes'
 import type { Notification, NotificationType } from '@types/notification'
 import { cn } from '@utils/cn'
 
@@ -21,8 +29,12 @@ const filters: { key: FilterKey; label: string; icon: string }[] = [
 
 export function NotificationsPage() {
   const items = useNotificationStore((s) => s.items)
-  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead)
+  const markAllRead = useMarkAllNotificationsRead()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const [filter, setFilter] = useState<FilterKey>('all')
+
+  // Fetches and pushes results into the store automatically.
+  const { isLoading } = useNotifications()
 
   const filtered = useMemo(() => {
     if (filter === 'all') return items
@@ -32,6 +44,19 @@ export function NotificationsPage() {
 
   const groups = useMemo(() => groupByDate(filtered), [filtered])
   const unread = items.filter((n) => !n.read).length
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-16">
+        <EmptyState
+          icon="login"
+          title="Đăng nhập để xem thông báo"
+          description="Đăng nhập để nhận cập nhật về booking, đánh giá và hoạt động cộng đồng."
+          action={{ label: 'Đăng nhập', to: ROUTES.LOGIN }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-8">
@@ -57,8 +82,9 @@ export function NotificationsPage() {
         {unread > 0 && (
           <button
             type="button"
-            onClick={() => markAllAsRead()}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-headline font-bold bg-surface-container-lowest text-on-surface shadow-editorial hover:bg-surface-container-low transition active:scale-95"
+            onClick={() => markAllRead.mutate()}
+            disabled={markAllRead.isPending}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-headline font-bold bg-surface-container-lowest text-on-surface shadow-editorial hover:bg-surface-container-low transition active:scale-95 disabled:opacity-50"
           >
             <Icon name="done_all" size={18} />
             Đánh dấu tất cả đã đọc
@@ -90,18 +116,14 @@ export function NotificationsPage() {
       </div>
 
       {/* List */}
-      {filtered.length === 0 ? (
-        <div className="bg-surface-container-low rounded-3xl p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-surface-container-high text-on-surface-variant flex items-center justify-center mx-auto mb-4">
-            <Icon name="notifications_off" className="text-2xl" />
-          </div>
-          <h3 className="font-headline font-extrabold text-xl text-on-surface mb-1">
-            Không có thông báo
-          </h3>
-          <p className="text-on-surface-variant max-w-sm mx-auto">
-            Khi có hoạt động mới — booking, đánh giá, bình luận — bạn sẽ thấy ở đây.
-          </p>
-        </div>
+      {isLoading ? (
+        <LoadingState label="Đang tải thông báo..." />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="notifications_off"
+          title="Không có thông báo"
+          description="Khi có hoạt động mới — booking, đánh giá, bình luận — bạn sẽ thấy ở đây."
+        />
       ) : (
         <div className="space-y-6">
           {groups.map((g) => (

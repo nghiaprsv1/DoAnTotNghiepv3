@@ -10,6 +10,10 @@ export interface ChatUser {
   online?: boolean
   /** Last seen (relative string for now) */
   lastSeen?: string
+  /** Marked as admin in the conversation (group creator / leader). */
+  isAdmin?: boolean
+  /** Optional handle (@username) — surfaced in members panel. */
+  handle?: string
 }
 
 export interface ChatMessage {
@@ -36,6 +40,8 @@ export interface Conversation {
   groupName?: string
   /** Group only: cover/avatar. */
   groupAvatar?: string
+  /** Trip-bound group chats carry the source trip id (for "open trip" jump). */
+  tripId?: string
   /** All participants (group only — may be empty for direct). */
   participants?: ChatUser[]
   lastMessage: string

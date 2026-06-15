@@ -1,38 +1,170 @@
+import { useEffect, useRef, useState } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { AxiosError } from 'axios'
 import { Icon } from '@components/ui/Icon'
 import { Button } from '@components/ui/Button'
+import { LoadingState } from '@components/common/LoadingState'
+import { ROUTES } from '@constants/routes'
+import { useAuthStore } from '@store/authStore'
+import { useCurrentUserStore } from '@store/currentUserStore'
+import { useUserProfile } from '@hooks/useUserProfile'
+import { userService } from '@services/userService'
+import { uploadService } from '@services/uploadService'
 import {
   BasicInfoSection,
   ContactSection,
   PreferencesSection,
   TravelProfileSection,
+  type BasicInfoValue,
+  type ContactValue,
 } from './components/sections'
 import {
   DangerSection,
-  EmergencyContactSection,
   PrivacySection,
   SocialLinksSection,
-  TravelDocsSection,
+  type SocialLinksValue,
 } from './components/extraSections'
 import { SecuritySection } from './components/SecuritySection'
-
-const COVER =
-  'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1600&q=80'
-const AVATAR =
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80'
+import type { TravelPreferences } from '@types/profile'
 
 const navAnchors = [
   { id: 'basic', label: 'Cơ bản', icon: 'person' },
   { id: 'contact', label: 'Liên hệ', icon: 'contact_mail' },
   { id: 'travel', label: 'Hồ sơ du lịch', icon: 'explore' },
   { id: 'prefs', label: 'Sở thích', icon: 'favorite' },
-  { id: 'docs', label: 'Giấy tờ', icon: 'badge' },
-  { id: 'emergency', label: 'Khẩn cấp', icon: 'emergency' },
   { id: 'social', label: 'Mạng xã hội', icon: 'link' },
   { id: 'privacy', label: 'Riêng tư', icon: 'lock' },
   { id: 'security', label: 'Bảo mật', icon: 'shield' },
 ]
 
 export function EditProfilePage() {
+  const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const currentUserId = useCurrentUserStore((s) => s.id)
+  const updateCurrent = useCurrentUserStore((s) => s.update)
+  const { data: profile, isLoading, refetch } = useUserProfile(currentUserId ?? undefined)
+
+  const [basic, setBasic] = useState<BasicInfoValue>({ name: '', handle: '', bio: '' })
+  const [contact, setContact] = useState<ContactValue>({ email: '', phone: '', location: '' })
+  const [social, setSocial] = useState<SocialLinksValue>({
+    instagram: '',
+    facebook: '',
+    tiktok: '',
+    website: '',
+  })
+  const [travel, setTravel] = useState<TravelPreferences>({
+    travelStyles: [],
+    tripPurposes: [],
+    budgetLevel: null,
+    experienceLevel: null,
+    terrainPrefs: [],
+    activities: [],
+    languages: [],
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [savedOk, setSavedOk] = useState(false)
+  const [uploadingMedia, setUploadingMedia] = useState<'avatar' | 'cover' | null>(null)
+  const [mediaError, setMediaError] = useState<string | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement | null>(null)
+  const coverInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Hydrate the form once profile data is available.
+  useEffect(() => {
+    if (!profile) return
+    setBasic({
+      name: profile.name ?? '',
+      handle: profile.handle ?? '',
+      bio: profile.bio ?? '',
+    })
+    setContact({
+      email: profile.email ?? '',
+      phone: profile.phone ?? '',
+      location: profile.location ?? '',
+    })
+    setSocial({
+      instagram: profile.socialLinks?.instagram ?? '',
+      facebook: profile.socialLinks?.facebook ?? '',
+      tiktok: profile.socialLinks?.tiktok ?? '',
+      website: profile.socialLinks?.website ?? '',
+    })
+    setTravel({
+      travelStyles: profile.preferences?.travelStyles ?? [],
+      tripPurposes: profile.preferences?.tripPurposes ?? [],
+      budgetLevel: profile.preferences?.budgetLevel ?? null,
+      experienceLevel: profile.preferences?.experienceLevel ?? null,
+      terrainPrefs: profile.preferences?.terrainPrefs ?? [],
+      activities: profile.preferences?.activities ?? [],
+      languages: profile.preferences?.languages ?? [],
+    })
+  }, [profile])
+
+  if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} replace />
+
+  if (isLoading || !profile) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-16">
+        <LoadingState label="Đang tải hồ sơ..." />
+      </div>
+    )
+  }
+
+  const handleMediaUpload = async (kind: 'avatar' | 'cover', file: File) => {
+    setMediaError(null)
+    setUploadingMedia(kind)
+    try {
+      const url = await uploadService.uploadOne(file)
+      const updated = await userService.updateMe({ [kind]: url })
+      // Reflect in TopNav avatar / current store immediately
+      if (kind === 'avatar') updateCurrent({ avatar: updated.avatar })
+      await refetch()
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>
+      setMediaError(ax.response?.data?.message ?? 'Tải ảnh lên thất bại.')
+    } finally {
+      setUploadingMedia(null)
+    }
+  }
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (saving) return
+    setSaving(true)
+    setError(null)
+    setSavedOk(false)
+    try {
+      // Strip empty fields so the BE keeps the existing value untouched.
+      const trimmedSocial = Object.fromEntries(
+        Object.entries(social)
+          .map(([k, v]) => [k, v.trim()])
+          .filter(([, v]) => v.length > 0),
+      )
+
+      const updated = await userService.updateMe({
+        name: basic.name.trim(),
+        handle: basic.handle.replace(/^@/, '').trim(),
+        bio: basic.bio.trim(),
+        phone: contact.phone.trim() || undefined,
+        location: contact.location.trim() || undefined,
+        socialLinks: trimmedSocial,
+        preferences: travel,
+      })
+      // Reflect changes in the navbar/profile via currentUserStore.
+      updateCurrent({
+        name: updated.name,
+        avatar: updated.avatar,
+      })
+      await refetch()
+      setSavedOk(true)
+      setTimeout(() => setSavedOk(false), 2500)
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>
+      setError(ax.response?.data?.message ?? 'Không lưu được hồ sơ. Vui lòng thử lại.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
       <header className="mb-10">
@@ -48,7 +180,7 @@ export function EditProfilePage() {
         </p>
       </header>
 
-      <form className="grid grid-cols-1 lg:grid-cols-12 gap-8" onSubmit={(e) => e.preventDefault()}>
+      <form className="grid grid-cols-1 lg:grid-cols-12 gap-8" onSubmit={handleSave}>
         {/* Left nav (sticky) */}
         <aside className="hidden lg:block lg:col-span-3">
           <nav className="sticky top-24 bg-surface-container-lowest rounded-3xl shadow-editorial p-3 space-y-1">
@@ -70,52 +202,102 @@ export function EditProfilePage() {
           {/* Media banner */}
           <section className="relative">
             <div className="relative h-48 md:h-64 w-full rounded-3xl overflow-hidden bg-surface-container-low">
-              <img src={COVER} alt="Cover" className="w-full h-full object-cover" />
+              {profile.cover && (
+                <img src={profile.cover} alt="Cover" className="w-full h-full object-cover" />
+              )}
               <button
                 type="button"
-                className="absolute inset-0 bg-black/20 hover:bg-black/40 flex items-center justify-center transition group"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingMedia === 'cover'}
+                className="absolute inset-0 bg-black/20 hover:bg-black/40 flex items-center justify-center transition group disabled:opacity-60"
               >
                 <span className="flex items-center gap-2 bg-white/20 editorial-blur px-4 py-2 rounded-full text-white border border-white/30 text-sm font-semibold">
-                  <Icon name="photo_camera" />
-                  Thay đổi ảnh bìa
+                  <Icon name={uploadingMedia === 'cover' ? 'hourglass_empty' : 'photo_camera'} />
+                  {uploadingMedia === 'cover' ? 'Đang tải lên…' : 'Thay đổi ảnh bìa'}
                 </span>
               </button>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) handleMediaUpload('cover', f)
+                  e.target.value = ''
+                }}
+              />
             </div>
             <div className="absolute -bottom-12 left-6 md:left-10">
-              <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-3xl overflow-hidden border-4 border-surface shadow-editorial-lg bg-surface-container-lowest">
-                <img src={AVATAR} alt="Avatar" className="w-full h-full object-cover" />
+              <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-3xl overflow-hidden border-4 border-surface shadow-editorial-lg bg-surface-container-lowest flex items-center justify-center">
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Icon name="person" className="text-5xl text-on-surface-variant" />
+                )}
                 <button
                   type="button"
-                  className="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingMedia === 'avatar'}
+                  className="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity disabled:opacity-100"
                   aria-label="Đổi ảnh đại diện"
                 >
-                  <Icon name="add_a_photo" className="text-3xl" />
+                  <Icon
+                    name={uploadingMedia === 'avatar' ? 'hourglass_empty' : 'add_a_photo'}
+                    className="text-3xl"
+                  />
                 </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) handleMediaUpload('avatar', f)
+                    e.target.value = ''
+                  }}
+                />
               </div>
             </div>
+            {mediaError && (
+              <p className="mt-3 text-sm text-error flex items-center gap-1">
+                <Icon name="error" size={16} />
+                {mediaError}
+              </p>
+            )}
           </section>
 
           <div className="mt-20 space-y-8">
             <div id="basic">
-              <BasicInfoSection />
+              <BasicInfoSection
+                value={basic}
+                onChange={(patch) => setBasic((b) => ({ ...b, ...patch }))}
+              />
             </div>
             <div id="contact">
-              <ContactSection />
+              <ContactSection
+                value={contact}
+                onChange={(patch) => setContact((c) => ({ ...c, ...patch }))}
+              />
             </div>
             <div id="travel">
-              <TravelProfileSection />
+              <TravelProfileSection
+                value={travel}
+                onChange={(patch) => setTravel((t) => ({ ...t, ...patch }))}
+              />
             </div>
             <div id="prefs">
-              <PreferencesSection />
-            </div>
-            <div id="docs">
-              <TravelDocsSection />
-            </div>
-            <div id="emergency">
-              <EmergencyContactSection />
+              <PreferencesSection
+                value={travel}
+                onChange={(patch) => setTravel((t) => ({ ...t, ...patch }))}
+              />
             </div>
             <div id="social">
-              <SocialLinksSection />
+              <SocialLinksSection
+                value={social}
+                onChange={(patch) => setSocial((s) => ({ ...s, ...patch }))}
+              />
             </div>
             <div id="privacy">
               <PrivacySection />
@@ -129,16 +311,36 @@ export function EditProfilePage() {
           {/* Sticky save bar */}
           <div className="sticky bottom-4 z-30 mt-8">
             <div className="flex items-center justify-between gap-3 bg-surface-container-lowest p-3 rounded-full shadow-editorial-lg border border-outline-variant/15">
-              <p className="text-xs sm:text-sm text-on-surface-variant pl-3 flex items-center gap-2">
-                <Icon name="info" size={16} className="text-primary" />
-                <span className="hidden sm:inline">Mọi thay đổi sẽ được lưu khi bạn bấm Lưu.</span>
-                <span className="sm:hidden">Lưu thay đổi của bạn</span>
+              <p className="text-xs sm:text-sm text-on-surface-variant pl-3 flex items-center gap-2 min-w-0">
+                {error ? (
+                  <>
+                    <Icon name="error" size={16} className="text-error" />
+                    <span className="text-error truncate">{error}</span>
+                  </>
+                ) : savedOk ? (
+                  <>
+                    <Icon name="check_circle" size={16} className="text-green-600" />
+                    <span className="text-green-700">Đã lưu hồ sơ.</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="info" size={16} className="text-primary" />
+                    <span className="hidden sm:inline">Mọi thay đổi sẽ được lưu khi bạn bấm Lưu.</span>
+                    <span className="sm:hidden">Lưu thay đổi</span>
+                  </>
+                )}
               </p>
               <div className="flex items-center gap-2">
-                <Button type="button" variant="ghost" size="md" rounded="full">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="md"
+                  rounded="full"
+                  onClick={() => navigate(ROUTES.PROFILE)}
+                >
                   Huỷ
                 </Button>
-                <Button type="submit" size="md" rounded="full">
+                <Button type="submit" size="md" rounded="full" isLoading={saving}>
                   <Icon name="check" />
                   Lưu thay đổi
                 </Button>

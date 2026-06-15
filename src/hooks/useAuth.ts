@@ -1,4 +1,5 @@
 import { useAuthStore } from '@store/authStore'
+import { useCurrentUserStore } from '@store/currentUserStore'
 import { authService } from '@services/authService'
 import type { LoginCredentials, RegisterCredentials } from '@types/user'
 
@@ -7,11 +8,14 @@ import type { LoginCredentials, RegisterCredentials } from '@types/user'
  */
 export function useAuth() {
   const { user, isAuthenticated, logout: storeLogout, setAuth } = useAuthStore()
+  const syncCurrent = useCurrentUserStore((s) => s.syncFromAuth)
+  const resetCurrent = useCurrentUserStore((s) => s.reset)
 
   const login = async (credentials: LoginCredentials) => {
     const response = await authService.login(credentials)
     if (response.success) {
       setAuth(response.data.user, response.data.tokens)
+      syncCurrent(response.data.user)
     }
     return response
   }
@@ -20,6 +24,7 @@ export function useAuth() {
     const response = await authService.register(credentials)
     if (response.success) {
       setAuth(response.data.user, response.data.tokens)
+      syncCurrent(response.data.user)
     }
     return response
   }
@@ -29,6 +34,7 @@ export function useAuth() {
       await authService.logout()
     } finally {
       storeLogout()
+      resetCurrent()
     }
   }
 

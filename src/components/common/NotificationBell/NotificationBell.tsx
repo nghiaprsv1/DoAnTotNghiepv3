@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { ROUTES } from '@constants/routes'
 import { useDisclosure } from '@hooks/useDisclosure'
+import {
+  useMarkAllNotificationsRead,
+  useNotifications,
+} from '@hooks/useNotifications'
 import { useNotificationStore } from '@store/notificationStore'
 import { NotificationItem } from './NotificationItem'
 
@@ -10,8 +14,11 @@ export function NotificationBell() {
   const { isOpen, toggle, close } = useDisclosure()
   const ref = useRef<HTMLDivElement>(null)
 
+  // Sync notifications from /api into the store on mount + window focus.
+  useNotifications()
+
   const items = useNotificationStore((s) => s.items)
-  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead)
+  const markAllRead = useMarkAllNotificationsRead()
 
   const unread = items.filter((n) => !n.read).length
 
@@ -68,8 +75,9 @@ export function NotificationBell() {
             {unread > 0 && (
               <button
                 type="button"
-                onClick={() => markAllAsRead()}
-                className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+                onClick={() => markAllRead.mutate()}
+                disabled={markAllRead.isPending}
+                className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-50"
               >
                 <Icon name="done_all" size={14} />
                 Đánh dấu đã đọc

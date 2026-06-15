@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { FilterBar } from '@components/features'
-import { PLACE_CATEGORIES, PROVINCES, mockPlaces } from '@constants/mockPlaces'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
+import { usePlaces, usePlaceCategories, usePlaceProvinces } from '@hooks/usePlaces'
 import { PlaceCard } from './components/PlaceCard'
 
 type SortKey = 'recommended' | 'rating' | 'reviews' | 'name'
@@ -15,6 +17,8 @@ const sortOptions: { key: SortKey; label: string }[] = [
 
 const PAGE_SIZE = 6
 
+const ALL_FILTER_ITEM = { key: 'all', label: 'Tất cả', icon: 'apps' }
+
 export function PlacesPage() {
   const [category, setCategory] = useState<string>('all')
   const [province, setProvince] = useState<string>('all')
@@ -22,45 +26,59 @@ export function PlacesPage() {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
 
-  const filtered = useMemo(() => {
-    let list = mockPlaces.slice()
+  // Send filters to BE so the database does the heavy lifting.
+  const { data: places, isLoading } = usePlaces({
+    category: category === 'all' ? undefined : category,
+    province: province === 'all' ? undefined : province,
+    keyword: query.trim() || undefined,
+  })
+  const { data: categoriesData } = usePlaceCategories()
+  const { data: provincesData } = usePlaceProvinces()
 
-    if (category !== 'all') list = list.filter((p) => p.category === category)
-    if (province !== 'all') list = list.filter((p) => p.province === province)
-    if (query.trim()) {
-      const q = query.toLowerCase()
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.province.toLowerCase().includes(q) ||
-          (p.tags ?? []).some((t) => t.toLowerCase().includes(q)) ||
-          (p.highlights ?? []).some((h) => h.toLowerCase().includes(q))
-      )
-    }
+  const categoryFilters = useMemo(() => {
+    const items = (categoriesData ?? []).map((c) => ({
+      key: c.key,
+      label: c.label,
+      icon: c.icon ?? 'place',
+    }))
+    return [ALL_FILTER_ITEM, ...items]
+  }, [categoriesData])
 
+  const provinceFilters = useMemo(
+    () => [
+      { key: 'all', label: 'Toàn quốc' },
+      ...(provincesData ?? []).map((p) => ({ key: p.slug, label: p.name })),
+    ],
+    [provincesData]
+  )
+
+  const sourcePlaces = places ?? []
+
+  const sorted = useMemo(() => {
+    const list = sourcePlaces.slice()
     switch (sort) {
       case 'rating':
         list.sort((a, b) => b.rating - a.rating)
         break
       case 'reviews':
-        list.sort((a, b) => b.reviewCount - a.reviewCount)
+        list.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0))
         break
       case 'name':
         list.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
         break
+      case 'recommended':
       default:
-        // recommended: rating * log(reviews)
         list.sort(
           (a, b) =>
-            b.rating * Math.log10(b.reviewCount + 10) -
-            a.rating * Math.log10(a.reviewCount + 10)
+            b.rating * Math.log10((b.reviewCount ?? 0) + 10) -
+            a.rating * Math.log10((a.reviewCount ?? 0) + 10)
         )
     }
     return list
-  }, [category, province, sort, query])
+  }, [sourcePlaces, sort])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const visible = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   // Reset page when filters change
   const handleCategory = (k: string) => {
@@ -115,7 +133,7 @@ export function PlacesPage() {
 
       {/* Category filter */}
       <section className="mb-3">
-        <FilterBar items={[...PLACE_CATEGORIES]} activeKey={category} onChange={handleCategory} />
+        <FilterBar items={categoryFilters} activeKey={category} onChange={handleCategory} />
       </section>
 
       {/* Province + sort row */}
@@ -128,7 +146,7 @@ export function PlacesPage() {
             onChange={(e) => handleProvince(e.target.value)}
             className="bg-surface-container-lowest border border-outline-variant/30 rounded-full px-3 py-1.5 text-sm font-bold text-on-surface focus:ring-2 focus:ring-primary/40 outline-none"
           >
-            {PROVINCES.map((p) => (
+            {provinceFilters.map((p) => (
               <option key={p.key} value={p.key}>
                 {p.label}
               </option>
@@ -154,17 +172,18 @@ export function PlacesPage() {
 
       {/* Result count */}
       <p className="text-sm text-on-surface-variant mb-4">
-        <strong className="text-on-surface">{filtered.length}</strong> địa điểm phù hợp
+        <strong className="text-on-surface">{sorted.length}</strong> địa điểm phù hợp
       </p>
 
       {/* Grid */}
-      {visible.length === 0 ? (
-        <div className="bg-surface-container-low rounded-3xl p-12 text-center">
-          <Icon name="explore_off" className="text-3xl text-on-surface-variant mb-2" />
-          <p className="text-on-surface-variant">
-            Không tìm thấy địa điểm phù hợp. Thử bỏ bớt bộ lọc.
-          </p>
-        </div>
+      {isLoading ? (
+        <LoadingState count={6} />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon="explore_off"
+          title="Không có địa điểm phù hợp"
+          description="Thử bỏ bớt bộ lọc hoặc đổi từ khoá tìm kiếm."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {visible.map((p) => (

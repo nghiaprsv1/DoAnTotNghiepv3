@@ -1,22 +1,32 @@
 import { useState } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
+import { MultiImageUpload } from '@components/common/ImageUpload'
+import { cn } from '@utils/cn'
+import type { PostVisibility } from '@types/post'
 
 interface Props {
   avatar: string
-  onPost: (text: string, image?: string) => void
+  /** Posted with up to 3 images. The first image is used as the cover. */
+  onPost: (text: string, images: string[], visibility: PostVisibility) => void
 }
+
+const MAX_IMAGES = 3
 
 export function PostComposer({ avatar, onPost }: Props) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
-  const [image, setImage] = useState<string | undefined>()
+  const [images, setImages] = useState<string[]>([])
+  const [visibility, setVisibility] = useState<PostVisibility>('public')
+  const [showImageUploader, setShowImageUploader] = useState(false)
 
   const submit = () => {
     if (!text.trim()) return
-    onPost(text, image)
+    onPost(text, images, visibility)
     setText('')
-    setImage(undefined)
+    setImages([])
+    setVisibility('public')
+    setShowImageUploader(false)
     setOpen(false)
   }
 
@@ -55,33 +65,47 @@ export function PostComposer({ avatar, onPost }: Props) {
             />
           </div>
 
-          {image && (
-            <div className="mt-3 relative rounded-2xl overflow-hidden">
-              <img src={image} alt="" className="w-full max-h-72 object-cover" />
-              <button
-                type="button"
-                onClick={() => setImage(undefined)}
-                aria-label="Xoá ảnh"
-                className="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80"
-              >
-                <Icon name="close" />
-              </button>
+          {(showImageUploader || images.length > 0) && (
+            <div className="mt-3">
+              <MultiImageUpload
+                value={images}
+                onChange={setImages}
+                max={MAX_IMAGES}
+                label="Ảnh đính kèm"
+                hint={`Tối đa ${MAX_IMAGES} ảnh, chọn từ máy.`}
+              />
             </div>
           )}
 
           <div className="flex flex-wrap items-center gap-1 mt-3 pt-3 border-t border-outline-variant/15">
             <ToolButton
               icon="image"
-              label="Ảnh"
-              onClick={() =>
-                setImage(
-                  'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80'
-                )
-              }
+              label={`Ảnh${images.length ? ` (${images.length}/${MAX_IMAGES})` : ''}`}
+              onClick={() => setShowImageUploader((v) => !v)}
             />
             <ToolButton icon="location_on" label="Vị trí" />
             <ToolButton icon="mood" label="Cảm xúc" />
             <ToolButton icon="alternate_email" label="Tag" />
+
+            <span className="w-px h-5 bg-outline-variant/30 mx-1" />
+
+            {/* Visibility toggle */}
+            <button
+              type="button"
+              onClick={() => setVisibility((v) => (v === 'public' ? 'friends' : 'public'))}
+              className={cn(
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition',
+                visibility === 'public'
+                  ? 'text-primary bg-primary/10 hover:bg-primary/15'
+                  : 'text-amber-700 bg-amber-500/15 hover:bg-amber-500/20',
+              )}
+              title="Chuyển đổi quyền xem bài"
+            >
+              <Icon name={visibility === 'public' ? 'public' : 'group'} size={16} />
+              <span className="hidden sm:inline font-headline font-bold">
+                {visibility === 'public' ? 'Công khai' : 'Bạn bè'}
+              </span>
+            </button>
 
             <div className="ml-auto flex items-center gap-2">
               <button
@@ -89,7 +113,9 @@ export function PostComposer({ avatar, onPost }: Props) {
                 onClick={() => {
                   setOpen(false)
                   setText('')
-                  setImage(undefined)
+                  setImages([])
+                  setShowImageUploader(false)
+                  setVisibility('public')
                 }}
                 className="px-4 py-2 rounded-full text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low"
               >

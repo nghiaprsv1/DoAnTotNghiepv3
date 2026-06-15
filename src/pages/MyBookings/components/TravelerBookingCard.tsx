@@ -5,7 +5,11 @@ import { Button } from '@components/ui/Button'
 import { Avatar } from '@components/ui/Avatar'
 import { ReviewModal } from '@components/features/ReviewModal'
 import type { ReviewTarget } from '@components/features/ReviewModal'
-import { guideDetailPath, messageThreadPath } from '@constants/routes'
+import {
+  bookingDetailPath,
+  guideDetailPath,
+  messageThreadPath,
+} from '@constants/routes'
 import { cn } from '@utils/cn'
 import type { TravelerBooking, BookingStatus } from '@types/booking'
 
@@ -26,12 +30,33 @@ const STATUS: Record<
     icon: 'hourglass_top',
     helper: 'HDV thường phản hồi trong 24 giờ. Nếu không, yêu cầu sẽ tự huỷ.',
   },
+  pending_acceptance: {
+    label: 'Chờ HDV duyệt',
+    cls: 'bg-amber-500/15 text-amber-700 border-amber-500/30',
+    dot: 'bg-amber-500',
+    icon: 'hourglass_top',
+    helper: 'HDV thường phản hồi trong 24 giờ.',
+  },
+  pending_payment: {
+    label: 'Chờ thanh toán',
+    cls: 'bg-orange-500/15 text-orange-700 border-orange-500/30',
+    dot: 'bg-orange-500',
+    icon: 'payments',
+    helper: 'HDV đã đồng ý. Hãy thanh toán trong 24 giờ để giữ chỗ.',
+  },
   confirmed: {
     label: 'Đã xác nhận',
     cls: 'bg-green-500/15 text-green-700 border-green-500/30',
     dot: 'bg-green-500',
     icon: 'check_circle',
     helper: 'HDV đã xác nhận. Hẹn gặp bạn trong chuyến đi!',
+  },
+  expired: {
+    label: 'Hết hạn',
+    cls: 'bg-on-surface-variant/10 text-on-surface-variant border-on-surface-variant/30',
+    dot: 'bg-on-surface-variant',
+    icon: 'event_busy',
+    helper: 'Đã quá 24 giờ kể từ khi HDV duyệt. Hãy gửi lại yêu cầu nếu vẫn muốn đi.',
   },
   completed: {
     label: 'Đã hoàn thành',
@@ -47,12 +72,23 @@ const STATUS: Record<
     icon: 'event_busy',
     helper: '',
   },
+  rejected: {
+    label: 'Bị từ chối',
+    cls: 'bg-error/10 text-error border-error/30',
+    dot: 'bg-error',
+    icon: 'event_busy',
+    helper: 'HDV đã từ chối yêu cầu này. Bạn có thể tìm HDV khác.',
+  },
 }
 
 export function TravelerBookingCard({ booking, onCancel, onMarkReviewed }: Props) {
   const [openReview, setOpenReview] = useState(false)
-  const s = STATUS[booking.status]
-  const canCancel = booking.status === 'pending' || booking.status === 'confirmed'
+  const s = STATUS[booking.status] ?? STATUS.pending
+  const canCancel =
+    booking.status === 'pending' ||
+    booking.status === 'pending_acceptance' ||
+    booking.status === 'pending_payment' ||
+    booking.status === 'confirmed'
   const canReview = booking.status === 'completed' && !booking.hasReview
 
   const target: ReviewTarget = {
@@ -60,6 +96,7 @@ export function TravelerBookingCard({ booking, onCancel, onMarkReviewed }: Props
     name: booking.guide.name,
     image: booking.guide.avatar,
     context: `Tour: ${booking.tourTitle}`,
+    targetId: booking.guide.id,
   }
 
   return (
@@ -141,7 +178,9 @@ export function TravelerBookingCard({ booking, onCancel, onMarkReviewed }: Props
           <div
             className={cn(
               'rounded-2xl p-3 text-xs mb-3 flex items-start gap-2',
-              booking.status === 'cancelled'
+              booking.status === 'cancelled' ||
+                booking.status === 'rejected' ||
+                booking.status === 'expired'
                 ? 'bg-error/5 text-error'
                 : 'bg-surface-container-low text-on-surface-variant'
             )}
@@ -163,6 +202,16 @@ export function TravelerBookingCard({ booking, onCancel, onMarkReviewed }: Props
 
         {/* Actions */}
         <div className="flex flex-wrap items-center gap-2 mt-auto pt-3 border-t border-outline-variant/15">
+          <Link to={bookingDetailPath(booking.id)}>
+            <Button variant="primary" size="md" rounded="full">
+              <Icon name="visibility" size={16} />
+              {booking.status === 'pending_payment'
+                ? 'Thanh toán ngay'
+                : booking.status === 'confirmed'
+                  ? 'Xem & xác nhận'
+                  : 'Xem chi tiết'}
+            </Button>
+          </Link>
           <Link to={messageThreadPath(booking.guide.id)}>
             <Button variant="ghost" size="md" rounded="full">
               <Icon name="chat" size={16} />
@@ -198,7 +247,7 @@ export function TravelerBookingCard({ booking, onCancel, onMarkReviewed }: Props
         open={openReview}
         onClose={() => setOpenReview(false)}
         target={target}
-        onSubmit={() => onMarkReviewed?.(booking.id)}
+        onSuccess={() => onMarkReviewed?.(booking.id)}
       />
     </article>
   )

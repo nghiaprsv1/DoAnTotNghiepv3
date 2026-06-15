@@ -1,38 +1,41 @@
-import { useState } from 'react'
-import { Icon } from '@components/ui/Icon'
-import { defaultReviews } from '@constants/mockGuideDetail'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
+import { useCurrentUserStore } from '@store/currentUserStore'
+import { reviewService } from '@services/reviewService'
 import { RatingBreakdown } from '../GuideDetail/components/RatingBreakdown'
 import { ReviewManageCard } from './components/ReviewManageCard'
-import type { GuideReview } from '@constants/mockGuideDetail'
+import type { GuideReview } from '@types/guideDashboard'
 
 export function ReviewsManageTab() {
-  const [reviews, setReviews] = useState<GuideReview[]>(defaultReviews)
-  const [filter, setFilter] = useState<'all' | 'unreplied' | 'replied'>('all')
+  const userId = useCurrentUserStore((s) => s.id)
 
-  const avg = reviews.reduce((s, r) => s + r.rating, 0) / Math.max(1, reviews.length)
-  const needsReply = reviews.filter((r) => !r.reply).length
-
-  const handleReply = (id: string, content: string) => {
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? { ...r, reply: { content, date: 'vừa xong' } }
-          : r
-      )
-    )
-  }
-
-  const filtered = reviews.filter((r) => {
-    if (filter === 'unreplied') return !r.reply
-    if (filter === 'replied') return !!r.reply
-    return true
+  // Reviews targeting the current guide profile.
+  // NOTE: BE expects a guideProfileId, but the user mapping provides a userId.
+  // For now we point at the user — adjust when the BE exposes a /guides/me endpoint.
+  const { data: rawReviews, isLoading } = useQuery({
+    queryKey: ['reviews', 'guide-self', userId],
+    queryFn: () => reviewService.list('guide', userId as string),
+    enabled: Boolean(userId),
   })
 
-  const filterChips: { key: typeof filter; label: string; count: number }[] = [
-    { key: 'all', label: 'Tất cả', count: reviews.length },
-    { key: 'unreplied', label: 'Chưa phản hồi', count: needsReply },
-    { key: 'replied', label: 'Đã phản hồi', count: reviews.length - needsReply },
-  ]
+  const reviews = useMemo<GuideReview[]>(
+    () =>
+      (rawReviews ?? []).map((r) => ({
+        id: r.id,
+        authorId: r.author.id,
+        authorName: r.author.name,
+        authorAvatar: r.author.avatar ?? '',
+        rating: r.rating,
+        date: new Date(r.createdAt).toLocaleDateString('vi-VN'),
+        content: r.comment ?? '',
+        helpfulCount: r.helpfulCount,
+      })),
+    [rawReviews]
+  )
+
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / Math.max(1, reviews.length)
 
   return (
     <div className="space-y-6">
@@ -45,67 +48,29 @@ export function ReviewsManageTab() {
         </p>
       </header>
 
-      <RatingBreakdown reviews={reviews} averageRating={avg} />
-
-      {needsReply > 0 && (
-        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center gap-3">
-          <Icon name="reply" className="text-primary" />
-          <p className="text-sm text-on-surface/85 flex-1">
-            Bạn còn <strong className="text-primary">{needsReply}</strong> đánh giá chưa phản hồi.
-          </p>
-          <button
-            type="button"
-            onClick={() => setFilter('unreplied')}
-            className="inline-flex items-center gap-1 px-4 py-2 rounded-full text-sm font-headline font-bold bg-primary text-on-primary shadow-editorial active:scale-95"
-          >
-            Lọc xem ngay
-          </button>
-        </div>
-      )}
-
-      {/* Filter chips */}
-      <div className="flex flex-wrap gap-2">
-        {filterChips.map((f) => {
-          const active = filter === f.key
-          return (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setFilter(f.key)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-headline font-bold transition border ${
-                active
-                  ? 'bg-primary text-on-primary border-primary shadow-editorial'
-                  : 'bg-surface-container-lowest text-on-surface border-outline-variant/30 hover:border-primary/40'
-              }`}
-            >
-              {f.label}
-              <span
-                className={`min-w-5 h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center ${
-                  active ? 'bg-on-primary text-primary' : 'bg-surface-container text-on-surface-variant'
-                }`}
-              >
-                {f.count}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="bg-surface-container-low rounded-3xl p-10 text-center">
-          <Icon name="reviews" className="text-3xl text-on-surface-variant mb-2" />
-          <p className="text-on-surface-variant">Không có đánh giá nào khớp.</p>
-        </div>
+      {isLoading ? (
+        <LoadingState count={2} />
+      ) : reviews.length === 0 ? (
+        <EmptyState
+          icon="reviews"
+          title="Chưa có đánh giá"
+          description="Khi traveler đánh giá tour của bạn, các review sẽ xuất hiện ở đây."
+        />
       ) : (
-        <div className="space-y-4">
-          {filtered.map((r) => (
-            <ReviewManageCard
-              key={r.id}
-              review={r}
-              onReply={(content) => handleReply(r.id, content)}
-            />
-          ))}
-        </div>
+        <>
+          <RatingBreakdown reviews={reviews} averageRating={avg} />
+          <div className="space-y-4">
+            {reviews.map((r) => (
+              <ReviewManageCard
+                key={r.id}
+                review={r}
+                onReply={() => {
+                  // TODO: wire BE endpoint for guide reply when available.
+                }}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

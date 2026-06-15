@@ -6,7 +6,7 @@ export interface TripMember {
   id: string
   name: string
   avatar: string
-  role?: 'leader' | 'member'
+  role?: 'leader' | 'member' | 'guide'
   note?: string
 }
 
@@ -30,6 +30,8 @@ export interface TripGuide {
 
 /** Hireable guide listing — extends TripGuide with marketplace fields. */
 export interface HireableGuide extends TripGuide {
+  /** Underlying User id of the guide (for DM, self-check, etc). */
+  userId?: string
   /** Cover photo for listing card */
   coverImage: string
   /** Optional gallery */
@@ -66,11 +68,40 @@ export interface ItineraryDay {
   activities: ItineraryActivity[]
 }
 
+/** Quick-glance bundles surfaced on the trip detail page. */
+export interface TripInclusions {
+  accommodation?: string
+  transport?: string
+  meals?: string
+}
+
+export type JoinRequestStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled'
+
+/** A pending join request — visible only to the trip owner. */
+export interface PendingJoinRequest {
+  id: string
+  message?: string
+  createdAt: string
+  user: {
+    id: string
+    name: string
+    avatar?: string
+    handle?: string
+  }
+}
+
 export interface Trip {
   id: string
   title: string
   description: string
   destination: string
+  /** Optional starting point (free-form name). */
+  originName?: string | null
+  /** Geocoded coordinates (lat/lng) — present when set via the map picker. */
+  originLat?: number | null
+  originLng?: number | null
+  destinationLat?: number | null
+  destinationLng?: number | null
   category: TripCategory
   coverImage: string
   gallery?: string[]
@@ -87,7 +118,19 @@ export interface Trip {
   /** Optional dedicated tour guide (separate from creator/members) */
   guide?: TripGuide
   tags: string[]
+  inclusions?: TripInclusions
   itinerary: ItineraryDay[]
   isJoined?: boolean
+  isOwner?: boolean
+  /** Backend lifecycle status — independent from date-derived live status. */
+  status?: 'draft' | 'published' | 'cancelled' | 'completed'
+  /** Current viewer's most recent join-request status (null if never asked). */
+  joinRequestStatus?: JoinRequestStatus | null
+  /** Owner-only: pending join requests waiting for response. */
+  pendingRequests?: PendingJoinRequest[]
   isSaved?: boolean
+  /** Score from the recommender — only present in the recommended endpoint. */
+  recommendScore?: number
+  /** Human-readable reasons explaining why this trip was recommended. */
+  recommendReasons?: string[]
 }

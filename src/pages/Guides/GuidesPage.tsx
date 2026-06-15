@@ -2,11 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { FilterBar } from '@components/features'
-import {
-  CATEGORY_FILTERS,
-  REGION_FILTERS,
-  mockHireableGuides,
-} from '@constants/mockGuides'
+import { LoadingState } from '@components/common/LoadingState'
+import { CATEGORY_FILTERS, REGION_FILTERS } from '@constants/guideFilters'
+import { useGuides } from '@hooks/useGuides'
+import { useCurrentUserStore } from '@store/currentUserStore'
 import { ROUTES } from '@constants/routes'
 import { GuideListingCard } from './components/GuideListingCard'
 
@@ -27,16 +26,29 @@ export function GuidesPage() {
   const [query, setQuery] = useState('')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [availableOnly, setAvailableOnly] = useState(false)
+  // Date-range availability filter — both must be set to take effect.
+  const [availableFrom, setAvailableFrom] = useState('')
+  const [availableTo, setAvailableTo] = useState('')
+
+  // Hide the "become a guide" CTA for users who are already guides (or admins).
+  const role = useCurrentUserStore((s) => s.role)
+  const showBecomeGuide = role !== 'guide' && role !== 'admin'
+
+  // Only send the date range when both ends are picked and ordered correctly.
+  const dateRangeValid = !!availableFrom && !!availableTo && availableFrom <= availableTo
+
+  // Server-side filter for region + category + date range; client refines verified / search.
+  const { data: apiGuides, isLoading } = useGuides({
+    region: region === 'all' ? undefined : region,
+    category: category === 'all' ? undefined : category,
+    availableFrom: dateRangeValid ? availableFrom : undefined,
+    availableTo: dateRangeValid ? availableTo : undefined,
+  })
+  const sourceGuides = apiGuides ?? []
 
   const guides = useMemo(() => {
-    let list = mockHireableGuides.slice()
+    let list = sourceGuides.slice()
 
-    if (region !== 'all') {
-      list = list.filter((g) => g.regionKeys?.includes(region as never))
-    }
-    if (category !== 'all') {
-      list = list.filter((g) => g.categoryKeys?.includes(category as never))
-    }
     if (verifiedOnly) {
       list = list.filter((g) => g.verified)
     }
@@ -74,7 +86,7 @@ export function GuidesPage() {
         })
     }
     return list
-  }, [region, category, sort, query, verifiedOnly, availableOnly])
+  }, [sourceGuides, sort, query, verifiedOnly, availableOnly])
 
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-8">
@@ -113,30 +125,32 @@ export function GuidesPage() {
         </div>
       </header>
 
-      {/* Become a guide banner */}
-      <Link
-        to={ROUTES.GUIDE_APPLY}
-        className="group flex items-center gap-4 mb-8 p-5 rounded-3xl editorial-gradient text-on-primary shadow-editorial-lg hover:shadow-editorial transition-all"
-      >
-        <span className="w-12 h-12 rounded-2xl bg-on-primary/15 flex items-center justify-center flex-shrink-0">
-          <Icon name="workspace_premium" />
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="font-headline font-extrabold text-lg leading-tight">
-            Bạn là người bản địa? Đăng ký làm Hướng dẫn viên
-          </p>
-          <p className="text-sm text-on-primary/85 mt-0.5">
-            Chia sẻ vùng đất bạn yêu, kiếm thu nhập từ đam mê. Hồ sơ duyệt trong 3–5 ngày.
-          </p>
-        </div>
-        <span className="hidden sm:inline-flex items-center gap-1 px-4 py-2.5 rounded-full bg-on-primary text-primary font-headline font-bold text-sm flex-shrink-0 group-hover:scale-105 transition-transform">
-          Bắt đầu
-          <Icon name="arrow_forward" size={16} />
-        </span>
-        <span className="sm:hidden">
-          <Icon name="arrow_forward" />
-        </span>
-      </Link>
+      {/* Become a guide banner — hidden for existing guides / admins */}
+      {showBecomeGuide && (
+        <Link
+          to={ROUTES.GUIDE_APPLY}
+          className="group flex items-center gap-4 mb-8 p-5 rounded-3xl editorial-gradient text-on-primary shadow-editorial-lg hover:shadow-editorial transition-all"
+        >
+          <span className="w-12 h-12 rounded-2xl bg-on-primary/15 flex items-center justify-center flex-shrink-0">
+            <Icon name="workspace_premium" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="font-headline font-extrabold text-lg leading-tight">
+              Bạn là người bản địa? Đăng ký làm Hướng dẫn viên
+            </p>
+            <p className="text-sm text-on-primary/85 mt-0.5">
+              Chia sẻ vùng đất bạn yêu, kiếm thu nhập từ đam mê. Hồ sơ duyệt trong 3–5 ngày.
+            </p>
+          </div>
+          <span className="hidden sm:inline-flex items-center gap-1 px-4 py-2.5 rounded-full bg-on-primary text-primary font-headline font-bold text-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+            Bắt đầu
+            <Icon name="arrow_forward" size={16} />
+          </span>
+          <span className="sm:hidden">
+            <Icon name="arrow_forward" />
+          </span>
+        </Link>
+      )}
 
       {/* Filters */}
       <section className="space-y-3 mb-10">
@@ -172,6 +186,46 @@ export function GuidesPage() {
             </select>
           </div>
         </div>
+
+        {/* Date-range availability filter */}
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant/30 rounded-full px-4 py-2">
+            <Icon name="event_available" size={18} className="text-primary" />
+            <span className="text-sm font-bold text-on-surface-variant">Rảnh từ</span>
+            <input
+              type="date"
+              value={availableFrom}
+              onChange={(e) => setAvailableFrom(e.target.value)}
+              className="bg-transparent text-sm font-semibold text-on-surface outline-none"
+            />
+            <span className="text-sm text-on-surface-variant">→</span>
+            <input
+              type="date"
+              value={availableTo}
+              min={availableFrom || undefined}
+              onChange={(e) => setAvailableTo(e.target.value)}
+              className="bg-transparent text-sm font-semibold text-on-surface outline-none"
+            />
+          </div>
+          {(availableFrom || availableTo) && (
+            <button
+              type="button"
+              onClick={() => {
+                setAvailableFrom('')
+                setAvailableTo('')
+              }}
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-full text-sm font-bold text-on-surface-variant hover:bg-surface-container-low transition"
+            >
+              <Icon name="close" size={16} />
+              Xoá ngày
+            </button>
+          )}
+          {availableFrom && availableTo && availableFrom > availableTo && (
+            <span className="text-sm text-error font-semibold">
+              Ngày kết thúc phải sau ngày bắt đầu
+            </span>
+          )}
+        </div>
       </section>
 
       {/* Results count */}
@@ -180,8 +234,10 @@ export function GuidesPage() {
       </p>
 
       {/* Grid */}
-      {guides.length === 0 ? (
-        <EmptyState />
+      {isLoading ? (
+        <LoadingState count={6} />
+      ) : guides.length === 0 ? (
+        <GuidesEmptyState />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {guides.map((g) => (
@@ -220,7 +276,7 @@ function ToggleChip({
   )
 }
 
-function EmptyState() {
+function GuidesEmptyState() {
   return (
     <div className="flex flex-col items-center text-center py-16 px-6 bg-surface-container-low rounded-3xl">
       <div className="w-16 h-16 rounded-2xl editorial-gradient text-on-primary flex items-center justify-center mb-4 shadow-editorial">

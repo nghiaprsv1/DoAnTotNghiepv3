@@ -3,7 +3,7 @@ import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { Rating } from '../../GuideDetail/components/Rating'
 import { cn } from '@utils/cn'
-import type { GuideReview } from '@constants/mockGuideDetail'
+import type { GuideReview } from '@types/guideDashboard'
 
 interface Props {
   review: GuideReview

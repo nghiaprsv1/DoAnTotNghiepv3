@@ -7,9 +7,13 @@ export interface PostComment {
   authorAvatar: string
   content: string
   createdAt: string
+  /** Null for top-level comments; otherwise the id of the comment being replied to. */
+  parentId?: string | null
   likes?: number
   isLiked?: boolean
 }
+
+export type PostVisibility = 'public' | 'friends'
 
 export interface Post {
   id: string
@@ -34,19 +38,22 @@ export interface Post {
   shares?: number
   isBookmarked?: boolean
   isLiked?: boolean
+  /** Public (everyone) or friends-only (mutuals). */
+  visibility?: PostVisibility
   /** Pre-loaded comments to show inline */
   topComments?: PostComment[]
 }
 
-/** Lightweight item shown in story bar */
-export interface Story {
+/** A user who has liked a post (returned by `GET /posts/:id/likes`). */
+export interface PostLiker {
   id: string
-  authorId: string
-  authorName: string
-  authorAvatar: string
-  preview: string
-  /** Already viewed by current user */
-  seen?: boolean
+  name: string
+  handle?: string | null
+  avatar?: string | null
+  bio?: string | null
+  likedAt: string
+  isFollowing: boolean
+  isMe: boolean
 }
 
 export interface Guide {

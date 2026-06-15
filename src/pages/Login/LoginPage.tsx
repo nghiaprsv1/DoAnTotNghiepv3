@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AxiosError } from 'axios'
 import { Icon } from '@components/ui/Icon'
 import { Button } from '@components/ui/Button'
 import { Input } from '@components/ui/Input'
 import { SocialButton } from '@components/ui/SocialButton'
 import { ROUTES } from '@constants/routes'
+import { useAuth } from '@hooks/useAuth'
 
 const BG_IMG =
   'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1600&q=80'
@@ -16,10 +18,42 @@ const COMMUNITY_AVATARS = [
 ]
 
 export function LoginPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { login } = useAuth()
+  const redirectTo = (location.state as { from?: string } | null)?.from ?? ROUTES.HOME
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (submitting) return
+    if (!email.trim() || !password) {
+      setError('Vui lòng nhập email và mật khẩu.')
+      return
+    }
+    setError(null)
+    setSubmitting(true)
+    try {
+      const res = await login({ email: email.trim(), password })
+      // Admins live exclusively in the Admin Console — bypass the requested
+      // redirect (e.g. a public page they tried to reach) and send them home.
+      const target = res?.data?.user?.role === 'admin' ? ROUTES.ADMIN : redirectTo
+      navigate(target, { replace: true })
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>
+      setError(ax.response?.data?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4">
+    <div className="relative min-h-screen flex items-center justify-center p-3 md:p-4">
       {/* Background image */}
       <div className="fixed inset-0 z-0">
         <img
@@ -30,7 +64,7 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-tr from-on-surface/40 via-transparent to-primary/10" />
       </div>
 
-      <main className="relative z-10 w-full max-w-[1100px] grid md:grid-cols-2 bg-surface-container-lowest/95 backdrop-blur-md rounded-[2rem] overflow-hidden shadow-editorial-lg">
+      <main className="relative z-10 w-full max-w-[1100px] grid md:grid-cols-2 bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl md:rounded-[2rem] overflow-hidden shadow-editorial-lg">
         {/* Editorial left side */}
         <div className="hidden md:flex flex-col justify-between p-12 editorial-gradient relative overflow-hidden text-on-primary">
           <div className="absolute -top-24 -left-24 w-64 h-64 bg-surface-variant/20 rounded-full blur-3xl" />
@@ -75,16 +109,26 @@ export function LoginPage() {
         </div>
 
         {/* Form right side */}
-        <div className="p-8 md:p-16 flex flex-col justify-center">
-          <header className="mb-10">
-            <h2 className="text-3xl font-headline font-extrabold text-on-surface mb-2 tracking-tight">
+        <div className="p-6 sm:p-10 md:p-16 flex flex-col justify-center">
+          <header className="mb-6 md:mb-10">
+            <h2 className="text-2xl md:text-3xl font-headline font-extrabold text-on-surface mb-1 md:mb-2 tracking-tight">
               Chào mừng trở lại
             </h2>
-            <p className="text-on-surface-variant">Đăng nhập vào tài khoản TravelSocial của bạn</p>
+            <p className="text-sm md:text-base text-on-surface-variant">Đăng nhập vào tài khoản TravelSocial của bạn</p>
           </header>
 
-          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-            <Input label="Email" type="email" placeholder="example@gmail.com" iconLeft="mail" />
+          <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit} noValidate>
+            <Input
+              label="Email"
+              type="email"
+              placeholder="example@gmail.com"
+              iconLeft="mail"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={submitting}
+              required
+            />
 
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
@@ -107,6 +151,11 @@ export function LoginPage() {
                   type={showPwd ? 'text' : 'password'}
                   placeholder="••••••••"
                   iconLeft="lock"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={submitting}
+                  required
                 />
                 <button
                   type="button"
@@ -119,6 +168,16 @@ export function LoginPage() {
               </div>
             </div>
 
+            {error && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-error/10 text-error text-sm font-medium"
+              >
+                <Icon name="error" size={18} />
+                <span>{error}</span>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 px-1">
               <input
                 type="checkbox"
@@ -130,7 +189,7 @@ export function LoginPage() {
               </label>
             </div>
 
-            <Button type="submit" size="lg" className="w-full">
+            <Button type="submit" size="lg" className="w-full" isLoading={submitting}>
               Đăng nhập
               <Icon name="arrow_forward" />
             </Button>

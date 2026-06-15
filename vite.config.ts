@@ -5,6 +5,9 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Use relative asset URLs so the same `dist/` build works inside Capacitor's
+  // Android WebView (served over capacitor://) without needing a server prefix.
+  base: './',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

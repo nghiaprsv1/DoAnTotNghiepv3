@@ -1,15 +1,18 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
-import { mockFollowers, mockFollowing, mockPublicProfiles } from '@constants/mockProfiles'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
+import { useFollowers, useFollowing, useUserProfile } from '@hooks/useUserProfile'
+import { userService } from '@services/userService'
 import {
+  ROUTES,
   userFollowersPath,
   userFollowingPath,
   userProfilePath,
 } from '@constants/routes'
 import { cn } from '@utils/cn'
 import { FollowRow } from './components/FollowRow'
-import type { FollowItem } from '@types/profile'
 
 interface Props {
   /** Active tab — derived from URL: /followers or /following */
@@ -19,19 +22,23 @@ interface Props {
 export function FollowListPage({ initial = 'followers' }: Props) {
   const { id } = useParams<{ id: string }>()
   const [search] = useSearchParams()
-  const profile = (id && mockPublicProfiles[id]) || mockPublicProfiles.u1
 
+  const { data: profile, isLoading: profileLoading } = useUserProfile(id)
   const tabFromQuery = search.get('tab')
   const [tab, setTab] = useState<'followers' | 'following'>(
     (tabFromQuery as 'followers' | 'following') || initial
   )
 
-  const [followers, setFollowers] = useState<FollowItem[]>(mockFollowers)
-  const [following, setFollowing] = useState<FollowItem[]>(mockFollowing)
-  const [query, setQuery] = useState('')
+  const { data: followers = [], refetch: refetchFollowers, isLoading: followersLoading } =
+    useFollowers(tab === 'followers' ? id : undefined)
+  const { data: following = [], refetch: refetchFollowing, isLoading: followingLoading } =
+    useFollowing(tab === 'following' ? id : undefined)
 
   const list = tab === 'followers' ? followers : following
-  const setter = tab === 'followers' ? setFollowers : setFollowing
+  const isLoading = tab === 'followers' ? followersLoading : followingLoading
+  const refetch = tab === 'followers' ? refetchFollowers : refetchFollowing
+
+  const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
     if (!query.trim()) return list
@@ -44,10 +51,40 @@ export function FollowListPage({ initial = 'followers' }: Props) {
     )
   }, [list, query])
 
-  const toggleFollow = (uid: string) =>
-    setter((prev) =>
-      prev.map((u) => (u.id === uid ? { ...u, isFollowing: !u.isFollowing } : u))
+  const toggleFollow = async (uid: string) => {
+    const target = list.find((u) => u.id === uid)
+    if (!target) return
+    try {
+      if (target.isFollowing) {
+        await userService.unfollow(uid)
+      } else {
+        await userService.follow(uid)
+      }
+      await refetch()
+    } catch {
+      // optimistic UI not implemented for follow row; let refetch reflect reality
+    }
+  }
+
+  if (profileLoading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-16">
+        <LoadingState label="Đang tải..." />
+      </div>
     )
+  }
+
+  if (!profile) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-16">
+        <EmptyState
+          icon="person_off"
+          title="Không tìm thấy người dùng"
+          action={{ label: 'Về trang chủ', to: ROUTES.HOME }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-8">
@@ -118,19 +155,19 @@ export function FollowListPage({ initial = 'followers' }: Props) {
       </div>
 
       {/* List */}
-      {filtered.length === 0 ? (
-        <div className="bg-surface-container-low rounded-3xl p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-surface-container-high text-on-surface-variant flex items-center justify-center mx-auto mb-4">
-            <Icon name="group_off" className="text-2xl" />
-          </div>
-          <p className="text-on-surface-variant">
-            {query
-              ? 'Không tìm thấy ai khớp.'
+      {isLoading ? (
+        <LoadingState label="Đang tải..." />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="group_off"
+          title={
+            query
+              ? 'Không tìm thấy ai khớp'
               : tab === 'followers'
-                ? 'Chưa có ai theo dõi.'
-                : 'Chưa theo dõi ai.'}
-          </p>
-        </div>
+                ? 'Chưa có ai theo dõi'
+                : 'Chưa theo dõi ai'
+          }
+        />
       ) : (
         <div className="space-y-3">
           {filtered.map((u) => (

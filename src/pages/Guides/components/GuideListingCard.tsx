@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { guideDetailPath } from '@constants/routes'
+import { useToggleSaved } from '@hooks/useSaved'
 import { cn } from '@utils/cn'
 import type { HireableGuide } from '@types/trip'
 
@@ -23,6 +25,19 @@ const availabilityDot: Record<HireableGuide['availability'], string> = {
 
 export function GuideListingCard({ guide }: Props) {
   const isFullyBooked = guide.availability === 'fully-booked'
+  const [saved, setSaved] = useState(!!(guide as HireableGuide & { isSaved?: boolean }).isSaved)
+  const toggleSaved = useToggleSaved()
+
+  const onToggleSave = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const next = !saved
+    setSaved(next)
+    toggleSaved.mutate(
+      { type: 'guide', id: guide.id },
+      { onError: () => setSaved(!next) },
+    )
+  }
 
   return (
     <Link
@@ -61,6 +76,15 @@ export function GuideListingCard({ guide }: Props) {
           {guide.availabilityLabel ??
             (guide.availability === 'available' ? 'Còn lịch' : 'Bận')}
         </span>
+
+        <button
+          type="button"
+          onClick={onToggleSave}
+          aria-label={saved ? 'Bỏ lưu hướng dẫn viên' : 'Lưu hướng dẫn viên'}
+          className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-on-surface hover:text-primary flex items-center justify-center shadow transition-colors"
+        >
+          <Icon name="favorite" size={18} filled={saved} />
+        </button>
 
         <div className="absolute -bottom-7 left-5">
           <Avatar src={guide.avatar} alt={guide.name} size="lg" ring className="border-4 border-surface-container-lowest" />

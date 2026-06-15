@@ -3,9 +3,11 @@ import { Icon } from '@components/ui/Icon'
 
 interface Props {
   onSend: (text: string) => void
+  /** Called as the user types — used to emit `typing` over the socket. */
+  onTyping?: () => void
 }
 
-export function MessageComposer({ onSend }: Props) {
+export function MessageComposer({ onSend, onTyping }: Props) {
   const [value, setValue] = useState('')
 
   const submit = () => {
@@ -34,7 +36,10 @@ export function MessageComposer({ onSend }: Props) {
         <input
           type="text"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value)
+            onTyping?.()
+          }}
           placeholder="Nhập tin nhắn…"
           className="flex-1 bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant/60 py-2"
         />

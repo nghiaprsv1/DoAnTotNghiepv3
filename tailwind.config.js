@@ -3,6 +3,17 @@ export default {
     content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
     darkMode: 'class',
     theme: {
+        // Custom screens — keep Tailwind's defaults but add `xs` for the
+        // 480px step. Many phones are 360–414dp so this lets us scale
+        // typography/grids one notch before `sm:` (640px).
+        screens: {
+            xs: '480px',
+            sm: '640px',
+            md: '768px',
+            lg: '1024px',
+            xl: '1280px',
+            '2xl': '1536px',
+        },
         extend: {
             colors: {
                 // Saffron Horizon — The Digital Concierge palette

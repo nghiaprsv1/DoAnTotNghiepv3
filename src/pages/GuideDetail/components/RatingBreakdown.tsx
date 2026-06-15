@@ -1,5 +1,5 @@
 import { Rating } from './Rating'
-import type { GuideReview } from '@constants/mockGuideDetail'
+import type { GuideReview } from '@types/guideDashboard'
 
 interface Props {
   reviews: GuideReview[]

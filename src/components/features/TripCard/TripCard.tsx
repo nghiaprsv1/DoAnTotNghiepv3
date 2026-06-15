@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { Badge } from '@components/ui/Badge'
 import { tripDetailPath } from '@constants/routes'
+import { useToggleSaved } from '@hooks/useSaved'
+import {
+  computeTripStatus,
+  tripStatusLabel,
+  tripStatusTone,
+  tripStatusIcon,
+} from '@utils/tripStatus'
 import type { Trip } from '@types/trip'
 
 interface TripCardProps {
@@ -13,6 +21,20 @@ interface TripCardProps {
  * Editorial-style trip card used in Trips list page.
  */
 export function TripCard({ trip }: TripCardProps) {
+  const status = computeTripStatus(trip)
+  const [saved, setSaved] = useState(!!trip.isSaved)
+  const toggleSaved = useToggleSaved()
+
+  const onToggleSave = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const next = !saved
+    setSaved(next) // optimistic
+    toggleSaved.mutate(
+      { type: 'trip', id: trip.id },
+      { onError: () => setSaved(!next) },
+    )
+  }
   return (
     <Link
       to={tripDetailPath(trip.id)}
@@ -24,10 +46,16 @@ export function TripCard({ trip }: TripCardProps) {
           alt={trip.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
-        <div className="absolute top-4 left-4 flex items-center gap-2">
+        <div className="absolute top-4 left-4 flex items-center gap-2 flex-wrap">
           <Badge variant="outline" size="sm">
             {trip.destination}
           </Badge>
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${tripStatusTone(status)}`}
+          >
+            <Icon name={tripStatusIcon(status)} size={12} />
+            {tripStatusLabel(status)}
+          </span>
           {trip.isJoined && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-on-primary text-[10px] font-bold uppercase tracking-wider shadow-editorial">
               <Icon name="check_circle" size={12} />
@@ -37,11 +65,11 @@ export function TripCard({ trip }: TripCardProps) {
         </div>
         <button
           type="button"
-          onClick={(e) => e.preventDefault()}
+          onClick={onToggleSave}
           className="absolute top-4 right-4 bg-surface-container-lowest/80 backdrop-blur-md p-2 rounded-full text-on-surface hover:text-primary transition-colors"
-          aria-label="Save trip"
+          aria-label={saved ? 'Bỏ lưu chuyến đi' : 'Lưu chuyến đi'}
         >
-          <Icon name="favorite" size={20} filled={trip.isSaved} />
+          <Icon name="favorite" size={20} filled={saved} />
         </button>
       </div>
 

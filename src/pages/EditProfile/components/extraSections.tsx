@@ -5,35 +5,32 @@ import { ChipSelect } from './ChipSelect'
 import { ToggleRow } from './ToggleRow'
 import { DIETARY } from './options'
 
+const WIP_NOTE = 'Đang phát triển — chưa lưu được khi bấm Lưu thay đổi.'
+
 export function TravelDocsSection() {
   return (
     <FormSection
       icon="badge"
       title="Giấy tờ & Sức khoẻ"
-      description="Thông tin chỉ hiển thị với hướng dẫn viên/admin của chuyến đi"
+      description={`Thông tin chỉ hiển thị với hướng dẫn viên/admin của chuyến đi · ${WIP_NOTE}`}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Số hộ chiếu"
-          defaultValue="C12345678"
-          iconLeft="passport"
+          placeholder="vd: C12345678"
+          iconLeft="badge"
           tone="highest"
         />
-        <Input
-          label="Hộ chiếu hết hạn"
-          type="date"
-          defaultValue="2030-06-30"
-          tone="highest"
-        />
+        <Input label="Hộ chiếu hết hạn" type="date" tone="highest" />
         <Input
           label="CCCD / CMND"
-          defaultValue="079096012345"
+          placeholder="vd: 079096012345"
           iconLeft="badge"
           tone="highest"
         />
         <Input
           label="Bảo hiểm du lịch"
-          defaultValue="VNI Travel · #VNI-9876"
+          placeholder="vd: VNI Travel · #VNI-9876"
           iconLeft="health_and_safety"
           tone="highest"
         />
@@ -43,7 +40,7 @@ export function TravelDocsSection() {
         <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 ml-1">
           Chế độ ăn / dị ứng
         </p>
-        <ChipSelect options={DIETARY} value={['vegetarian']} onChange={() => {}} />
+        <ChipSelect options={DIETARY} value={[]} onChange={() => {}} />
       </div>
 
       <div>
@@ -65,85 +62,71 @@ export function EmergencyContactSection() {
     <FormSection
       icon="emergency"
       title="Liên hệ khẩn cấp"
-      description="Người sẽ được liên hệ nếu có sự cố trong chuyến đi"
+      description={`Người sẽ được liên hệ nếu có sự cố trong chuyến đi · ${WIP_NOTE}`}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Họ và tên"
-          defaultValue="Nguyễn Văn Bình"
-          iconLeft="person"
-          tone="highest"
-        />
-        <Input
-          label="Mối quan hệ"
-          defaultValue="Anh trai"
-          iconLeft="diversity_3"
-          tone="highest"
-        />
+        <Input label="Họ và tên" iconLeft="person" tone="highest" placeholder="Nguyễn Văn A" />
+        <Input label="Mối quan hệ" iconLeft="diversity_3" tone="highest" placeholder="Anh trai" />
         <Input
           label="Số điện thoại"
           type="tel"
-          defaultValue="+84 909 888 777"
           iconLeft="call"
           tone="highest"
+          placeholder="+84 ..."
         />
         <Input
           label="Email"
           type="email"
-          defaultValue="binh.nguyen@email.com"
           iconLeft="mail"
           tone="highest"
+          placeholder="email@example.com"
         />
       </div>
     </FormSection>
   )
 }
 
-export function SocialLinksSection() {
-  const socials: { key: string; icon: string; label: string; placeholder: string; defaultValue?: string }[] =
-    [
-      {
-        key: 'instagram',
-        icon: 'photo_camera',
-        label: 'Instagram',
-        placeholder: '@username',
-        defaultValue: '@linh.travels',
-      },
-      {
-        key: 'facebook',
-        icon: 'public',
-        label: 'Facebook',
-        placeholder: 'facebook.com/...',
-      },
-      {
-        key: 'tiktok',
-        icon: 'music_note',
-        label: 'TikTok',
-        placeholder: '@username',
-      },
-      {
-        key: 'website',
-        icon: 'language',
-        label: 'Website / Blog',
-        placeholder: 'https://...',
-      },
-    ]
+export interface SocialLinksValue {
+  instagram: string
+  facebook: string
+  tiktok: string
+  website: string
+}
+
+interface SocialLinksProps {
+  value: SocialLinksValue
+  onChange: (patch: Partial<SocialLinksValue>) => void
+}
+
+export function SocialLinksSection({ value, onChange }: SocialLinksProps) {
+  const fields: {
+    key: keyof SocialLinksValue
+    icon: string
+    label: string
+    placeholder: string
+  }[] = [
+    { key: 'instagram', icon: 'photo_camera', label: 'Instagram', placeholder: '@username' },
+    { key: 'facebook', icon: 'public', label: 'Facebook', placeholder: 'facebook.com/...' },
+    { key: 'tiktok', icon: 'music_note', label: 'TikTok', placeholder: '@username' },
+    { key: 'website', icon: 'language', label: 'Website / Blog', placeholder: 'https://...' },
+  ]
 
   return (
     <FormSection
       icon="link"
       title="Mạng xã hội"
-      description="Liên kết để cộng đồng theo dõi hành trình của bạn"
+      description="Liên kết để cộng đồng theo dõi hành trình của bạn."
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {socials.map((s) => (
+        {fields.map((f) => (
           <Input
-            key={s.key}
-            label={s.label}
-            iconLeft={s.icon}
-            placeholder={s.placeholder}
-            defaultValue={s.defaultValue}
+            key={f.key}
+            label={f.label}
+            iconLeft={f.icon}
+            placeholder={f.placeholder}
             tone="highest"
+            value={value[f.key]}
+            onChange={(e) => onChange({ [f.key]: e.target.value } as Partial<SocialLinksValue>)}
           />
         ))}
       </div>
@@ -156,7 +139,7 @@ export function PrivacySection() {
     <FormSection
       icon="lock"
       title="Quyền riêng tư & Thông báo"
-      description="Bạn quyết định ai có thể thấy gì"
+      description={`Bạn quyết định ai có thể thấy gì · ${WIP_NOTE}`}
     >
       <div className="space-y-1 bg-surface-container-lowest/40 rounded-2xl p-2">
         <ToggleRow

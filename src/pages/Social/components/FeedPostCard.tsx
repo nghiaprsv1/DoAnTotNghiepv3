@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { userProfilePath } from '@constants/routes'
+import { usePostComments } from '@hooks/usePosts'
+import { useToggleSaved } from '@hooks/useSaved'
+import { postService } from '@services/postService'
+import { useCurrentUserStore } from '@store/currentUserStore'
 import { GalleryCarousel } from './GalleryCarousel'
 import { CommentSection } from './CommentSection'
-import type { Post } from '@types/post'
+import { LikersModal } from './LikersModal'
+import type { Post, PostComment } from '@types/post'
 
 interface Props {
   post: Post
@@ -14,22 +20,36 @@ interface Props {
   onDelete?: (id: string) => void
   /** ID of the current user — used to gate "Xoá" menu item. */
   currentUserId?: string
+  /** Optional callbacks to persist state on the backend. */
+  onToggleLike?: (id: string) => Promise<void> | void
+  onAddComment?: (id: string, content: string, parentId?: string) => Promise<void> | void
 }
-
-const CURRENT_AVATAR =
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80'
 
 export function FeedPostCard({
   post,
   onChange,
   onDelete,
   currentUserId = 'me',
+  onToggleLike,
+  onAddComment,
 }: Props) {
+  // Avatar shown next to the comment composer / reply input — taken from the
+  // logged-in user so it actually reflects who's typing instead of a stock photo.
+  const currentAvatar = useCurrentUserStore((s) => s.avatar)
+  const toggleSaved = useToggleSaved()
   const [expanded, setExpanded] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  const [showLikers, setShowLikers] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const queryClient = useQueryClient()
+
+  // Fetch the actual comment list lazily — only after the user opens the
+  // comment section. The feed endpoint returns counts, not the comment array.
+  const { data: fetchedComments = [], isLoading: commentsLoading } = usePostComments(
+    showComments ? post.id : undefined,
+  )
 
   const isAuthor = post.authorId === currentUserId
 
@@ -45,34 +65,77 @@ export function FeedPostCard({
 
   const images = post.gallery && post.gallery.length > 0 ? post.gallery : [post.image]
 
-  const toggleLike = () =>
+  const toggleLike = () => {
     onChange(post.id, (p) => ({
       ...p,
       isLiked: !p.isLiked,
       likes: p.isLiked ? p.likes - 1 : p.likes + 1,
     }))
+    if (onToggleLike) {
+      // Fire-and-forget; parent will reconcile if needed.
+      void Promise.resolve(onToggleLike(post.id)).catch(() => {
+        // Roll back the optimistic change on failure.
+        onChange(post.id, (p) => ({
+          ...p,
+          isLiked: !p.isLiked,
+          likes: p.isLiked ? p.likes - 1 : p.likes + 1,
+        }))
+      })
+    }
+  }
 
-  const toggleBookmark = () =>
+  const toggleBookmark = () => {
+    // Optimistic flip, then persist via the bookmark API. Roll back on error.
     onChange(post.id, (p) => ({ ...p, isBookmarked: !p.isBookmarked }))
+    toggleSaved.mutate(
+      { type: 'post', id: post.id },
+      {
+        onError: () =>
+          onChange(post.id, (p) => ({ ...p, isBookmarked: !p.isBookmarked })),
+      },
+    )
+  }
 
-  const addComment = (content: string) => {
+  const addComment = (content: string, parentId?: string) => {
     if (!content.trim()) return
-    onChange(post.id, (p) => ({
-      ...p,
-      comments: p.comments + 1,
-      topComments: [
-        ...(p.topComments ?? []),
-        {
-          id: `lc-${Date.now()}`,
-          authorId: 'me',
-          authorName: 'Bạn',
-          authorAvatar: CURRENT_AVATAR,
-          content: content.trim(),
-          createdAt: 'vừa xong',
-          likes: 0,
-        },
-      ],
-    }))
+    if (onAddComment) {
+      void Promise.resolve(onAddComment(post.id, content.trim(), parentId))
+        .then(() => {
+          // Refresh the comment list so the new comment shows up.
+          queryClient.invalidateQueries({ queryKey: ['post', post.id, 'comments'] })
+        })
+        .catch(() => undefined)
+    }
+    // Bump the visible counter only for top-level comments to mirror what
+    // the BE does (commentCount is per-post, includes replies — so this is
+    // a small lie but keeps counts moving in real time).
+    onChange(post.id, (p) => ({ ...p, comments: p.comments + 1 }))
+  }
+
+  /**
+   * Optimistically toggle a like on a comment, then persist via the BE.
+   * Updates the cached comment list so the heart fills/empties without a
+   * full refetch. Falls back to refetch on error to reconcile.
+   */
+  const toggleCommentLike = (commentId: string) => {
+    queryClient.setQueryData<PostComment[]>(
+      ['post', post.id, 'comments'],
+      (prev) =>
+        (prev ?? []).map((c) =>
+          c.id === commentId
+            ? {
+                ...c,
+                isLiked: !c.isLiked,
+                likes: (c.likes ?? 0) + (c.isLiked ? -1 : 1),
+              }
+            : c,
+        ),
+    )
+    void postService
+      .toggleCommentLike(commentId)
+      .catch(() =>
+        queryClient.invalidateQueries({ queryKey: ['post', post.id, 'comments'] }),
+      )
   }
 
   return (
@@ -97,6 +160,13 @@ export function FeedPostCard({
           <p className="text-xs text-on-surface-variant flex items-center gap-1">
             <Icon name="location_on" size={12} />
             {post.location} · {post.postedAt}
+            {post.visibility === 'friends' && (
+              <>
+                <span className="mx-1 text-on-surface-variant/40">·</span>
+                <Icon name="group" size={12} />
+                <span>Bạn bè</span>
+              </>
+            )}
           </p>
         </Link>
         <div ref={menuRef} className="relative">
@@ -206,16 +276,25 @@ export function FeedPostCard({
 
       {/* Reactions summary */}
       <div className="flex items-center justify-between px-5 pt-4 text-xs text-on-surface-variant">
-        <span className="inline-flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => post.likes > 0 && setShowLikers(true)}
+          disabled={post.likes === 0}
+          className="inline-flex items-center gap-1 hover:text-primary transition disabled:opacity-100 disabled:cursor-default"
+          aria-label={post.likes > 0 ? 'Xem ai đã thích' : 'Chưa có lượt thích'}
+        >
           <span className="inline-flex -space-x-1">
             <span className="w-5 h-5 rounded-full editorial-gradient flex items-center justify-center text-on-primary">
               <Icon name="favorite" size={12} className="fill" />
             </span>
           </span>
           <span>
-            <strong className="text-on-surface">{post.likes.toLocaleString()}</strong> lượt thích
+            <strong className={post.likes > 0 ? 'text-on-surface group-hover:text-primary' : 'text-on-surface'}>
+              {post.likes.toLocaleString()}
+            </strong>{' '}
+            lượt thích
           </span>
-        </span>
+        </button>
         <span>
           {post.comments} bình luận · {post.shares ?? 0} chia sẻ
         </span>
@@ -251,11 +330,19 @@ export function FeedPostCard({
       {/* Comments */}
       {showComments && (
         <CommentSection
-          comments={post.topComments ?? []}
+          comments={fetchedComments}
+          loading={commentsLoading}
           onSubmit={addComment}
-          currentAvatar={CURRENT_AVATAR}
+          onToggleLike={toggleCommentLike}
+          currentAvatar={currentAvatar}
         />
       )}
+
+      <LikersModal
+        postId={post.id}
+        open={showLikers}
+        onClose={() => setShowLikers(false)}
+      />
     </article>
   )
 }

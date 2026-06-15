@@ -1,6 +1,6 @@
 import { Icon } from '@components/ui/Icon'
 import { TourHistoryCard } from '../components/TourHistoryCard'
-import type { GuideTourHistory } from '@constants/mockGuideDetail'
+import type { GuideTourHistory } from '@types/guideDashboard'
 
 interface Props {
   tours: GuideTourHistory[]

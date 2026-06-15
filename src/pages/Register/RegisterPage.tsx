@@ -1,17 +1,68 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { AxiosError } from 'axios'
 import { Icon } from '@components/ui/Icon'
 import { Button } from '@components/ui/Button'
 import { Input } from '@components/ui/Input'
 import { SocialButton } from '@components/ui/SocialButton'
 import { ROUTES } from '@constants/routes'
+import { useAuth } from '@hooks/useAuth'
 
 const SIDE_IMG =
   'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80'
 
 export function RegisterPage() {
+  const navigate = useNavigate()
+  const { register } = useAuth()
+
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [agree, setAgree] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (submitting) return
+    if (!name.trim() || !email.trim() || !password) {
+      setError('Vui lòng điền đủ họ tên, email và mật khẩu.')
+      return
+    }
+    if (password.length < 6) {
+      setError('Mật khẩu cần ít nhất 6 ký tự.')
+      return
+    }
+    if (password !== confirmPassword) {
+      setError('Hai mật khẩu không trùng nhau.')
+      return
+    }
+    if (!agree) {
+      setError('Bạn cần đồng ý với điều khoản để tiếp tục.')
+      return
+    }
+    setError(null)
+    setSubmitting(true)
+    try {
+      await register({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        confirmPassword,
+      })
+      navigate(ROUTES.HOME, { replace: true })
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>
+      setError(ax.response?.data?.message ?? 'Đăng ký thất bại. Vui lòng thử lại.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-6xl flex flex-col md:flex-row bg-surface-container-lowest rounded-[2rem] overflow-hidden shadow-editorial-lg relative">
+    <main className="min-h-screen flex items-center justify-center p-3 md:p-8">
+      <div className="w-full max-w-6xl flex flex-col md:flex-row bg-surface-container-lowest rounded-2xl md:rounded-[2rem] overflow-hidden shadow-editorial-lg relative">
         {/* Visual side */}
         <div className="hidden md:flex md:w-1/2 relative min-h-[700px] overflow-hidden">
           <img src={SIDE_IMG} alt="Sapa" className="absolute inset-0 w-full h-full object-cover" />
@@ -42,9 +93,9 @@ export function RegisterPage() {
         </div>
 
         {/* Form side */}
-        <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center">
+        <div className="w-full md:w-1/2 p-6 sm:p-10 md:p-16 flex flex-col justify-center">
           <div className="max-w-md mx-auto w-full">
-            <div className="flex items-center gap-2 mb-10">
+            <div className="flex items-center gap-2 mb-6 md:mb-10">
               <div className="w-8 h-8 rounded-lg editorial-gradient flex items-center justify-center shadow-md">
                 <Icon name="travel_explore" className="text-on-primary text-lg fill" />
               </div>
@@ -53,26 +104,62 @@ export function RegisterPage() {
               </span>
             </div>
 
-            <div className="mb-10">
-              <h2 className="font-headline text-3xl font-bold text-on-surface mb-2">
+            <div className="mb-6 md:mb-10">
+              <h2 className="font-headline text-2xl md:text-3xl font-bold text-on-surface mb-1 md:mb-2">
                 Đăng ký tài khoản
               </h2>
-              <p className="text-on-surface-variant font-medium">
+              <p className="text-sm md:text-base text-on-surface-variant font-medium">
                 Bắt đầu chuyến phiêu lưu của bạn cùng chúng tôi.
               </p>
             </div>
 
-            <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-              <Input label="Họ và tên" placeholder="Nguyễn Văn A" iconLeft="person" />
-              <Input label="Email" type="email" placeholder="email@vidu.com" iconLeft="mail" />
+            <form className="space-y-4 md:space-y-5" onSubmit={handleSubmit} noValidate>
+              <Input
+                label="Họ và tên"
+                placeholder="Nguyễn Văn A"
+                iconLeft="person"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={submitting}
+                required
+              />
+              <Input
+                label="Email"
+                type="email"
+                placeholder="email@vidu.com"
+                iconLeft="mail"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={submitting}
+                required
+              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input label="Mật khẩu" type="password" placeholder="••••••••" iconLeft="lock" />
+                <Input
+                  label="Mật khẩu"
+                  type="password"
+                  placeholder="••••••••"
+                  iconLeft="lock"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={submitting}
+                  minLength={6}
+                  required
+                />
                 <Input
                   label="Xác nhận"
                   type="password"
                   placeholder="••••••••"
                   iconLeft="verified_user"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={submitting}
+                  minLength={6}
+                  required
                 />
               </div>
 
@@ -80,6 +167,9 @@ export function RegisterPage() {
                 <input
                   id="terms"
                   type="checkbox"
+                  checked={agree}
+                  onChange={(e) => setAgree(e.target.checked)}
+                  disabled={submitting}
                   className="mt-1 w-5 h-5 rounded-md border-outline-variant text-primary focus:ring-primary"
                 />
                 <label htmlFor="terms" className="text-sm text-on-surface-variant leading-relaxed">
@@ -95,7 +185,17 @@ export function RegisterPage() {
                 </label>
               </div>
 
-              <Button type="submit" size="lg" className="w-full">
+              {error && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-error/10 text-error text-sm font-medium"
+                >
+                  <Icon name="error" size={18} />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <Button type="submit" size="lg" className="w-full" isLoading={submitting}>
                 Tạo tài khoản
                 <Icon name="arrow_forward" />
               </Button>

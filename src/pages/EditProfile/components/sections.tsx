@@ -12,8 +12,20 @@ import {
   TRAVEL_STYLES,
   TRIP_PURPOSES,
 } from './options'
+import type { TravelPreferences } from '@types/profile'
 
-export function BasicInfoSection() {
+export interface BasicInfoValue {
+  name: string
+  handle: string
+  bio: string
+}
+
+interface BasicInfoProps {
+  value: BasicInfoValue
+  onChange: (patch: Partial<BasicInfoValue>) => void
+}
+
+export function BasicInfoSection({ value, onChange }: BasicInfoProps) {
   return (
     <FormSection
       icon="person"
@@ -21,34 +33,17 @@ export function BasicInfoSection() {
       description="Cách bạn muốn xuất hiện trên TravelSocial"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input label="Tên hiển thị" defaultValue="Linh Nguyễn" tone="highest" />
         <Input
-          label="Tên đăng nhập"
-          defaultValue="@linh.travels"
-          iconLeft="alternate_email"
+          label="Tên hiển thị"
+          value={value.name}
+          onChange={(e) => onChange({ name: e.target.value })}
           tone="highest"
         />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input label="Ngày sinh" type="date" defaultValue="1996-08-12" tone="highest" />
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">
-            Giới tính
-          </label>
-          <select
-            defaultValue="female"
-            className="w-full bg-surface-container-highest border-none rounded-2xl py-4 px-4 outline-none focus:ring-2 focus:ring-primary/40 text-on-surface font-medium"
-          >
-            <option value="female">Nữ</option>
-            <option value="male">Nam</option>
-            <option value="other">Khác</option>
-            <option value="hidden">Không hiển thị</option>
-          </select>
-        </div>
         <Input
-          label="Quốc tịch"
-          defaultValue="Việt Nam"
-          iconLeft="public"
+          label="Tên đăng nhập"
+          value={value.handle}
+          onChange={(e) => onChange({ handle: e.target.value })}
+          iconLeft="alternate_email"
           tone="highest"
         />
       </div>
@@ -58,17 +53,32 @@ export function BasicInfoSection() {
         </label>
         <textarea
           rows={4}
-          maxLength={240}
-          defaultValue="Yêu du lịch và nhiếp ảnh. Đang trên hành trình khám phá vẻ đẹp tiềm ẩn của Việt Nam — và sẵn sàng kết bạn cùng đi."
+          maxLength={1000}
+          value={value.bio}
+          onChange={(e) => onChange({ bio: e.target.value })}
+          placeholder="Vài dòng giới thiệu về bạn — phong cách du lịch, nơi muốn đến..."
           className="w-full bg-surface-container-highest border-none rounded-2xl px-4 py-3 focus:ring-2 focus:ring-primary/40 focus:outline-none text-on-surface font-medium resize-none"
         />
-        <p className="text-[11px] text-on-surface-variant mt-1 ml-1">Tối đa 240 ký tự.</p>
+        <p className="text-[11px] text-on-surface-variant mt-1 ml-1">
+          {value.bio.length}/1000 ký tự.
+        </p>
       </div>
     </FormSection>
   )
 }
 
-export function ContactSection() {
+export interface ContactValue {
+  email: string
+  phone: string
+  location: string
+}
+
+interface ContactProps {
+  value: ContactValue
+  onChange: (patch: Partial<ContactValue>) => void
+}
+
+export function ContactSection({ value, onChange }: ContactProps) {
   return (
     <FormSection
       icon="contact_mail"
@@ -79,30 +89,40 @@ export function ContactSection() {
         <Input
           label="Email"
           type="email"
-          defaultValue="linh.nguyen@travel.com"
+          value={value.email}
           iconLeft="mail"
           tone="highest"
+          disabled
+          helperText="Email là ID đăng nhập, không thể chỉnh sửa."
         />
         <Input
           label="Số điện thoại"
           type="tel"
-          defaultValue="+84 901 234 567"
+          value={value.phone}
+          onChange={(e) => onChange({ phone: e.target.value })}
           iconLeft="call"
           tone="highest"
+          placeholder="+84 ..."
         />
         <Input
-          label="Thành phố hiện tại"
-          defaultValue="Thành phố Hồ Chí Minh"
+          label="Thành phố / địa phương"
+          value={value.location}
+          onChange={(e) => onChange({ location: e.target.value })}
           iconLeft="location_on"
           tone="highest"
+          placeholder="vd: Hà Nội"
         />
-        <Input label="Quốc gia" defaultValue="Việt Nam" iconLeft="flag" tone="highest" />
       </div>
     </FormSection>
   )
 }
 
-export function TravelProfileSection() {
+interface TravelProps {
+  value: TravelPreferences
+  onChange: (patch: Partial<TravelPreferences>) => void
+}
+
+export function TravelProfileSection({ value, onChange }: TravelProps) {
   return (
     <FormSection
       icon="explore"
@@ -112,46 +132,64 @@ export function TravelProfileSection() {
       <Field label="Phong cách (chọn nhiều)">
         <ChipSelect
           options={TRAVEL_STYLES}
-          value={['adventure', 'photography', 'food']}
-          onChange={() => {}}
+          value={value.travelStyles ?? []}
+          onChange={(v) => onChange({ travelStyles: v })}
         />
       </Field>
       <Field label="Mục đích đi du lịch">
-        <ChipSelect options={TRIP_PURPOSES} value={['friends', 'solo']} onChange={() => {}} />
+        <ChipSelect
+          options={TRIP_PURPOSES}
+          value={value.tripPurposes ?? []}
+          onChange={(v) => onChange({ tripPurposes: v })}
+        />
       </Field>
       <Field label="Ngân sách thường dùng">
-        <ChipSelect options={BUDGET_LEVELS} value={['mid']} onChange={() => {}} single />
+        <ChipSelect
+          options={BUDGET_LEVELS}
+          value={value.budgetLevel ? [value.budgetLevel] : []}
+          onChange={(v) => onChange({ budgetLevel: v[0] ?? null })}
+          single
+        />
       </Field>
       <Field label="Cấp độ kinh nghiệm">
-        <ChipSelect options={EXPERIENCE_LEVELS} value={['casual']} onChange={() => {}} single />
+        <ChipSelect
+          options={EXPERIENCE_LEVELS}
+          value={value.experienceLevel ? [value.experienceLevel] : []}
+          onChange={(v) => onChange({ experienceLevel: v[0] ?? null })}
+          single
+        />
       </Field>
     </FormSection>
   )
 }
 
-export function PreferencesSection() {
+export function PreferencesSection({ value, onChange }: TravelProps) {
   return (
     <FormSection
       icon="favorite"
       title="Sở thích & Hoạt động"
-      description="Bạn thích loại địa hình và hoạt động nào nhất?"
+      description="Loại địa hình và hoạt động bạn yêu thích"
     >
       <Field label="Loại địa hình yêu thích">
         <ChipSelect
           options={TERRAIN_PREFS}
-          value={['mountain', 'island', 'countryside']}
-          onChange={() => {}}
+          value={value.terrainPrefs ?? []}
+          onChange={(v) => onChange({ terrainPrefs: v })}
         />
       </Field>
       <Field label="Hoạt động yêu thích">
         <ChipSelect
           options={ACTIVITIES}
-          value={['trekking', 'motorbike', 'cooking']}
-          onChange={() => {}}
+          value={value.activities ?? []}
+          onChange={(v) => onChange({ activities: v })}
         />
       </Field>
       <Field label="Ngôn ngữ giao tiếp">
-        <ChipSelect options={LANGUAGES} value={['vi', 'en']} onChange={() => {}} />
+        <ChipSelect
+          options={LANGUAGES}
+          value={value.languages ?? []}
+          onChange={(v) => onChange({ languages: v })}
+        />
       </Field>
     </FormSection>
   )

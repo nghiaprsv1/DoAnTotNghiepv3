@@ -40,3 +40,19 @@ Thumbs.db
 
 # Testing
 coverage/
+
+# Local assets / scratch folders (Vietnamese-named "ảnh" image dump)
+/ảnh/
+
+# Capacitor Android native project (generated; large build artifacts)
+/android/
+
+# Local LLM models (multi-GB GGUF — never commit)
+models/
+*.gguf
+
+# Context-engine local cache
+.vibervn/
+
+# LAN dev env (machine-specific IP)
+.env.lan

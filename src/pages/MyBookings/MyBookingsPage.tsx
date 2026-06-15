@@ -1,43 +1,68 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
-import { mockTravelerBookings } from '@constants/mockTravelerBookings'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
+import { useMyBookingsAsTraveler } from '@hooks/useBookings'
+import { useAuthStore } from '@store/authStore'
 import { ROUTES } from '@constants/routes'
 import { cn } from '@utils/cn'
 import { TravelerBookingCard } from './components/TravelerBookingCard'
-import type { BookingStatus, TravelerBooking } from '@types/booking'
+import type { BookingStatus } from '@types/booking'
 
-type FilterKey = 'all' | BookingStatus
+type FilterKey = 'all' | 'awaiting' | 'awaiting_payment' | 'confirmed' | 'completed' | 'cancelled'
 
 const filters: { key: FilterKey; label: string; icon: string }[] = [
   { key: 'all', label: 'Tất cả', icon: 'inbox' },
-  { key: 'pending', label: 'Chờ phản hồi', icon: 'hourglass_top' },
+  { key: 'awaiting', label: 'Chờ HDV duyệt', icon: 'hourglass_top' },
+  { key: 'awaiting_payment', label: 'Chờ thanh toán', icon: 'payments' },
   { key: 'confirmed', label: 'Đã xác nhận', icon: 'check_circle' },
   { key: 'completed', label: 'Đã hoàn thành', icon: 'task_alt' },
   { key: 'cancelled', label: 'Đã huỷ', icon: 'event_busy' },
 ]
 
+/** Maps a backend BookingStatus to the FE filter bucket for traveler view. */
+function bucketOf(status: BookingStatus): Exclude<FilterKey, 'all'> {
+  switch (status) {
+    case 'pending':
+    case 'pending_acceptance':
+      return 'awaiting'
+    case 'pending_payment':
+      return 'awaiting_payment'
+    case 'confirmed':
+      return 'confirmed'
+    case 'completed':
+      return 'completed'
+    case 'expired':
+    case 'cancelled':
+    case 'rejected':
+      return 'cancelled'
+  }
+}
+
 export function MyBookingsPage() {
-  const [bookings, setBookings] = useState<TravelerBooking[]>(mockTravelerBookings)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const { data: apiBookings, isLoading } = useMyBookingsAsTraveler()
+  const bookings = apiBookings ?? []
   const [filter, setFilter] = useState<FilterKey>('all')
 
   const counts = useMemo(() => {
     const acc: Record<FilterKey, number> = {
       all: bookings.length,
-      pending: 0,
+      awaiting: 0,
+      awaiting_payment: 0,
       confirmed: 0,
       completed: 0,
       cancelled: 0,
     }
     bookings.forEach((b) => {
-      acc[b.status]++
+      acc[bucketOf(b.status)]++
     })
     return acc
   }, [bookings])
 
   const filtered = useMemo(() => {
     if (filter === 'all') return bookings
-    return bookings.filter((b) => b.status === filter)
+    return bookings.filter((b) => bucketOf(b.status) === filter)
   }, [bookings, filter])
 
   const totalSpent = useMemo(
@@ -48,17 +73,33 @@ export function MyBookingsPage() {
     [bookings]
   )
 
-  const handleCancel = (id: string) => {
+  const handleCancel = async (id: string) => {
     if (!confirm('Huỷ booking này? Hành động không thể hoàn tác.')) return
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === id ? { ...b, status: 'cancelled', cancelReason: 'Bạn đã huỷ' } : b
-      )
-    )
+    try {
+      const { bookingService } = await import('@services/bookingService')
+      await bookingService.respond(id, 'cancel', 'Bạn đã huỷ')
+      // Refetch from server.
+      window.location.reload()
+    } catch (err) {
+      alert('Không thể huỷ booking. Vui lòng thử lại.')
+    }
   }
 
-  const handleMarkReviewed = (id: string) => {
-    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, hasReview: true } : b)))
+  const handleMarkReviewed = (_id: string) => {
+    // No-op until reviewService.create is wired into the booking-card flow.
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-16">
+        <EmptyState
+          icon="login"
+          title="Đăng nhập để xem booking"
+          description="Bạn cần đăng nhập để theo dõi các chuyến đi đã đặt với hướng dẫn viên."
+          action={{ label: 'Đăng nhập', to: ROUTES.LOGIN }}
+        />
+      </div>
+    )
   }
 
   return (
@@ -79,7 +120,12 @@ export function MyBookingsPage() {
       {/* Summary stats */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         <Stat icon="luggage" value={`${bookings.length}`} label="Tổng booking" />
-        <Stat icon="hourglass_top" value={`${counts.pending}`} label="Chờ phản hồi" tone="amber" />
+        <Stat
+          icon="hourglass_top"
+          value={`${counts.awaiting + counts.awaiting_payment}`}
+          label="Chờ xử lý"
+          tone="amber"
+        />
         <Stat icon="check_circle" value={`${counts.completed}`} label="Đã hoàn thành" tone="green" />
         <Stat
           icon="payments"
@@ -123,25 +169,19 @@ export function MyBookingsPage() {
       </div>
 
       {/* List */}
-      {filtered.length === 0 ? (
-        <div className="bg-surface-container-low rounded-3xl p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-surface-container-high text-on-surface-variant flex items-center justify-center mx-auto mb-4">
-            <Icon name="luggage" className="text-2xl" />
-          </div>
-          <h3 className="font-headline font-extrabold text-xl text-on-surface mb-1">
-            {filter === 'all' ? 'Chưa có booking nào' : `Không có booking ${filters.find((f) => f.key === filter)?.label.toLowerCase()}`}
-          </h3>
-          <p className="text-on-surface-variant max-w-md mx-auto mb-5">
-            Khám phá danh sách HDV và đặt chuyến đi đầu tiên của bạn.
-          </p>
-          <Link
-            to={ROUTES.GUIDES}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full editorial-gradient text-on-primary font-headline font-bold shadow-editorial active:scale-95"
-          >
-            <Icon name="search" />
-            Tìm hướng dẫn viên
-          </Link>
-        </div>
+      {isLoading ? (
+        <LoadingState count={3} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="luggage"
+          title={
+            filter === 'all'
+              ? 'Chưa có booking nào'
+              : `Không có booking ${filters.find((f) => f.key === filter)?.label.toLowerCase()}`
+          }
+          description="Khám phá danh sách HDV và đặt chuyến đi đầu tiên của bạn."
+          action={{ label: 'Tìm hướng dẫn viên', to: ROUTES.GUIDES }}
+        />
       ) : (
         <div className="space-y-4">
           {filtered.map((b) => (

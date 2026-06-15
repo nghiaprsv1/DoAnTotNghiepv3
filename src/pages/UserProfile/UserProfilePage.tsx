@@ -1,16 +1,27 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { Button } from '@components/ui/Button'
-import { mockPublicProfiles } from '@constants/mockProfiles'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
+import { TravelPreferencesView } from '@components/common/TravelPreferencesView'
+import { TripCard } from '@components/features'
+import { FeedPostCard } from '@pages/Social/components/FeedPostCard'
+import { useUserProfile } from '@hooks/useUserProfile'
+import { useUserPosts } from '@hooks/usePosts'
+import { useUserTrips } from '@hooks/useTrips'
+import { useOpenDirectChat } from '@hooks/useMessages'
+import { useCurrentUserStore } from '@store/currentUserStore'
+import { userService } from '@services/userService'
+import { postService } from '@services/postService'
 import {
   ROUTES,
-  messageThreadPath,
   userFollowersPath,
   userFollowingPath,
 } from '@constants/routes'
 import { cn } from '@utils/cn'
+import type { PublicProfile } from '@types/profile'
 
 const TABS = [
   { key: 'posts', label: 'Bài viết', icon: 'photo_library' },
@@ -21,20 +32,60 @@ type TabKey = (typeof TABS)[number]['key']
 
 export function UserProfilePage() {
   const { id } = useParams<{ id: string }>()
-  const baseProfile = (id && mockPublicProfiles[id]) || mockPublicProfiles.u1
-  const [profile, setProfile] = useState(baseProfile)
+  const currentUserId = useCurrentUserStore((s) => s.id)
+  const { data, isLoading, refetch } = useUserProfile(id)
+  const openDirectChat = useOpenDirectChat()
   const [tab, setTab] = useState<TabKey>('posts')
-  const isMe = profile.id === 'me'
 
-  const toggleFollow = () =>
-    setProfile((p) => ({
-      ...p,
-      isFollowing: !p.isFollowing,
-      followersCount: p.isFollowing ? p.followersCount - 1 : p.followersCount + 1,
-    }))
+  // Local copy for optimistic follow toggle.
+  const [optimisticProfile, setOptimisticProfile] = useState<PublicProfile | null>(null)
+  const profile = optimisticProfile ?? data
+  const isMe = !!profile && profile.id === currentUserId
 
-  // Re-sync when navigating between profiles
-  useMemo(() => setProfile(baseProfile), [baseProfile])
+  const toggleFollow = async () => {
+    if (!profile) return
+    const next: PublicProfile = {
+      ...profile,
+      isFollowing: !profile.isFollowing,
+      followersCount: profile.isFollowing
+        ? profile.followersCount - 1
+        : profile.followersCount + 1,
+    }
+    setOptimisticProfile(next)
+    try {
+      if (profile.isFollowing) {
+        await userService.unfollow(profile.id)
+      } else {
+        await userService.follow(profile.id)
+      }
+      await refetch()
+      setOptimisticProfile(null)
+    } catch {
+      // Roll back on failure.
+      setOptimisticProfile(profile)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="max-w-screen-2xl mx-auto px-6 py-16">
+        <LoadingState label="Đang tải hồ sơ..." />
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="max-w-screen-2xl mx-auto px-6 py-16">
+        <EmptyState
+          icon="person_off"
+          title="Không tìm thấy người dùng"
+          description="Hồ sơ này có thể đã bị ẩn hoặc đường dẫn không đúng."
+          action={{ label: 'Về trang chủ', to: ROUTES.HOME }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex-grow">
@@ -106,12 +157,15 @@ export function UserProfilePage() {
                   <Icon name={profile.isFollowing ? 'how_to_reg' : 'person_add'} />
                   {profile.isFollowing ? 'Đang theo dõi' : 'Theo dõi'}
                 </Button>
-                <Link to={messageThreadPath(profile.id)}>
-                  <Button variant="ghost" size="md" rounded="full">
-                    <Icon name="chat" />
-                    Nhắn tin
-                  </Button>
-                </Link>
+                <Button
+                  variant="ghost"
+                  size="md"
+                  rounded="full"
+                  onClick={() => openDirectChat(profile.id)}
+                >
+                  <Icon name="chat" />
+                  Nhắn tin
+                </Button>
               </div>
             ) : (
               <Link to={ROUTES.PROFILE_EDIT}>
@@ -179,16 +233,95 @@ export function UserProfilePage() {
           })}
         </div>
 
-        {/* Tab content placeholder */}
-        <div className="bg-surface-container-low rounded-3xl p-12 mt-6 text-center mb-12">
-          <Icon name="construction" className="text-3xl text-on-surface-variant mb-2" />
-          <p className="text-on-surface-variant">
-            {tab === 'posts' && `${profile.postsCount} bài viết của ${profile.name} sẽ hiện ở đây.`}
-            {tab === 'trips' && `${profile.tripsCount ?? 0} chuyến đi của ${profile.name}.`}
-            {tab === 'about' && 'Thông tin chi tiết về sở thích, ngôn ngữ, hành trình…'}
-          </p>
+        {/* Tab content */}
+        <div className="mt-6 mb-12">
+          {tab === 'posts' && (
+            <UserPostsList userId={profile.id} ownerName={profile.name} currentUserId={currentUserId} />
+          )}
+          {tab === 'trips' && (
+            <UserTripsList userId={profile.id} ownerName={profile.name} />
+          )}
+          {tab === 'about' && (
+            <div className="space-y-6">
+              <div className="bg-surface-container-low rounded-3xl p-8">
+                <h3 className="font-headline font-extrabold text-on-surface text-lg mb-3">
+                  Giới thiệu
+                </h3>
+                {profile.bio ? (
+                  <p className="text-on-surface/85 leading-relaxed">{profile.bio}</p>
+                ) : (
+                  <p className="text-on-surface-variant text-sm">
+                    {profile.name} chưa cập nhật giới thiệu.
+                  </p>
+                )}
+              </div>
+              <TravelPreferencesView preferences={profile.preferences} />
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function UserPostsList({
+  userId,
+  ownerName,
+  currentUserId,
+}: {
+  userId: string
+  ownerName: string
+  currentUserId: string | null
+}) {
+  const { data, isLoading } = useUserPosts(userId)
+  if (isLoading) return <LoadingState count={2} />
+  if (!data || data.length === 0) {
+    return (
+      <EmptyState
+        icon="auto_stories"
+        title={`${ownerName} chưa có bài viết`}
+        description="Khi có bài viết mới, chúng sẽ xuất hiện ở đây."
+      />
+    )
+  }
+  return (
+    <div className="space-y-6">
+      {data.map((p) => (
+        <FeedPostCard
+          key={p.id}
+          post={p}
+          currentUserId={currentUserId ?? 'guest'}
+          onChange={() => undefined}
+          onDelete={() => undefined}
+          onToggleLike={async (id) => {
+            await postService.toggleLike(id)
+          }}
+          onAddComment={async (id, content, parentId) => {
+            await postService.addComment(id, content, parentId)
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function UserTripsList({ userId, ownerName }: { userId: string; ownerName: string }) {
+  const { data, isLoading } = useUserTrips(userId)
+  if (isLoading) return <LoadingState count={2} />
+  if (!data || data.length === 0) {
+    return (
+      <EmptyState
+        icon="flight_takeoff"
+        title={`${ownerName} chưa tạo chuyến đi nào`}
+        description="Khi họ tạo chuyến đi mới, chúng sẽ xuất hiện ở đây."
+      />
+    )
+  }
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      {data.map((t) => (
+        <TripCard key={t.id} trip={t} />
+      ))}
     </div>
   )
 }

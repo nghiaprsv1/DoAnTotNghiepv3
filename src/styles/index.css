@@ -69,4 +69,32 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
+
+    /* ----- Responsive helpers ----- */
+
+    /* Standard horizontal page padding: snug on mobile, generous on desktop. */
+    .container-page {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    @media (min-width: 768px) {
+        .container-page {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+    }
+    @media (min-width: 1280px) {
+        .container-page {
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+    }
+
+    /* Bottom safe-area for devices with home indicator (iOS notch / Android gesture). */
+    .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    .safe-top {
+        padding-top: env(safe-area-inset-top);
+    }
 }

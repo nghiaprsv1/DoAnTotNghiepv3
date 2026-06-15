@@ -1,26 +1,66 @@
 import { useMemo, useState } from 'react'
 import { Icon } from '@components/ui/Icon'
-import { mockBookings } from '@constants/mockGuideDashboard'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
+import { useMyBookingsAsGuide } from '@hooks/useBookings'
 import { BookingRow } from './components/BookingRow'
-import type { Booking } from '@constants/mockGuideDashboard'
+import type { TravelerBooking } from '@types/booking'
+import type { DashboardBooking } from '@types/guideDashboard'
 
-type FilterKey = 'all' | Booking['status']
+type FilterKey = 'all' | 'awaiting' | 'confirmed' | 'completed' | 'cancelled'
 
 const filters: { key: FilterKey; label: string }[] = [
   { key: 'all', label: 'Tất cả' },
-  { key: 'pending', label: 'Chờ duyệt' },
+  { key: 'awaiting', label: 'Cần xử lý' },
   { key: 'confirmed', label: 'Đã xác nhận' },
   { key: 'completed', label: 'Hoàn thành' },
   { key: 'cancelled', label: 'Đã huỷ' },
 ]
 
+/** Bucket statuses for the guide-side view. */
+function bucketOf(status: DashboardBooking['status']): Exclude<FilterKey, 'all'> {
+  switch (status) {
+    case 'pending':
+    case 'pending_acceptance':
+    case 'pending_payment':
+      return 'awaiting'
+    case 'confirmed':
+      return 'confirmed'
+    case 'completed':
+      return 'completed'
+    case 'expired':
+    case 'cancelled':
+    case 'rejected':
+      return 'cancelled'
+  }
+}
+
+/** Map TravelerBooking (BE) → DashboardBooking shape used by BookingRow. */
+const adapt = (b: TravelerBooking): DashboardBooking => ({
+  id: b.id,
+  customerId: b.traveler?.id,
+  customerName: b.traveler?.name ?? 'Khách',
+  customerAvatar: b.traveler?.avatar ?? '',
+  tourTitle: b.tourTitle,
+  destination: b.destination,
+  date: b.startDate,
+  durationDays: b.durationDays,
+  groupSize: b.groupSize,
+  amount: b.amount,
+  status: b.status,
+  createdAt: b.createdAt,
+  message: b.message,
+})
+
 export function BookingsTab() {
   const [filter, setFilter] = useState<FilterKey>('all')
   const [query, setQuery] = useState('')
+  const { data: rawBookings, isLoading } = useMyBookingsAsGuide()
+  const bookings = useMemo(() => (rawBookings ?? []).map(adapt), [rawBookings])
 
   const list = useMemo(() => {
-    let l = mockBookings
-    if (filter !== 'all') l = l.filter((b) => b.status === filter)
+    let l = bookings
+    if (filter !== 'all') l = l.filter((b) => bucketOf(b.status) === filter)
     if (query.trim()) {
       const q = query.toLowerCase()
       l = l.filter(
@@ -31,29 +71,27 @@ export function BookingsTab() {
       )
     }
     return l
-  }, [filter, query])
+  }, [bookings, filter, query])
 
   const counts = useMemo(() => {
     const acc: Record<FilterKey, number> = {
-      all: mockBookings.length,
-      pending: 0,
+      all: bookings.length,
+      awaiting: 0,
       confirmed: 0,
       completed: 0,
       cancelled: 0,
     }
-    mockBookings.forEach((b) => {
-      acc[b.status] = (acc[b.status] ?? 0) + 1
+    bookings.forEach((b) => {
+      acc[bucketOf(b.status)]++
     })
     return acc
-  }, [])
+  }, [bookings])
 
   return (
     <div className="space-y-5">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h2 className="font-headline font-extrabold text-2xl text-on-surface">
-            Đặt chỗ
-          </h2>
+          <h2 className="font-headline font-extrabold text-2xl text-on-surface">Đặt chỗ</h2>
           <p className="text-sm text-on-surface-variant">
             Quản lý booking từ khách. Xác nhận / từ chối / nhắn tin trực tiếp với khách.
           </p>
@@ -88,7 +126,9 @@ export function BookingsTab() {
               {f.label}
               <span
                 className={`min-w-5 h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center ${
-                  active ? 'bg-on-primary text-primary' : 'bg-surface-container text-on-surface-variant'
+                  active
+                    ? 'bg-on-primary text-primary'
+                    : 'bg-surface-container text-on-surface-variant'
                 }`}
               >
                 {counts[f.key]}
@@ -98,11 +138,14 @@ export function BookingsTab() {
         })}
       </div>
 
-      {list.length === 0 ? (
-        <div className="bg-surface-container-low rounded-3xl p-10 text-center">
-          <Icon name="event_busy" className="text-3xl text-on-surface-variant mb-2" />
-          <p className="text-on-surface-variant">Không có booking nào khớp.</p>
-        </div>
+      {isLoading ? (
+        <LoadingState count={3} />
+      ) : list.length === 0 ? (
+        <EmptyState
+          icon="event_busy"
+          title={filter === 'all' ? 'Chưa có booking nào' : 'Không có booking khớp bộ lọc'}
+          description="Khi traveler đặt tour với bạn, yêu cầu sẽ xuất hiện ở đây."
+        />
       ) : (
         <div className="space-y-3">
           {list.map((b) => (

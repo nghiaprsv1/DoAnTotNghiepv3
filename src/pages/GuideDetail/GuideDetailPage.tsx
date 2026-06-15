@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
-import { mockHireableGuides } from '@constants/mockGuides'
-import {
-  defaultReviews,
-  defaultTourHistory,
-  guideToursById,
-} from '@constants/mockGuideDetail'
+import { LoadingState } from '@components/common/LoadingState'
+import { EmptyState } from '@components/common/EmptyState'
+import { ReviewModal, type ReviewTarget } from '@components/features/ReviewModal'
+import { useGuide } from '@hooks/useGuides'
+import { reviewService } from '@services/reviewService'
 import { ROUTES } from '@constants/routes'
 import { cn } from '@utils/cn'
 import { BookingPanel } from './components/BookingPanel'
@@ -15,6 +15,7 @@ import { Rating } from './components/Rating'
 import { AboutTab } from './tabs/AboutTab'
 import { ToursTab } from './tabs/ToursTab'
 import { ReviewsTab } from './tabs/ReviewsTab'
+import type { GuideReview, GuideTourHistory } from '@types/guideDashboard'
 
 const TABS = [
   { key: 'about', label: 'Giới thiệu', icon: 'info' },
@@ -25,19 +26,54 @@ type TabKey = (typeof TABS)[number]['key']
 
 export function GuideDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const guide = mockHireableGuides.find((g) => g.id === id) ?? mockHireableGuides[0]
+  const { data: guide, isLoading } = useGuide(id)
   const [tab, setTab] = useState<TabKey>('about')
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const queryClient = useQueryClient()
 
-  const tours = useMemo(
-    () => guideToursById[guide.id] ?? defaultTourHistory,
-    [guide.id]
+  // Reviews fetched from /api/reviews?targetType=guide
+  const { data: reviewsRaw } = useQuery({
+    queryKey: ['reviews', 'guide', id],
+    queryFn: () => reviewService.list('guide', id as string),
+    enabled: Boolean(id),
+  })
+
+  // Adapt BE review shape → FE GuideReview shape used by RatingBreakdown / ReviewCard
+  const reviews = useMemo<GuideReview[]>(
+    () =>
+      (reviewsRaw ?? []).map((r) => ({
+        id: r.id,
+        authorId: r.author.id,
+        authorName: r.author.name,
+        authorAvatar: r.author.avatar ?? '',
+        rating: r.rating,
+        date: new Date(r.createdAt).toLocaleDateString('vi-VN'),
+        content: r.comment ?? '',
+        helpfulCount: r.helpfulCount,
+      })),
+    [reviewsRaw]
   )
-  const reviews = defaultReviews
+
+  // Tour history endpoint not implemented yet on the backend.
+  const tours: GuideTourHistory[] = []
+
+  if (isLoading) {
+    return (
+      <div className="max-w-screen-2xl mx-auto px-6 py-16">
+        <LoadingState label="Đang tải hồ sơ hướng dẫn viên..." />
+      </div>
+    )
+  }
 
   if (!guide) {
     return (
-      <div className="text-center py-32 text-on-surface-variant">
-        Không tìm thấy hướng dẫn viên.
+      <div className="max-w-screen-2xl mx-auto px-6 py-16">
+        <EmptyState
+          icon="person_off"
+          title="Không tìm thấy hướng dẫn viên"
+          description="Hồ sơ này có thể đã bị ẩn hoặc đường dẫn không đúng."
+          action={{ label: 'Quay lại danh sách', to: ROUTES.GUIDES }}
+        />
       </div>
     )
   }
@@ -155,17 +191,40 @@ export function GuideDetailPage() {
           {tab === 'about' && <AboutTab guide={guide} />}
           {tab === 'tours' && <ToursTab tours={tours} />}
           {tab === 'reviews' && (
-            <ReviewsTab reviews={reviews} averageRating={guide.rating} />
+            <ReviewsTab
+              reviewsSummary={reviews}
+              averageRating={guide.rating}
+              guideId={guide.id}
+              onWriteReview={() => setReviewOpen(true)}
+            />
           )}
         </div>
 
         {/* Sidebar */}
         <aside className="lg:col-span-4">
           <div className="lg:pt-20">
-            <BookingPanel guide={guide} />
+            <BookingPanel guide={guide} guideUserId={guide.userId} />
           </div>
         </aside>
       </div>
+
+      <ReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        target={
+          {
+            kind: 'guide',
+            name: guide.name,
+            image: guide.avatar,
+            targetId: guide.id,
+          } as ReviewTarget
+        }
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['reviews', 'guide', id] })
+          // Re-fetch guide so the average rating + review count update.
+          queryClient.invalidateQueries({ queryKey: ['guide', id] })
+        }}
+      />
     </div>
   )
 }

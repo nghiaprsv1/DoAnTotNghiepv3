@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { Button } from '@components/ui/Button'
+import { reviewService } from '@services/reviewService'
+import type { ReviewTargetType } from '@services/reviewService'
 import { cn } from '@utils/cn'
 
 export type ReviewTargetKind = 'guide' | 'place' | 'trip' | 'member'
@@ -13,6 +15,8 @@ export interface ReviewTarget {
   image?: string
   /** Optional context line, e.g. "Tour: ..." */
   context?: string
+  /** Backend id of the target entity. Required to actually persist the review. */
+  targetId?: string
 }
 
 export interface ReviewSubmission {
@@ -26,6 +30,8 @@ interface Props {
   onClose: () => void
   target: ReviewTarget
   onSubmit?: (data: ReviewSubmission) => void
+  /** Fired after the review has been persisted by the BE (only when targetId is set). */
+  onSuccess?: () => void
 }
 
 const TARGET_LABEL: Record<ReviewTargetKind, string> = {
@@ -33,6 +39,14 @@ const TARGET_LABEL: Record<ReviewTargetKind, string> = {
   place: 'địa điểm',
   trip: 'chuyến đi',
   member: 'người đi cùng',
+}
+
+/** Map FE kind to BE ReviewTargetType (same name in BE). */
+const KIND_TO_TARGET_TYPE: Record<ReviewTargetKind, ReviewTargetType> = {
+  guide: 'guide',
+  place: 'place',
+  trip: 'trip',
+  member: 'member',
 }
 
 const TAGS_BY_KIND: Record<ReviewTargetKind, string[]> = {
@@ -44,12 +58,14 @@ const TAGS_BY_KIND: Record<ReviewTargetKind, string[]> = {
 
 const RATING_LABELS = ['', 'Tệ', 'Tạm', 'Khá', 'Tốt', 'Tuyệt vời']
 
-export function ReviewModal({ open, onClose, target, onSubmit }: Props) {
+export function ReviewModal({ open, onClose, target, onSubmit, onSuccess }: Props) {
   const [rating, setRating] = useState(0)
   const [hover, setHover] = useState(0)
   const [comment, setComment] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Reset on open
   useEffect(() => {
@@ -59,6 +75,8 @@ export function ReviewModal({ open, onClose, target, onSubmit }: Props) {
       setComment('')
       setTags([])
       setSubmitted(false)
+      setSubmitting(false)
+      setError(null)
     }
   }, [open])
 
@@ -83,24 +101,51 @@ export function ReviewModal({ open, onClose, target, onSubmit }: Props) {
   const toggleTag = (t: string) =>
     setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]))
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!valid) return
-    onSubmit?.({ rating, comment: comment.trim(), tags })
-    setSubmitted(true)
-    setTimeout(() => onClose(), 1500)
+    if (!valid || submitting) return
+    setError(null)
+    const data: ReviewSubmission = { rating, comment: comment.trim(), tags }
+
+    // Always notify the parent so it can do extra UX (refresh lists, etc).
+    onSubmit?.(data)
+
+    // If we know the target id, persist via BE; otherwise treat as preview-only.
+    if (target.targetId) {
+      setSubmitting(true)
+      try {
+        await reviewService.create({
+          targetType: KIND_TO_TARGET_TYPE[target.kind],
+          targetId: target.targetId,
+          rating: data.rating,
+          comment: data.comment,
+          tags: data.tags,
+        })
+        setSubmitted(true)
+        onSuccess?.()
+        setTimeout(() => onClose(), 1500)
+      } catch (err) {
+        const e2 = err as { response?: { data?: { message?: string } } }
+        setError(e2.response?.data?.message ?? 'Không gửi được đánh giá. Thử lại sau.')
+      } finally {
+        setSubmitting(false)
+      }
+    } else {
+      setSubmitted(true)
+      setTimeout(() => onClose(), 1500)
+    }
   }
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-on-surface/40 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-surface-container-lowest rounded-3xl shadow-editorial-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-surface-container-lowest rounded-t-3xl md:rounded-3xl shadow-editorial-lg w-full max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-y-auto safe-bottom"
       >
         {submitted ? (
           <div className="p-10 text-center">
@@ -239,13 +284,33 @@ export function ReviewModal({ open, onClose, target, onSubmit }: Props) {
                   Tối thiểu 10 ký tự, tối đa 1000.
                 </p>
               </div>
+
+              {error && (
+                <p className="text-error text-sm flex items-center gap-2">
+                  <Icon name="error" size={16} />
+                  {error}
+                </p>
+              )}
             </div>
 
             <footer className="flex items-center justify-end gap-2 p-4 border-t border-outline-variant/15">
-              <Button type="button" variant="ghost" size="md" rounded="full" onClick={onClose}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="md"
+                rounded="full"
+                onClick={onClose}
+                disabled={submitting}
+              >
                 Huỷ
               </Button>
-              <Button type="submit" size="md" rounded="full" disabled={!valid}>
+              <Button
+                type="submit"
+                size="md"
+                rounded="full"
+                disabled={!valid || submitting}
+                isLoading={submitting}
+              >
                 <Icon name="send" />
                 Gửi đánh giá
               </Button>

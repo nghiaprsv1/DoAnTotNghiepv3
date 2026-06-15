@@ -4,23 +4,30 @@ import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { Button } from '@components/ui/Button'
 import { ROUTES } from '@constants/routes'
-import { NOTIFICATION_ICON, NOTIFICATION_TONE } from '@constants/mockNotifications'
+import { NOTIFICATION_ICON, NOTIFICATION_TONE } from '@constants/notifications'
 import { useNotificationStore } from '@store/notificationStore'
+import {
+  useDeleteNotification,
+  useMarkNotificationRead,
+} from '@hooks/useNotifications'
 import { cn } from '@utils/cn'
 
 export function NotificationDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const items = useNotificationStore((s) => s.items)
-  const markAsRead = useNotificationStore((s) => s.markAsRead)
-  const remove = useNotificationStore((s) => s.remove)
+  const markRead = useMarkNotificationRead()
+  const removeMut = useDeleteNotification()
 
   const notification = items.find((n) => n.id === id)
 
-  // Auto mark as read on open
+  // Auto mark as read on open — persists to BE so the badge stays cleared
+  // after refresh.
   useEffect(() => {
-    if (notification && !notification.read) markAsRead(notification.id)
-  }, [notification, markAsRead])
+    if (notification && !notification.read) markRead.mutate(notification.id)
+    // markRead is stable from React Query; intentionally omit from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notification?.id, notification?.read])
 
   if (!notification) {
     return (
@@ -121,7 +128,7 @@ export function NotificationDetailPage() {
             <button
               type="button"
               onClick={() => {
-                remove(notification.id)
+                removeMut.mutate(notification.id)
                 navigate(ROUTES.NOTIFICATIONS)
               }}
               aria-label="Xoá thông báo"

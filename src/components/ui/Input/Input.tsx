@@ -46,7 +46,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full border-none rounded-2xl py-4 pr-4 text-on-surface font-medium',
+              // text-base (16px) prevents iOS Safari from zooming on focus.
+              'w-full border-none rounded-2xl py-3 md:py-4 pr-4 text-base text-on-surface font-medium',
               'placeholder:text-on-surface-variant/40',
               'focus:ring-2 focus:ring-primary/40 focus:outline-none transition-all',
               toneStyles[tone],

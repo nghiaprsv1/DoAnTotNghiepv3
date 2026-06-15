@@ -1,7 +1,7 @@
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { Rating } from './Rating'
-import type { GuideReview } from '@constants/mockGuideDetail'
+import type { GuideReview } from '@types/guideDashboard'
 
 interface Props {
   review: GuideReview

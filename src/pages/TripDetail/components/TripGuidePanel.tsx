@@ -8,9 +8,12 @@ interface Props {
   guide: TripGuide
   /** When true, shows actions like "Nhắn tin"; otherwise CTA "Liên hệ sau khi tham gia" */
   isJoined?: boolean
+  /** Current user id. When matches guide.id, hide "message guide" CTA (you are the guide). */
+  currentUserId?: string | null
 }
 
-export function TripGuidePanel({ guide, isJoined }: Props) {
+export function TripGuidePanel({ guide, isJoined, currentUserId }: Props) {
+  const isSelf = !!currentUserId && currentUserId === guide.id
   return (
     <section className="bg-surface-container-lowest p-6 md:p-7 rounded-3xl shadow-editorial border border-outline-variant/15">
       <div className="flex items-center justify-between mb-5">
@@ -91,9 +94,13 @@ export function TripGuidePanel({ guide, isJoined }: Props) {
         </div>
       )}
 
-      {isJoined ? (
+      {isSelf ? (
+        <p className="text-center text-xs text-on-surface-variant/80">
+          Bạn là hướng dẫn viên của chuyến đi này.
+        </p>
+      ) : isJoined ? (
         <Link
-          to={messageThreadPath('c1')}
+          to={messageThreadPath(guide.id)}
           className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-headline font-bold transition active:scale-[0.98]"
         >
           <Icon name="chat" />

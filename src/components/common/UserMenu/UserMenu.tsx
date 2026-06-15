@@ -4,6 +4,8 @@ import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { ROUTES } from '@constants/routes'
 import { useCurrentUserStore, isGuide } from '@store/currentUserStore'
+import { useAIAssistantStore } from '@store/aiAssistantStore'
+import { useAuth } from '@hooks/useAuth'
 import { useDisclosure } from '@hooks/useDisclosure'
 import { cn } from '@utils/cn'
 
@@ -16,6 +18,8 @@ interface MenuItem {
   guideOnly?: boolean
   /** Show only for non-guides (e.g. "Trở thành HDV") */
   travelerOnly?: boolean
+  /** Show only for admin role */
+  adminOnly?: boolean
   danger?: boolean
   divider?: boolean
 }
@@ -24,7 +28,16 @@ export function UserMenu() {
   const { isOpen, toggle, close } = useDisclosure()
   const navigate = useNavigate()
   const { name, email, avatar, role, toggleGuide } = useCurrentUserStore()
+  const aiEnabled = useAIAssistantStore((s) => s.enabled)
+  const setAIEnabled = useAIAssistantStore((s) => s.setEnabled)
+  const { logout } = useAuth()
   const ref = useRef<HTMLDivElement>(null)
+
+  const handleLogout = async () => {
+    close()
+    await logout()
+    navigate(ROUTES.LOGIN, { replace: true })
+  }
 
   // Close on outside click
   useEffect(() => {
@@ -47,14 +60,22 @@ export function UserMenu() {
   }, [isOpen, close])
 
   const guide = isGuide(role)
+  const isAdmin = role === 'admin'
 
   const items: MenuItem[] = [
     { icon: 'person', label: 'Hồ sơ của tôi', to: ROUTES.PROFILE },
     { icon: 'edit', label: 'Chỉnh sửa hồ sơ', to: ROUTES.PROFILE_EDIT },
     { icon: 'flight_takeoff', label: 'Chuyến đi của tôi', to: ROUTES.TRIPS },
     { icon: 'luggage', label: 'Booking của tôi', to: ROUTES.MY_BOOKINGS },
+    { icon: 'account_balance_wallet', label: 'Ví của tôi', to: ROUTES.WALLET },
     { icon: 'bookmark', label: 'Đã lưu', to: '/saved' },
     { divider: true, icon: '', label: '' },
+    {
+      icon: 'admin_panel_settings',
+      label: 'Bảng điều khiển Admin',
+      to: ROUTES.ADMIN,
+      adminOnly: true,
+    },
     {
       icon: 'workspace_premium',
       label: 'Quản lý Guide',
@@ -73,7 +94,7 @@ export function UserMenu() {
     {
       icon: 'logout',
       label: 'Đăng xuất',
-      onClick: () => navigate(ROUTES.LOGIN),
+      onClick: handleLogout,
       danger: true,
     },
   ]
@@ -125,6 +146,7 @@ export function UserMenu() {
               }
               if (it.guideOnly && !guide) return null
               if (it.travelerOnly && guide) return null
+              if (it.adminOnly && !isAdmin) return null
 
               const cls = cn(
                 'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition',
@@ -171,7 +193,29 @@ export function UserMenu() {
           </ul>
 
           {/* Demo role toggle (dev preview) */}
-          <div className="border-t border-outline-variant/15 p-3 bg-surface-container-low/50">
+          <div className="border-t border-outline-variant/15 p-3 bg-surface-container-low/50 space-y-2">
+            <button
+              type="button"
+              onClick={() => setAIEnabled(!aiEnabled)}
+              className="w-full inline-flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs text-on-surface-variant hover:bg-surface-container transition"
+              title="Bật/tắt bong bóng trợ lý AI"
+            >
+              <span className="font-bold uppercase tracking-widest inline-flex items-center gap-1.5">
+                <Icon name="auto_awesome" size={14} />
+                Trợ lý AI
+              </span>
+              <span
+                className={cn(
+                  'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
+                  aiEnabled
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-surface-container-high text-on-surface'
+                )}
+              >
+                {aiEnabled ? 'Bật' : 'Tắt'}
+              </span>
+            </button>
+
             <button
               type="button"
               onClick={() => toggleGuide()}

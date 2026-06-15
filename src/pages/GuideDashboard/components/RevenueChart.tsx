@@ -1,4 +1,4 @@
-import type { RevenueMonth } from '@constants/mockGuideDashboard'
+import type { RevenueMonth } from '@types/guideDashboard'
 
 interface Props {
   data: RevenueMonth[]

@@ -1,0 +1,1 @@
+export { GlobalUserSearch } from './GlobalUserSearch'
