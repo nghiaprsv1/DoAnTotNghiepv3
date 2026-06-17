@@ -17,7 +17,7 @@ import {
   WalletTxnType,
 } from './entities/wallet-transaction.entity';
 import { User } from '@/modules/user/entities/user.entity';
-import { Trip } from '@/modules/trip/entities/trip.entity';
+import { Trip, TripStatus } from '@/modules/trip/entities/trip.entity';
 import { TripMember, TripMemberRole } from '@/modules/trip/entities/trip-member.entity';
 import { Review, ReviewTargetType } from '@/modules/review/entities/review.entity';
 import { UserRole } from '@/common/enums/user-role.enum';
@@ -199,6 +199,8 @@ export class GuidesService {
       .createQueryBuilder('g')
       .leftJoinAndSelect('g.user', 'u')
       .where('g.status = :st', { st: GuideStatus.APPROVED });
+    // Không hiển thị chính mình trong danh sách/tìm kiếm HDV (không thể tự thuê).
+    if (viewerId) qb.andWhere('g.user_id != :viewerId', { viewerId });
     if (q.region) qb.andWhere(':r = ANY(g.regionKeys)', { r: q.region });
     if (q.category) qb.andWhere(':c = ANY(g.categoryKeys)', { c: q.category });
     if (q.availability) qb.andWhere('g.availability = :a', { a: q.availability });
@@ -227,6 +229,11 @@ export class GuidesService {
           availTo: q.availableTo,
         },
       );
+      // Loại thêm HDV đang bận vì chuyến đi (owner/member/guide) chồng ngày.
+      qb.andWhere(`NOT ${this.tripBusyExistsSql('g')}`, {
+        tripFrom: q.availableFrom,
+        tripTo: q.availableTo,
+      });
     }
     if (q.search) {
       qb.andWhere(
@@ -348,6 +355,88 @@ export class GuidesService {
   }
 
   /**
+   * Các khoảng ngày mà CHỦ TÀI KHOẢN của HDV (userId) đang "bận" vì một chuyến
+   * đi — bất kể vai trò: người tạo (owner), thành viên (member), hoặc HDV được
+   * thuê (guide_id) của chuyến. Chỉ tính chuyến chưa bị huỷ. Dùng cho cả lọc
+   * tìm kiếm, busyDates và chặn đặt trực tiếp.
+   *
+   * SQL con dùng trong NOT EXISTS để loại HDV bận khỏi kết quả tìm kiếm. Tham
+   * số: :uidCol = cột user_id của guide_profiles (g.user_id), :from/:to.
+   */
+  private tripBusyExistsSql(alias = 'g'): string {
+    return `EXISTS (
+      SELECT 1 FROM trips t
+      LEFT JOIN trip_members tm ON tm.trip_id = t.id AND tm.user_id = ${alias}.user_id
+      WHERE t.status <> 'cancelled'
+        AND (t.creator_id = ${alias}.user_id OR t.guide_id = ${alias}.user_id OR tm.user_id IS NOT NULL)
+        AND t.start_date <= :tripTo
+        AND t.end_date >= :tripFrom
+    )`;
+  }
+
+  /** Khoảng ngày bận vì trip (3 vai trò) của một userId — dùng cho busyDates. */
+  private async tripBusyRanges(
+    userId: string,
+  ): Promise<Array<{ startDate: string; endDate: string }>> {
+    const rows = await this.trips
+      .createQueryBuilder('t')
+      .select(['t.start_date AS "startDate"', 't.end_date AS "endDate"'])
+      .leftJoin(
+        TripMember,
+        'tm',
+        'tm.trip_id = t.id AND tm.user_id = :uid',
+        { uid: userId },
+      )
+      .where('t.status != :cancelled', { cancelled: TripStatus.CANCELLED })
+      .andWhere(
+        new Brackets((b) =>
+          b
+            .where('t.creator_id = :uid', { uid: userId })
+            .orWhere('t.guide_id = :uid', { uid: userId })
+            .orWhere('tm.user_id IS NOT NULL'),
+        ),
+      )
+      .getRawMany<{ startDate: string; endDate: string }>();
+    return rows.map((r) => ({
+      startDate: String(r.startDate),
+      endDate: String(r.endDate),
+    }));
+  }
+
+  /**
+   * Trả về true nếu userId của HDV đang bận vì một chuyến đi (owner/member/
+   * guide) chồng lấn khoảng [from, to]. Dùng để chặn đặt trực tiếp khi người
+   * dùng vào thẳng trang profile mà không qua bộ lọc theo ngày.
+   */
+  private async hasTripConflict(
+    userId: string,
+    from: string,
+    to: string,
+  ): Promise<boolean> {
+    const conflict = await this.trips
+      .createQueryBuilder('t')
+      .leftJoin(
+        TripMember,
+        'tm',
+        'tm.trip_id = t.id AND tm.user_id = :uid',
+        { uid: userId },
+      )
+      .where('t.status != :cancelled', { cancelled: TripStatus.CANCELLED })
+      .andWhere(
+        new Brackets((b) =>
+          b
+            .where('t.creator_id = :uid', { uid: userId })
+            .orWhere('t.guide_id = :uid', { uid: userId })
+            .orWhere('tm.user_id IS NOT NULL'),
+        ),
+      )
+      .andWhere('t.start_date <= :to', { to })
+      .andWhere('t.end_date >= :from', { from })
+      .getOne();
+    return !!conflict;
+  }
+
+  /**
    * Return guide's "busy" date ranges — bookings that are pending acceptance,
    * pending payment, or confirmed. The FE date picker uses these to disable
    * dates the guide is unavailable. Cancelled / rejected / expired / completed
@@ -365,10 +454,14 @@ export class GuidesService {
       .where('b.guide_id = :gid', { gid: guideId })
       .andWhere('b.status IN (:...st)', { st: ACTIVE_STATUSES })
       .getRawMany<{ startDate: string; endDate: string | null }>();
-    return rows.map((r) => ({
+    const bookingRanges = rows.map((r) => ({
       startDate: String(r.startDate),
       endDate: String(r.endDate ?? r.startDate),
     }));
+    // Gộp thêm các khoảng bận vì chuyến đi (owner/member/guide) của tài khoản HDV.
+    const profile = await this.profiles.findOne({ where: { id: guideId } });
+    const tripRanges = profile ? await this.tripBusyRanges(profile.userId) : [];
+    return [...bookingRanges, ...tripRanges];
   }
 
   async createBooking(travelerId: string, dto: CreateBookingDto): Promise<GuideBooking> {
@@ -440,6 +533,20 @@ export class GuidesService {
     if (conflict) {
       throw new BadRequestException(
         'Hướng dẫn viên đã có lịch bận trong khoảng ngày bạn chọn. Vui lòng chọn ngày khác.',
+      );
+    }
+
+    // Chặn đặt trực tiếp (vào thẳng profile, không qua bộ lọc theo ngày) khi tài
+    // khoản HDV đang bận vì một chuyến đi của chính họ — với tư cách owner,
+    // member, hoặc HDV được thuê — chồng lấn khoảng ngày yêu cầu.
+    const tripConflict = await this.hasTripConflict(
+      guide.userId,
+      bookingStart,
+      bookingEnd,
+    );
+    if (tripConflict) {
+      throw new BadRequestException(
+        'Hướng dẫn viên đang tham gia một chuyến đi khác trong khoảng ngày này nên không thể nhận tour. Vui lòng chọn ngày khác.',
       );
     }
 

@@ -8,3 +8,7 @@ models/
 .DS_Store
 .vscode/
 .idea/
+
+# Python cache (scripts test)
+__pycache__/
+*.pyc

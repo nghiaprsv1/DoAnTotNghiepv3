@@ -47,6 +47,11 @@ export function TripDetailPage() {
     }
   }, [baseTrip])
 
+  // Ghi nhận lượt xem chi tiết (độ hot + interaction). Chạy 1 lần mỗi khi đổi id.
+  useEffect(() => {
+    if (id) void tripService.trackView(id)
+  }, [id])
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto container-page py-16 md:py-20 text-center">
@@ -98,6 +103,9 @@ export function TripDetailPage() {
         setMemberCount((c) => c + 1)
       }
       queryClient.invalidateQueries({ queryKey: ['trip', id] })
+      // Đồng bộ cả danh sách Khám phá + "của tôi" để chuyến vừa tham gia rời
+      // khỏi mục Khám phá ngay (không chờ F5).
+      queryClient.invalidateQueries({ queryKey: ['trips'] })
     } catch (err) {
       const e = err as { response?: { data?: { message?: string } } }
       setActionError(e.response?.data?.message ?? 'Không gửi được yêu cầu tham gia.')
@@ -115,6 +123,8 @@ export function TripDetailPage() {
       setJoined(false)
       setMemberCount(res.memberCount)
       queryClient.invalidateQueries({ queryKey: ['trip', id] })
+      // Rời chuyến → nó được phép xuất hiện lại trong Khám phá.
+      queryClient.invalidateQueries({ queryKey: ['trips'] })
     } catch (err) {
       const e = err as { response?: { data?: { message?: string } } }
       setActionError(e.response?.data?.message ?? 'Không rời được chuyến đi.')

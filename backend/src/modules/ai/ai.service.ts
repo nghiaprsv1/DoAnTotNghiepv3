@@ -182,16 +182,26 @@ export class AiService {
    */
   private classifyDraftAction(query: string): 'edit_place' | 'finalize' | 'other' {
     const q = query.toLowerCase();
-    // Tín hiệu chỉnh sửa địa điểm.
-    if (/(thay|đổi|bỏ|xoá|xóa|thêm|thay thế|đổi lại|không thích|chán)/.test(q) &&
-        /(địa điểm|chỗ|nơi|điểm|ngày|hoạt động|thác|biển|chùa|núi|đảo|ăn|quán)/.test(q)) {
-      return 'edit_place';
-    }
-    // Tín hiệu chốt: có ngày tháng, số người, hoặc chi phí.
-    const hasDate = /\d{1,2}\s*[/\-.]\s*\d{1,2}|ngày\s+\d|tháng\s+\d|khởi hành|xuất phát|kết thúc/.test(q);
+    // Tín hiệu CHỐT (ưu tiên cao): ngày lịch dd/mm, "ngày N tháng M", số người,
+    // chi phí. Phải xét TRƯỚC edit_place để "đổi ngày thành 29/7" không bị hiểu
+    // nhầm là đổi địa điểm (vốn vì chữ "ngày" lẫn trong nhóm danh từ địa điểm).
+    const hasDate =
+      /\d{1,2}\s*[/\-.]\s*\d{1,2}|ngày\s+\d{1,2}\s+tháng|tháng\s+\d{1,2}|khởi hành|xuất phát|kết thúc/.test(
+        q,
+      );
     const hasMembers = /\d+\s*(người|thành viên|bạn|nguoi)|tối đa/.test(q);
     const hasCost = /\d+\s*(k|nghìn|ngàn|triệu|tr|đồng|vnd|đ)|chi phí|giá|ngân sách/.test(q);
     if (hasDate || hasMembers || hasCost) return 'finalize';
+
+    // Tín hiệu chỉnh sửa địa điểm (khi KHÔNG có tín hiệu chốt ở trên). Bỏ "ngày"
+    // khỏi nhóm danh từ địa điểm — nó nhập nhằng với "đổi ngày" (đổi lịch khởi
+    // hành). Câu sửa lịch trình theo ngày vẫn khớp qua danh từ thật (thác, biển…).
+    if (
+      /(thay|đổi|bỏ|xoá|xóa|thêm|thay thế|đổi lại|không thích|chán)/.test(q) &&
+      /(địa điểm|chỗ|nơi|điểm|hoạt động|thác|biển|chùa|núi|đảo|ăn|quán)/.test(q)
+    ) {
+      return 'edit_place';
+    }
     return 'other';
   }
 
@@ -561,39 +571,66 @@ Chỉ trả JSON, không markdown, không giải thích.`;
   // PLACEHOLDER_WRITERS
 
   /** Search trips by keyword/category/destination (PG ILIKE). */
-  private matchTrips(query: string): Promise<Trip[]> {
+  private async matchTrips(query: string): Promise<Trip[]> {
     const q = query.trim();
-    if (!q) return Promise.resolve([]);
+    if (!q) return [];
     // Tách token, bỏ stopword du lịch để cụm địa danh nổi lên (vd "tìm chuyến
-    // đi Đà Nẵng" → ["Đà","Nẵng"]). Khớp destination theo từng token.
+    // đi Đà Nẵng" → ["Đà","Nẵng"]). Bỏ thêm từ chỉ thời lượng/số người và token
+    // thuần số để chúng không lẫn vào điều kiện khớp destination.
     const STOP = new Set([
       'tìm', 'chuyến', 'đi', 'du', 'lịch', 'muốn', 'có', 'nào', 'không',
       'tôi', 'mình', 'cho', 'đến', 'ở', 'tại', 'một', 'các', 'và', 'the', 'trip',
+      'ngày', 'ngay', 'đêm', 'dem', 'tuần', 'tuan', 'người', 'nguoi', 'bạn',
     ]);
     const tokens = q
       .split(/\s+/)
-      .filter((w) => w.length >= 2 && !STOP.has(w.toLowerCase()));
+      .filter(
+        (w) => w.length >= 2 && !STOP.has(w.toLowerCase()) && !/^\d+$/.test(w),
+      );
 
     const qb = this.trips
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.category', 'cat')
       .leftJoinAndSelect('t.creator', 'creator')
       .where(
-        new Brackets((b) =>
-          b
-            .where('t.title ILIKE :kw', { kw: `%${q}%` })
+        new Brackets((b) => {
+          // Khớp NGUYÊN cụm trên các cột chính.
+          b.where('t.title ILIKE :kw', { kw: `%${q}%` })
             .orWhere('t.destination ILIKE :kw', { kw: `%${q}%` })
             .orWhere('t.description ILIKE :kw', { kw: `%${q}%` })
-            .orWhere(':q = ANY(t.tags)', { q }),
-        ),
+            .orWhere(':q = ANY(t.tags)', { q });
+          // Khớp theo token nhưng PHẢI đủ TẤT CẢ token trên destination. Nhờ
+          // vậy "Hà Nội" (Hà AND Nội) không còn lọt "Hà Giang" — vốn chỉ chung
+          // mỗi tiếng "Hà". Một token đơn chung tiền tố không tự kéo tỉnh khác vào.
+          if (tokens.length) {
+            b.orWhere(
+              new Brackets((tb) => {
+                tokens.forEach((tok, i) => {
+                  tb.andWhere(`t.destination ILIKE :tok${i}`, {
+                    [`tok${i}`]: `%${tok}%`,
+                  });
+                });
+              }),
+            );
+          }
+        }),
       );
 
-    // Thêm OR cho từng token vào destination (chỉ khi token có ý nghĩa).
-    tokens.forEach((tok, i) => {
-      qb.orWhere(`t.destination ILIKE :tok${i}`, { [`tok${i}`]: `%${tok}%` });
-    });
-
-    return qb.orderBy('t.rating', 'DESC').take(5).getMany();
+    // Lấy dư (rating cao trước) rồi XẾP HẠNG trong JS: khớp đúng cụm ở
+    // destination lên đầu, rồi tới title, rồi rating. Làm ở JS để tránh đặt
+    // tham số trong orderBy — TypeORM hiểu nhầm biểu thức CASE là alias khi
+    // kết hợp với take()+join (gây lỗi "(CASE WHEN t" alias not found).
+    const rows = await qb.orderBy('t.rating', 'DESC').take(20).getMany();
+    const lc = q.toLowerCase();
+    const rank = (t: Trip) =>
+      (t.destination ?? '').toLowerCase().includes(lc)
+        ? 2
+        : (t.title ?? '').toLowerCase().includes(lc)
+          ? 1
+          : 0;
+    return rows
+      .sort((a, b) => rank(b) - rank(a) || Number(b.rating) - Number(a.rating))
+      .slice(0, 5);
   }
 
   private fallback(query: string, trips: Trip[]): AskResult {
@@ -814,8 +851,13 @@ export function extractFinalizeSlots(query: string): {
 
   // Ngày dạng dd/mm[/yyyy] (cả - .) HOẶC "ngày 20 tháng 12".
   const dates: string[] = [];
-  for (const m of q.matchAll(/(\d{1,2})\s*[/\-.]\s*(\d{1,2})(?:\s*[/\-.]\s*(\d{2,4}))?/g)) {
-    const iso = parseVnDate(m[1], m[2], m[3]);
+  // Phần năm chỉ nhận khi dùng CÙNG dấu phân tách (\2) với d/m. Nhờ vậy dải ngày
+  // "29/7-30/7" không bị hiểu "-30" là năm (dấu nối "-" ≠ dấu trong ngày "/"),
+  // mà tách đúng thành 2 ngày 29/7 và 30/7.
+  for (const m of q.matchAll(
+    /(\d{1,2})\s*([/\-.])\s*(\d{1,2})(?:\s*\2\s*(\d{2,4}))?/g,
+  )) {
+    const iso = parseVnDate(m[1], m[3], m[4]);
     if (iso) dates.push(iso);
   }
   for (const m of q.matchAll(/ngày\s+(\d{1,2})\s+tháng\s+(\d{1,2})(?:\s+năm\s+(\d{4}))?/g)) {

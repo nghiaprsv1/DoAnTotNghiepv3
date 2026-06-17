@@ -5,6 +5,7 @@ import { Avatar } from '@components/ui/Avatar'
 import { Badge } from '@components/ui/Badge'
 import { tripDetailPath } from '@constants/routes'
 import { useToggleSaved } from '@hooks/useSaved'
+import { tripService } from '@services/tripService'
 import {
   computeTripStatus,
   tripStatusLabel,
@@ -38,6 +39,7 @@ export function TripCard({ trip }: TripCardProps) {
   return (
     <Link
       to={tripDetailPath(trip.id)}
+      onClick={() => void tripService.trackClick(trip.id)}
       className="group bg-surface-container-lowest rounded-xl overflow-hidden hover:shadow-editorial-lg transition-all duration-300 flex flex-col"
     >
       <div className="relative h-64 overflow-hidden">
@@ -114,6 +116,31 @@ export function TripCard({ trip }: TripCardProps) {
               {trip.priceFrom}
             </span>
           </div>
+        </div>
+
+        {/* DEBUG: thông số tính điểm gợi ý — hiển thị cho mọi chuyến để kiểm tra. */}
+        <div className="mt-3 pt-3 border-t border-dashed border-surface-container text-[11px] font-mono text-on-surface-variant space-y-1">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+            <span title="Lượt xem chi tiết">👁 view: {trip.viewCount ?? 0}</span>
+            <span title="Lượt click thẻ">🖱 click: {trip.clickCount ?? 0}</span>
+            <span title="Lượt yêu cầu tham gia">✋ req: {trip.requestCount ?? 0}</span>
+            <span title="Số thành viên">👥 mem: {trip.memberCount}/{trip.maxMembers}</span>
+          </div>
+          {trip.scoreBreakdown && (
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-primary">
+              <span title="Hợp sở thích (30%)">match: {trip.scoreBreakdown.match.toFixed(3)}</span>
+              <span title="Tương tác cá nhân (30%)">inter: {trip.scoreBreakdown.interaction.toFixed(3)}</span>
+              <span title="Độ hot toàn hệ thống (40%)">hot: {trip.scoreBreakdown.hot.toFixed(3)}</span>
+              <span className="font-bold" title="0.3·match + 0.3·inter + 0.4·hot">
+                = {trip.recommendScore?.toFixed(3)}
+              </span>
+            </div>
+          )}
+          {trip.recommendReasons && trip.recommendReasons.length > 0 && (
+            <div className="text-on-surface-variant/80">
+              💡 {trip.recommendReasons.join(' · ')}
+            </div>
+          )}
         </div>
       </div>
     </Link>

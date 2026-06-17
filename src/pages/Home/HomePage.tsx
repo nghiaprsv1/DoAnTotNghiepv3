@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { Badge } from '@components/ui/Badge'
 import { GuideCard, PostCard } from '@components/features'
@@ -5,6 +7,7 @@ import { LoadingState } from '@components/common/LoadingState'
 import { EmptyState } from '@components/common/EmptyState'
 import { useGuides } from '@hooks/useGuides'
 import { usePosts } from '@hooks/usePosts'
+import { ROUTES } from '@constants/routes'
 import type { Guide } from '@types/post'
 
 const HERO_IMG =
@@ -17,8 +20,20 @@ const stats = [
 ]
 
 export function HomePage() {
+  const navigate = useNavigate()
+  const [dest, setDest] = useState('')
+  const [date, setDate] = useState('')
   const { data: guidesRaw, isLoading: guidesLoading } = useGuides()
   const { data: posts, isLoading: postsLoading } = usePosts({ feed: 'foryou' })
+
+  // Đưa người dùng sang trang Chuyến đi kèm bộ lọc điểm đến + ngày khởi hành.
+  const handleSearch = () => {
+    const params = new URLSearchParams()
+    if (dest.trim()) params.set('destination', dest.trim())
+    if (date) params.set('date', date)
+    const qs = params.toString()
+    navigate(qs ? `${ROUTES.TRIPS}?${qs}` : ROUTES.TRIPS)
+  }
 
   // Adapt BE guide profile → simple Guide card shape (FE).
   const guides: Guide[] = (guidesRaw ?? []).slice(0, 4).map((g) => ({
@@ -54,16 +69,24 @@ export function HomePage() {
             </h1>
 
             {/* Search card — stacks vertically on mobile */}
-            <div className="flex flex-col md:flex-row gap-2 md:gap-4 p-2 bg-surface-container-lowest/90 backdrop-blur-xl rounded-2xl md:rounded-3xl editorial-shadow w-full md:max-w-2xl">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleSearch()
+              }}
+              className="flex flex-col md:flex-row gap-2 md:gap-4 p-2 bg-surface-container-lowest/90 backdrop-blur-xl rounded-2xl md:rounded-3xl editorial-shadow w-full md:max-w-2xl"
+            >
               <div className="flex-1 flex items-center px-3 md:px-4 py-2.5 md:py-3 gap-3 md:border-r border-surface-container">
                 <Icon name="location_on" className="text-primary" />
                 <div className="flex flex-col flex-1 min-w-0">
                   <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                    Destination
+                    Điểm đến
                   </span>
                   <input
                     type="text"
-                    placeholder="Where to?"
+                    value={dest}
+                    onChange={(e) => setDest(e.target.value)}
+                    placeholder="Bạn muốn đi đâu?"
                     className="bg-transparent border-none p-0 focus:ring-0 outline-none text-on-surface font-semibold placeholder:text-on-surface/40 w-full text-base"
                   />
                 </div>
@@ -72,22 +95,24 @@ export function HomePage() {
                 <Icon name="calendar_today" className="text-primary" />
                 <div className="flex flex-col flex-1 min-w-0">
                   <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                    When
+                    Ngày khởi hành
                   </span>
                   <input
-                    type="text"
-                    placeholder="Add dates"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
                     className="bg-transparent border-none p-0 focus:ring-0 outline-none text-on-surface font-semibold placeholder:text-on-surface/40 w-full text-base"
                   />
                 </div>
               </div>
               <button
-                type="button"
+                type="submit"
                 className="editorial-gradient text-on-primary font-headline font-bold px-6 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95"
               >
-                Search
+                <Icon name="search" size={18} />
+                Tìm kiếm
               </button>
-            </div>
+            </form>
 
             {/* Stats — 3 cols even on mobile, smaller text */}
             <div className="mt-8 md:mt-12 grid grid-cols-3 gap-4 md:flex md:gap-12 text-white">

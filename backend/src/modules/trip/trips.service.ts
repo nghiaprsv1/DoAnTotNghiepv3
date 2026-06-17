@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource, In, Repository } from 'typeorm';
 import { Trip, TripStatus } from './entities/trip.entity';
 import { TripMember, TripMemberRole } from './entities/trip-member.entity';
 import {
@@ -104,13 +104,28 @@ export class TripsService {
     qb.orderBy(`t.${q.sortBy ?? 'createdAt'}`, (q.sortOrder ?? 'desc').toUpperCase() as 'ASC' | 'DESC');
 
     const [data, total] = await qb.skip((page - 1) * pageSize).take(pageSize).getManyAndCount();
-    // Bulk-fetch saved set for the page so the FE can render bookmark state.
-    const savedSet = await this.saved.lookupSet(
-      viewerId ?? '',
-      'trip',
-      data.map((t) => t.id),
-    );
-    const decorated = data.map((t) => ({ ...t, isSaved: savedSet.has(t.id) }));
+    const ids = data.map((t) => t.id);
+    // Bulk-fetch saved set + the viewer's memberships for this page so the FE
+    // can render bookmark state AND filter out trips the viewer already joined
+    // (mục "Khám phá" chỉ nên hiện chuyến chưa tham gia). Một truy vấn gộp thay
+    // vì dựa vào 2 cache rời ở FE — tránh trip đang tham gia lọt vào Khám phá
+    // khi cache joined/created chưa kịp refetch.
+    const [savedSet, memberRows] = await Promise.all([
+      this.saved.lookupSet(viewerId ?? '', 'trip', ids),
+      viewerId && ids.length
+        ? this.members.find({
+            where: { userId: viewerId, tripId: In(ids) },
+            select: ['tripId'],
+          })
+        : Promise.resolve([] as TripMember[]),
+    ]);
+    const joinedSet = new Set(memberRows.map((m) => m.tripId));
+    const decorated = data.map((t) => ({
+      ...t,
+      isSaved: savedSet.has(t.id),
+      isOwner: !!viewerId && t.creatorId === viewerId,
+      isJoined: joinedSet.has(t.id),
+    }));
     return {
       data: decorated as Trip[],
       total,
@@ -617,15 +632,27 @@ export class TripsService {
     );
 
     const today = new Date().toISOString().slice(0, 10);
-    const candidates = await this.trips
+    const candQb = this.trips
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.category', 'cat')
       .leftJoinAndSelect('t.creator', 'creator')
       .leftJoinAndSelect('t.guide', 'guide')
       .where('t.status = :st', { st: TripStatus.PUBLISHED })
-      .andWhere('t.start_date >= :today', { today })
-      .take(120)
-      .getMany();
+      .andWhere('t.start_date >= :today', { today });
+    // Không gợi ý chuyến người dùng đã tạo (owner) hoặc đã tham gia (member) —
+    // mục gợi ý chỉ để khám phá chuyến MỚI, giống tab Khám phá.
+    if (viewerId) {
+      candQb
+        .andWhere('t.creator_id != :viewerId', { viewerId })
+        .andWhere(
+          `NOT EXISTS (
+            SELECT 1 FROM trip_members tm
+            WHERE tm.trip_id = t.id AND tm.user_id = :viewerId
+          )`,
+          { viewerId },
+        );
+    }
+    const candidates = await candQb.take(120).getMany();
 
     if (candidates.length === 0) return [];
 
@@ -669,19 +696,25 @@ export class TripsService {
         }
       }
 
-      // INTERACTION: views + 2*clicks + 4*favorite + 5*request (của chính user).
+      // INTERACTION: bão hoà bằng log để lượt xem/click có lợi ích giảm dần —
+      // tránh việc mở/bấm 1 chuyến nhiều lần làm điểm tăng vô hạn rồi đè các
+      // chuyến khác. favorite/request là ý định mạnh nên cộng thẳng (không lặp).
       const it = interMap.get(trip.id);
       const interRaw = it
-        ? it.views + it.clicks * 2 + (it.favorited ? 4 : 0) + (it.requested ? 5 : 0)
+        ? Math.log1p(it.views) +
+          Math.log1p(it.clicks) * 1.5 +
+          (it.favorited ? 2 : 0) +
+          (it.requested ? 2.5 : 0)
         : 0;
       if (interRaw > 0) reasons.push('Bạn từng quan tâm chuyến này');
 
-      // HOT: view_count + 2*click_count + 3*request_count + 2*member_count (toàn hệ thống).
+      // HOT: cũng bão hoà bằng log (view/click/request toàn hệ thống tăng không
+      // giới hạn). member_count nhỏ nên giữ tuyến tính nhẹ.
       const hotRaw =
-        (trip.viewCount ?? 0) +
-        (trip.clickCount ?? 0) * 2 +
-        (trip.requestCount ?? 0) * 3 +
-        (trip.memberCount ?? 0) * 2;
+        Math.log1p(trip.viewCount ?? 0) +
+        Math.log1p(trip.clickCount ?? 0) * 1.5 +
+        Math.log1p(trip.requestCount ?? 0) * 2 +
+        (trip.memberCount ?? 0) * 0.3;
 
       return { trip, matchRaw, interRaw, hotRaw, reasons };
     });

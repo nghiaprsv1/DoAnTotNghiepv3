@@ -8,7 +8,9 @@ import { ROUTES } from '@constants/routes'
 import { useAuthStore } from '@store/authStore'
 import { useCurrentUserStore } from '@store/currentUserStore'
 import { useUserProfile } from '@hooks/useUserProfile'
+import { usePlaceCategories, usePlaceProvinces } from '@hooks/usePlaces'
 import { userService } from '@services/userService'
+import { preferenceService, type UserPreferences } from '@services/preferenceService'
 import { uploadService } from '@services/uploadService'
 import {
   BasicInfoSection,
@@ -18,6 +20,7 @@ import {
   type BasicInfoValue,
   type ContactValue,
 } from './components/sections'
+import { RecommendPreferencesSection } from './components/RecommendPreferencesSection'
 import {
   DangerSection,
   PrivacySection,
@@ -32,6 +35,7 @@ const navAnchors = [
   { id: 'contact', label: 'Liên hệ', icon: 'contact_mail' },
   { id: 'travel', label: 'Hồ sơ du lịch', icon: 'explore' },
   { id: 'prefs', label: 'Sở thích', icon: 'favorite' },
+  { id: 'recommend', label: 'Gợi ý', icon: 'tune' },
   { id: 'social', label: 'Mạng xã hội', icon: 'link' },
   { id: 'privacy', label: 'Riêng tư', icon: 'lock' },
   { id: 'security', label: 'Bảo mật', icon: 'shield' },
@@ -43,6 +47,8 @@ export function EditProfilePage() {
   const currentUserId = useCurrentUserStore((s) => s.id)
   const updateCurrent = useCurrentUserStore((s) => s.update)
   const { data: profile, isLoading, refetch } = useUserProfile(currentUserId ?? undefined)
+  const { data: categoryOpts } = usePlaceCategories()
+  const { data: provinceOpts } = usePlaceProvinces()
 
   const [basic, setBasic] = useState<BasicInfoValue>({ name: '', handle: '', bio: '' })
   const [contact, setContact] = useState<ContactValue>({ email: '', phone: '', location: '' })
@@ -60,6 +66,13 @@ export function EditProfilePage() {
     terrainPrefs: [],
     activities: [],
     languages: [],
+  })
+  // Sở thích phục vụ gợi ý (bảng user_preferences).
+  const [recPrefs, setRecPrefs] = useState<UserPreferences>({
+    categories: [],
+    interests: [],
+    provinces: [],
+    budgetTier: null,
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +111,21 @@ export function EditProfilePage() {
       languages: profile.preferences?.languages ?? [],
     })
   }, [profile])
+
+  // Nạp sở thích gợi ý (user_preferences) một lần khi đã đăng nhập.
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let active = true
+    preferenceService
+      .getMine()
+      .then((p) => {
+        if (active) setRecPrefs(p)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [isAuthenticated])
 
   if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} replace />
 
@@ -149,6 +177,8 @@ export function EditProfilePage() {
         socialLinks: trimmedSocial,
         preferences: travel,
       })
+      // Lưu song song sở thích gợi ý (bảng user_preferences).
+      await preferenceService.upsertMine(recPrefs)
       // Reflect changes in the navbar/profile via currentUserStore.
       updateCurrent({
         name: updated.name,
@@ -291,6 +321,21 @@ export function EditProfilePage() {
               <PreferencesSection
                 value={travel}
                 onChange={(patch) => setTravel((t) => ({ ...t, ...patch }))}
+              />
+            </div>
+            <div id="recommend">
+              <RecommendPreferencesSection
+                value={recPrefs}
+                onChange={(patch) => setRecPrefs((p) => ({ ...p, ...patch }))}
+                categoryOptions={(categoryOpts ?? []).map((c) => ({
+                  value: c.key,
+                  label: c.label,
+                  icon: c.icon,
+                }))}
+                provinceOptions={(provinceOpts ?? []).map((p) => ({
+                  value: p.name,
+                  label: p.name,
+                }))}
               />
             </div>
             <div id="social">

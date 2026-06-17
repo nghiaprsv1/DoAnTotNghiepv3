@@ -75,6 +75,9 @@ interface BackendTrip {
   rating: string | number
   maxMembers: number
   memberCount: number
+  viewCount?: number
+  clickCount?: number
+  requestCount?: number
   creator: BackendUser
   guide?: BackendUser | null
   tags?: string[]
@@ -89,6 +92,7 @@ interface BackendTrip {
   isSaved?: boolean
   recommendScore?: number
   recommendReasons?: string[]
+  scoreBreakdown?: { match: number; interaction: number; hot: number }
 }
 
 const toMember = (m: BackendTripMember): TripMember => ({
@@ -149,6 +153,9 @@ export const adaptTrip = (b: BackendTrip): Trip => ({
   rating: Number(b.rating),
   maxMembers: b.maxMembers,
   memberCount: b.memberCount,
+  viewCount: b.viewCount,
+  clickCount: b.clickCount,
+  requestCount: b.requestCount,
   members: (b.members ?? []).map(toMember),
   creator: {
     id: b.creator.id,
@@ -175,6 +182,7 @@ export const adaptTrip = (b: BackendTrip): Trip => ({
   isSaved: b.isSaved,
   recommendScore: b.recommendScore,
   recommendReasons: b.recommendReasons,
+  scoreBreakdown: b.scoreBreakdown,
 })
 
 /** Payload for `POST /trips`. Mirrors backend `CreateTripDto`. */
@@ -227,6 +235,24 @@ export const tripService = {
   getById: async (id: string): Promise<Trip> => {
     const res = await axiosInstance.get<ApiResponse<BackendTrip>>(`/trips/${id}`)
     return adaptTrip(unwrap(res))
+  },
+
+  /** Ghi nhận 1 lượt xem chi tiết (tăng view_count + interaction). Best-effort. */
+  trackView: async (id: string): Promise<void> => {
+    try {
+      await axiosInstance.post(`/trips/${id}/view`)
+    } catch {
+      /* không chặn UX nếu tracking lỗi */
+    }
+  },
+
+  /** Ghi nhận 1 lượt click thẻ (tăng click_count + interaction). Best-effort. */
+  trackClick: async (id: string): Promise<void> => {
+    try {
+      await axiosInstance.post(`/trips/${id}/click`)
+    } catch {
+      /* không chặn UX nếu tracking lỗi */
+    }
   },
 
   create: async (payload: CreateTripPayload): Promise<Trip> => {

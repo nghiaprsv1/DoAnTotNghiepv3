@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { Button } from '@components/ui/Button'
 import { FilterBar, TripCard } from '@components/features'
@@ -38,22 +38,32 @@ const tabs: { key: TabKey; label: string; sublabel: string; icon: string }[] = [
 ]
 
 export function TripsPage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('joined')
+  // Đọc bộ lọc khởi tạo từ URL (đến từ ô tìm kiếm ở trang Home).
+  const [searchParams] = useSearchParams()
+  const initialDest = searchParams.get('destination') ?? ''
+  const initialDate = searchParams.get('date') ?? ''
+
+  const [activeTab, setActiveTab] = useState<TabKey>(
+    initialDest || initialDate ? 'explore' : 'joined',
+  )
   const [activeKey, setActiveKey] = useState('all')
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   // Bộ lọc theo điểm bắt đầu (origin) và điểm kết thúc (destination).
   const [originInput, setOriginInput] = useState('')
   const [originTerm, setOriginTerm] = useState('')
-  const [destInput, setDestInput] = useState('')
-  const [destTerm, setDestTerm] = useState('')
+  const [destInput, setDestInput] = useState(initialDest)
+  const [destTerm, setDestTerm] = useState(initialDest)
+  // Bộ lọc ngày khởi hành — tìm chuyến diễn ra (đang chạy) vào đúng ngày này.
+  const [dateInput, setDateInput] = useState(initialDate)
+  const [dateTerm, setDateTerm] = useState(initialDate)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const { data: trips, isLoading, isError, refetch } = useTrips({ search: searchTerm || undefined })
   const { data: joinedFromApi } = useMyJoinedTrips(isAuthenticated)
   const { data: createdFromApi } = useMyCreatedTrips(isAuthenticated)
 
-  const hasFilters = Boolean(searchTerm || originTerm || destTerm)
+  const hasFilters = Boolean(searchTerm || originTerm || destTerm || dateTerm)
 
   const clearFilters = () => {
     setSearchInput('')
@@ -62,6 +72,8 @@ export function TripsPage() {
     setOriginTerm('')
     setDestInput('')
     setDestTerm('')
+    setDateInput('')
+    setDateTerm('')
   }
 
   // Bộ lọc client-side thống nhất — áp cho CẢ HAI tab nên search hoạt động đồng
@@ -69,10 +81,13 @@ export function TripsPage() {
   // - searchTerm: khớp tên / điểm đến / mô tả / điểm bắt đầu.
   // - originTerm: khớp tên điểm bắt đầu (originName).
   // - destTerm: khớp điểm đến (destination).
+  // - dateTerm: chuyến diễn ra vào ngày này (startDate <= date <= endDate) —
+  //   kết hợp (AND) với điểm đến để tìm "đi <nơi> vào <ngày>".
   const matchFilters = useMemo(() => {
     const q = searchTerm.trim().toLowerCase()
     const o = originTerm.trim().toLowerCase()
     const d = destTerm.trim().toLowerCase()
+    const day = dateTerm.trim()
     return (t: Trip) => {
       if (q) {
         const hay = `${t.title} ${t.destination} ${t.description} ${t.originName ?? ''}`.toLowerCase()
@@ -80,9 +95,15 @@ export function TripsPage() {
       }
       if (o && !(t.originName ?? '').toLowerCase().includes(o)) return false
       if (d && !t.destination.toLowerCase().includes(d)) return false
+      if (day) {
+        // So sánh theo chuỗi yyyy-mm-dd (Trip.startDate/endDate là `date`).
+        const start = (t.startDate ?? '').slice(0, 10)
+        const end = (t.endDate ?? '').slice(0, 10)
+        if (!start || day < start || (end && day > end)) return false
+      }
       return true
     }
-  }, [searchTerm, originTerm, destTerm])
+  }, [searchTerm, originTerm, destTerm, dateTerm])
 
   // Trips list only surfaces trips that are still relevant to join: upcoming or
   // currently ongoing. Completed / cancelled trips are hidden here — users can
@@ -111,8 +132,14 @@ export function TripsPage() {
   )
 
   const joinedIds = useMemo(() => new Set(joinedAll.map((t) => t.id)), [joinedAll])
+  // Khám phá chỉ hiện chuyến người dùng CHƯA tham gia. Ưu tiên cờ isJoined/
+  // isOwner do backend gắn theo viewer (luôn đúng kể cả khi cache joined/created
+  // chưa refetch); joinedIds là lớp dự phòng từ 2 query "của tôi".
   const exploreTrips = useMemo(
-    () => allTrips.filter((t) => !joinedIds.has(t.id)).filter(matchFilters),
+    () =>
+      allTrips
+        .filter((t) => !t.isJoined && !t.isOwner && !joinedIds.has(t.id))
+        .filter(matchFilters),
     [allTrips, joinedIds, matchFilters],
   )
 
@@ -157,6 +184,7 @@ export function TripsPage() {
           setSearchTerm(searchInput.trim())
           setOriginTerm(originInput.trim())
           setDestTerm(destInput.trim())
+          setDateTerm(dateInput.trim())
         }}
       >
         <div className="flex items-center gap-2 md:gap-3">
@@ -181,8 +209,8 @@ export function TripsPage() {
             Tìm
           </Button>
         </div>
-        {/* Lọc theo điểm bắt đầu & điểm kết thúc */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 pt-1 border-t border-outline-variant/15">
+        {/* Lọc theo điểm bắt đầu & điểm kết thúc & ngày khởi hành */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3 pt-1 border-t border-outline-variant/15">
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container-low">
             <Icon name="trip_origin" size={16} className="text-primary shrink-0" />
             <input
@@ -199,6 +227,16 @@ export function TripsPage() {
               onChange={(e) => setDestInput(e.target.value)}
               placeholder="Điểm kết thúc (VD: Sa Pa)"
               className="flex-1 bg-transparent outline-none text-sm placeholder:text-on-surface-variant/60 min-w-0"
+            />
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container-low">
+            <Icon name="calendar_today" size={16} className="text-primary shrink-0" />
+            <input
+              type="date"
+              value={dateInput}
+              onChange={(e) => setDateInput(e.target.value)}
+              aria-label="Ngày khởi hành"
+              className="flex-1 bg-transparent outline-none text-sm text-on-surface placeholder:text-on-surface-variant/60 min-w-0"
             />
           </div>
         </div>
@@ -269,6 +307,7 @@ export function TripsPage() {
           trips={exploreFiltered}
           activeKey={activeKey}
           onChangeKey={setActiveKey}
+          hasFilters={hasFilters}
         />
       )}
     </div>
@@ -304,14 +343,18 @@ function ExploreSection({
   trips,
   activeKey,
   onChangeKey,
+  hasFilters,
 }: {
   trips: Trip[]
   activeKey: string
   onChangeKey: (key: string) => void
+  hasFilters: boolean
 }) {
   return (
     <>
-      <RecommendedTripsSection />
+      {/* Gợi ý cá nhân hoá chỉ hiện khi KHÔNG tìm kiếm — nếu không nó sẽ chèn
+          các chuyến không khớp bộ lọc (vd tìm "Đà Lạt" vẫn ra gợi ý Hà Nội). */}
+      {!hasFilters && <RecommendedTripsSection />}
 
       <section className="mb-6 md:mb-10">
         <FilterBar items={filterItems} activeKey={activeKey} onChange={onChangeKey} />

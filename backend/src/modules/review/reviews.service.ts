@@ -1,19 +1,30 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Review, ReviewTargetType } from './entities/review.entity';
 import { Like } from '@/modules/post/entities/like.entity';
+import { GuideProfile } from '@/modules/guide/entities/guide-profile.entity';
+import { Trip } from '@/modules/trip/entities/trip.entity';
+import { NotificationsService } from '@/modules/notification/notifications.service';
+import { NotificationType } from '@/modules/notification/entities/notification.entity';
 import { CreateReviewDto } from './dto/review.dto';
 
 @Injectable()
 export class ReviewsService {
+  private readonly logger = new Logger(ReviewsService.name);
+
   constructor(
     @InjectRepository(Review) private readonly repo: Repository<Review>,
     @InjectRepository(Like) private readonly likes: Repository<Like>,
+    @InjectRepository(GuideProfile)
+    private readonly guides: Repository<GuideProfile>,
+    @InjectRepository(Trip) private readonly trips: Repository<Trip>,
+    private readonly notifications: NotificationsService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -24,7 +35,7 @@ export class ReviewsService {
       if (!parent) throw new NotFoundException('Parent review not found');
       // Replies of replies are flattened up to the root (mirrors comments).
       const rootId = parent.parentId ?? parent.id;
-      return this.repo.save(
+      const reply = await this.repo.save(
         this.repo.create({
           authorId,
           targetType: parent.targetType,
@@ -35,6 +46,12 @@ export class ReviewsService {
           tags: dto.tags ?? [],
         }),
       );
+      // Báo cho TÁC GIẢ review gốc rằng có người (thường là HDV) đã phản hồi.
+      // Best-effort, không chặn việc lưu reply.
+      void this.notifyReplyToAuthor(parent, reply).catch((e) =>
+        this.logger.warn(`Không gửi được thông báo phản hồi: ${(e as Error).message}`),
+      );
+      return reply;
     }
     // Root review: enforce one rating per (author, target).
     const exists = await this.repo.findOne({
@@ -46,7 +63,81 @@ export class ReviewsService {
       },
     });
     if (exists) throw new ConflictException('Already reviewed this target');
-    return this.repo.save(this.repo.create({ ...dto, authorId }));
+    const saved = await this.repo.save(this.repo.create({ ...dto, authorId }));
+    // Best-effort: thông báo cho chủ đối tượng được đánh giá. Không để lỗi
+    // notification làm hỏng việc lưu review.
+    void this.notifyTargetOwner(saved).catch((e) =>
+      this.logger.warn(`Không gửi được thông báo đánh giá: ${(e as Error).message}`),
+    );
+    return saved;
+  }
+
+  /**
+   * Báo cho chủ sở hữu đối tượng vừa bị/được đánh giá (HDV hoặc người tạo
+   * chuyến). Bỏ qua nếu người tự đánh giá chính mình, hoặc target không có chủ
+   * rõ ràng (place không thuộc về user nào).
+   */
+  private async notifyTargetOwner(review: Review): Promise<void> {
+    let ownerId: string | undefined;
+    let title = 'Bạn có đánh giá mới';
+    let ctaHref: string | undefined;
+
+    if (review.targetType === ReviewTargetType.GUIDE) {
+      const profile = await this.guides.findOne({ where: { id: review.targetId } });
+      ownerId = profile?.userId;
+      title = `Bạn nhận được đánh giá ${review.rating}★`;
+      ctaHref = '/guide/dashboard';
+    } else if (review.targetType === ReviewTargetType.TRIP) {
+      const trip = await this.trips.findOne({ where: { id: review.targetId } });
+      ownerId = trip?.creatorId;
+      title = `Chuyến đi của bạn có đánh giá ${review.rating}★`;
+      ctaHref = `/trips/${review.targetId}`;
+    } else {
+      // place / member: chưa có chủ sở hữu rõ ràng để gửi → bỏ qua.
+      return;
+    }
+
+    if (!ownerId || ownerId === review.authorId) return;
+
+    const preview = review.comment?.trim()
+      ? review.comment.trim().slice(0, 140)
+      : `Bạn vừa nhận được ${review.rating} sao.`;
+    await this.notifications.push({
+      userId: ownerId,
+      actorId: review.authorId,
+      type: NotificationType.REVIEW_NEW,
+      title,
+      preview,
+      ctaLabel: 'Xem đánh giá',
+      ctaHref,
+    });
+  }
+
+  /**
+   * Báo cho tác giả review gốc khi có người phản hồi đánh giá của họ. Dùng cho
+   * luồng HDV trả lời đánh giá của khách. Bỏ qua nếu người phản hồi chính là
+   * tác giả (tự trả lời mình). CTA dẫn về trang đối tượng để xem hội thoại.
+   */
+  private async notifyReplyToAuthor(parent: Review, reply: Review): Promise<void> {
+    if (parent.authorId === reply.authorId) return;
+    let ctaHref: string | undefined;
+    if (parent.targetType === ReviewTargetType.GUIDE) {
+      ctaHref = `/guides/${parent.targetId}`;
+    } else if (parent.targetType === ReviewTargetType.TRIP) {
+      ctaHref = `/trips/${parent.targetId}`;
+    }
+    const preview = reply.comment?.trim()
+      ? reply.comment.trim().slice(0, 140)
+      : 'Hướng dẫn viên đã phản hồi đánh giá của bạn.';
+    await this.notifications.push({
+      userId: parent.authorId,
+      actorId: reply.authorId,
+      type: NotificationType.REVIEW_NEW,
+      title: 'Phản hồi mới cho đánh giá của bạn',
+      preview,
+      ctaLabel: 'Xem phản hồi',
+      ctaHref,
+    });
   }
 
   /**

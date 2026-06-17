@@ -113,6 +113,10 @@ export interface Trip {
   rating: number
   maxMembers: number
   memberCount: number
+  /** Độ hot — bộ đếm tương tác toàn hệ thống (dùng cho thuật toán gợi ý). */
+  viewCount?: number
+  clickCount?: number
+  requestCount?: number
   members: TripMember[]
   creator: TripMember
   /** Optional dedicated tour guide (separate from creator/members) */
@@ -133,4 +137,10 @@ export interface Trip {
   recommendScore?: number
   /** Human-readable reasons explaining why this trip was recommended. */
   recommendReasons?: string[]
+  /** Điểm thành phần đã chuẩn hoá [0,1] — chỉ có ở endpoint recommended. */
+  scoreBreakdown?: {
+    match: number
+    interaction: number
+    hot: number
+  }
 }
