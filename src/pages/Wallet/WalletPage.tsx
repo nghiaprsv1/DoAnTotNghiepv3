@@ -62,11 +62,14 @@ export function WalletPage() {
 
   const available = Number(data.wallet.balanceAvailable)
   const frozen = Number(data.wallet.balanceFrozen)
+  // CHỈ tính giao dịch nạp ĐÃ THÀNH CÔNG. Intent SePay tạo sẵn một bản ghi
+  // topup PENDING (chưa có tiền thật, chờ webhook), nếu cộng cả PENDING thì
+  // "Đã được nạp" tăng ngay khi bấm nạp dù tiền chưa về → sai lệch.
   const totalTopUp = data.transactions
-    .filter((t) => t.type === 'topup')
+    .filter((t) => t.type === 'topup' && t.status === 'success')
     .reduce((s, t) => s + Number(t.amount), 0)
   const totalSpent = data.transactions
-    .filter((t) => t.type === 'payment')
+    .filter((t) => t.type === 'payment' && t.status === 'success')
     .reduce((s, t) => s + Math.abs(Number(t.amount)), 0)
 
   return (
