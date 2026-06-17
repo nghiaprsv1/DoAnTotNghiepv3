@@ -101,6 +101,18 @@ export class Trip {
   @Column({ name: 'member_count', default: 1 })
   memberCount!: number;
 
+  /** Độ hot — tổng lượt xem chi tiết (tăng bởi POST /trips/:id/view). */
+  @Column({ name: 'view_count', default: 0 })
+  viewCount!: number;
+
+  /** Độ hot — tổng lượt click/mở thẻ (tăng bởi POST /trips/:id/click). */
+  @Column({ name: 'click_count', default: 0 })
+  clickCount!: number;
+
+  /** Độ hot — tổng lượt gửi yêu cầu tham gia (mọi trạng thái). */
+  @Column({ name: 'request_count', default: 0 })
+  requestCount!: number;
+
   @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'creator_id' })
   creator!: User;

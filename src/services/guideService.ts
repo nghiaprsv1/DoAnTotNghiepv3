@@ -107,4 +107,29 @@ export const guideService = {
     const res = await axiosInstance.post<ApiResponse<unknown>>('/guides/apply', body)
     return unwrap(res)
   },
+
+  /** The signed-in guide's own profile (any approval status). */
+  getMyProfile: async (): Promise<HireableGuide> => {
+    const res = await axiosInstance.get<ApiResponse<BackendGuide>>('/guides/me/profile')
+    return adaptGuide(unwrap(res))
+  },
+
+  /** Update the signed-in guide's own professional profile. */
+  updateMyProfile: async (body: {
+    region?: string
+    regionKeys?: string[]
+    categoryKeys?: string[]
+    languages?: string[]
+    specialties?: string[]
+    bio?: string
+    yearsExperience?: number
+    pricePerDay?: number
+    currency?: string
+    coverImage?: string
+    gallery?: string[]
+    highlights?: string[]
+  }): Promise<HireableGuide> => {
+    const res = await axiosInstance.put<ApiResponse<BackendGuide>>('/guides/me/profile', body)
+    return adaptGuide(unwrap(res))
+  },
 }

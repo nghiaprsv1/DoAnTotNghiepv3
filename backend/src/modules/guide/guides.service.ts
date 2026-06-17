@@ -26,6 +26,7 @@ import {
   GuideApplyDto,
   QueryGuidesDto,
   RespondBookingDto,
+  UpdateGuideProfileDto,
   WithdrawDto,
   WithdrawDecisionDto,
 } from './dto/guide.dto';
@@ -276,6 +277,33 @@ export class GuidesService {
       ? Object.assign(existing, dto, { status: GuideStatus.PENDING })
       : this.profiles.create({ ...dto, userId, status: GuideStatus.PENDING });
     return this.profiles.save(profile);
+  }
+
+  /** The signed-in guide's own profile (any status), decorated with live stats. */
+  async getMyProfile(userId: string): Promise<GuideProfile> {
+    const g = await this.profiles.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+    if (!g) throw new NotFoundException('Guide profile not found');
+    const statsMap = await this.loadStats([g.id]);
+    const stats = statsMap.get(g.id);
+    return stats ? this.decorateWithStats(g, stats) : g;
+  }
+
+  /**
+   * Update the signed-in guide's own professional profile (bio, specialties,
+   * languages, region, price, media). Editing does not change approval status.
+   */
+  async updateMyProfile(
+    userId: string,
+    dto: UpdateGuideProfileDto,
+  ): Promise<GuideProfile> {
+    const profile = await this.profiles.findOne({ where: { userId } });
+    if (!profile) throw new NotFoundException('Guide profile not found');
+    Object.assign(profile, dto);
+    await this.profiles.save(profile);
+    return this.getMyProfile(userId);
   }
 
   /** Admin only — approve / reject application. Spec §1.2. */

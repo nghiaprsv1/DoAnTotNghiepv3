@@ -14,6 +14,8 @@ export const buildTypeOrmOptions = (
   database: config.get<string>('DB_NAME', 'tripmate'),
   synchronize: config.get<string>('DB_SYNCHRONIZE') === 'true',
   logging: config.get<string>('DB_LOGGING') === 'true',
+  // Managed Postgres (Render/Neon/Supabase) yêu cầu SSL. Bật khi DB_SSL=true.
+  ssl: config.get<string>('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
   entities: [join(__dirname, '/**/*.entity.{js,ts}')],
   migrations: [join(__dirname, '/migrations/*.{js,ts}')],
   autoLoadEntities: true,

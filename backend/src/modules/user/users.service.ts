@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { Follow } from './entities/follow.entity';
+import { UserPreference } from './entities/user-preference.entity';
 import { Post } from '@/modules/post/entities/post.entity';
 import { NotificationsService } from '@/modules/notification/notifications.service';
 import { NotificationType } from '@/modules/notification/entities/notification.entity';
+import { UpsertUserPreferenceDto } from './dto/upsert-user-preference.dto';
 
 @Injectable()
 export class UsersService {
@@ -13,6 +15,8 @@ export class UsersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Follow) private readonly follows: Repository<Follow>,
     @InjectRepository(Post) private readonly posts: Repository<Post>,
+    @InjectRepository(UserPreference)
+    private readonly preferences: Repository<UserPreference>,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -79,6 +83,42 @@ export class UsersService {
   ): Promise<User> {
     await this.users.update(id, patch);
     return this.getProfile(id);
+  }
+
+  /* ──────────────── Structured AI-personalization preferences ──────────────── */
+
+  /**
+   * The caller's structured preference profile from the dedicated
+   * `user_preferences` table. Returns an empty (unsaved) shell when the user
+   * has never set any — callers can treat it as "no preferences yet".
+   */
+  async getPreferences(userId: string): Promise<UserPreference> {
+    const existing = await this.preferences.findOne({ where: { userId } });
+    if (existing) return existing;
+    return this.preferences.create({
+      userId,
+      categories: [],
+      interests: [],
+      provinces: [],
+    });
+  }
+
+  /** Create or update the caller's structured preference profile. */
+  async upsertPreferences(
+    userId: string,
+    dto: UpsertUserPreferenceDto,
+  ): Promise<UserPreference> {
+    const existing = await this.preferences.findOne({ where: { userId } });
+    const row = existing
+      ? Object.assign(existing, dto)
+      : this.preferences.create({
+          userId,
+          categories: dto.categories ?? [],
+          interests: dto.interests ?? [],
+          provinces: dto.provinces ?? [],
+          budgetTier: dto.budgetTier,
+        });
+    return this.preferences.save(row);
   }
 
   async follow(followerId: string, followingId: string): Promise<void> {

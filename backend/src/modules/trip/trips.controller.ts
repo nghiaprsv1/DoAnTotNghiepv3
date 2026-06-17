@@ -76,6 +76,30 @@ export class TripsController {
     return this.trips.findByIdForViewer(id, viewer?.sub);
   }
 
+  /** Track a detail-page view (độ hot). Public — guests count too. */
+  @Public()
+  @UseGuards(OptionalJwtAuthGuard)
+  @Post(':id/view')
+  async view(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() viewer?: JwtUserPayload,
+  ) {
+    await this.trips.recordView(id, viewer?.sub);
+    return null;
+  }
+
+  /** Track a card click in a list (độ hot). Public — guests count too. */
+  @Public()
+  @UseGuards(OptionalJwtAuthGuard)
+  @Post(':id/click')
+  async click(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() viewer?: JwtUserPayload,
+  ) {
+    await this.trips.recordClick(id, viewer?.sub);
+    return null;
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post()
   create(

@@ -10,6 +10,7 @@ import { RevenueTab } from './RevenueTab'
 import { BookingsTab } from './BookingsTab'
 import { ToursTab } from './ToursTab'
 import { ReviewsManageTab } from './ReviewsManageTab'
+import { GuideProfileTab } from './GuideProfileTab'
 
 const TABS = [
   { key: 'overview', label: 'Tổng quan', icon: 'dashboard' },
@@ -119,24 +120,7 @@ export function GuideDashboardPage() {
           {tab === 'bookings' && <BookingsTab />}
           {tab === 'tours' && <ToursTab />}
           {tab === 'reviews' && <ReviewsManageTab />}
-          {tab === 'profile' && (
-            <div className="bg-surface-container-low rounded-3xl p-10 text-center">
-              <Icon name="badge" className="text-3xl text-on-surface-variant mb-2" />
-              <h3 className="font-headline font-extrabold text-xl text-on-surface mb-1">
-                Hồ sơ Hướng dẫn viên
-              </h3>
-              <p className="text-on-surface-variant max-w-md mx-auto mb-5">
-                Cập nhật thông tin, vùng phụ trách, ngôn ngữ và chứng chỉ để khách dễ tìm bạn hơn.
-              </p>
-              <Link
-                to={ROUTES.PROFILE_EDIT}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full editorial-gradient text-on-primary font-headline font-bold shadow-editorial"
-              >
-                <Icon name="edit" size={18} />
-                Mở trình chỉnh sửa
-              </Link>
-            </div>
-          )}
+          {tab === 'profile' && <GuideProfileTab />}
         </main>
       </div>
     </div>

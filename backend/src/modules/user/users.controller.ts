@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '@/modules/auth/guards/optional-jwt-auth.guard';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpsertUserPreferenceDto } from './dto/upsert-user-preference.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -53,6 +54,22 @@ export class UsersController {
     @Body() dto: UpdateProfileDto,
   ) {
     return this.users.update(user.sub, dto);
+  }
+
+  /** Structured AI-personalization preferences. Must precede `:id` routes. */
+  @UseGuards(JwtAuthGuard)
+  @Get('me/preferences')
+  getMyPreferences(@CurrentUser() user: JwtUserPayload) {
+    return this.users.getPreferences(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('me/preferences')
+  upsertMyPreferences(
+    @CurrentUser() user: JwtUserPayload,
+    @Body() dto: UpsertUserPreferenceDto,
+  ) {
+    return this.users.upsertPreferences(user.sub, dto);
   }
 
   @UseGuards(JwtAuthGuard)

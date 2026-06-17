@@ -16,7 +16,9 @@ import {
 } from './entities/trip-join-request.entity';
 import { ItineraryDay } from './entities/itinerary-day.entity';
 import { ItineraryActivity } from './entities/itinerary-activity.entity';
+import { TripInteraction } from './entities/trip-interaction.entity';
 import { User, TravelPreferences } from '@/modules/user/entities/user.entity';
+import { UserPreference } from '@/modules/user/entities/user-preference.entity';
 import {
   CreateTripDto,
   ItineraryDayDto,
@@ -42,6 +44,10 @@ export class TripsService {
     @InjectRepository(ItineraryActivity)
     private readonly activities: Repository<ItineraryActivity>,
     @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(UserPreference)
+    private readonly userPrefs: Repository<UserPreference>,
+    @InjectRepository(TripInteraction)
+    private readonly interactions: Repository<TripInteraction>,
     private readonly dataSource: DataSource,
     private readonly notifications: NotificationsService,
     private readonly messages: MessagesService,
@@ -391,6 +397,9 @@ export class TripsService {
     const created = await this.requests.save(
       this.requests.create({ tripId, userId, message }),
     );
+    // Độ hot: đếm lượt request toàn hệ thống + đánh dấu interaction của user.
+    await this.trips.increment({ id: tripId }, 'requestCount', 1);
+    void this.markInteractionFlag(userId, tripId, 'requested').catch(() => undefined);
     void this.notifyJoinRequested(trip, userId).catch(() => undefined);
     return created;
   }
@@ -560,35 +569,52 @@ export class TripsService {
   /* ────────────────────────── Recommendations ────────────────────────── */
 
   /**
-   * Lightweight recommender that scores published trips against the viewer's
-   * stored TravelPreferences. Returns up to `limit` trips sorted by score,
-   * each annotated with the matched preference labels so the FE can show
-   * "vì sao gợi ý này".
+   * Weighted recommender. Điểm cuối của mỗi chuyến:
    *
-   * Scoring:
-   *  - +6 if trip's category matches one of the user's terrainPrefs / travelStyles
-   *  - +3 per overlapping tag (case-insensitive contains)
-   *  - +2 base for every published, future trip (so we always have something)
-   *  - +1 if the trip is by an author the user follows (TBD — out of scope here)
+   *   final = 0.3 * match + 0.3 * interaction + 0.4 * hot
+   *
+   * Trong đó (mỗi thành phần được min–max chuẩn hoá về [0,1] trên tập ứng viên):
+   *  - match       : độ hợp sở thích — category + tag + province khớp prefs/hashtag.
+   *  - interaction : tương tác của CHÍNH user với chuyến — views, clicks, favorite, request.
+   *  - hot         : độ hot toàn hệ thống — view_count, click_count, request_count, member.
+   *
+   * Trả về top `limit` chuyến (điểm cao lên đầu) kèm breakdown để giải thích.
    */
   async recommend(
     viewerId: string | undefined,
     limit = 6,
-  ): Promise<Array<Trip & { recommendScore: number; recommendReasons: string[] }>> {
+  ): Promise<
+    Array<
+      Trip & {
+        recommendScore: number;
+        recommendReasons: string[];
+        scoreBreakdown: { match: number; interaction: number; hot: number };
+      }
+    >
+  > {
     const user = viewerId
       ? await this.users.findOne({ where: { id: viewerId } })
       : null;
     const prefs: TravelPreferences = user?.preferences ?? {};
+    const structured = viewerId
+      ? await this.userPrefs.findOne({ where: { userId: viewerId } })
+      : null;
 
+    // ── Pool token sở thích (cho thành phần MATCH) ──
     const prefTokens = new Set<string>();
-    const addAll = (arr?: string[] | null) => {
+    const addAll = (arr?: string[] | null) =>
       arr?.forEach((s) => s && prefTokens.add(String(s).toLowerCase()));
-    };
     addAll(prefs.travelStyles);
     addAll(prefs.tripPurposes);
     addAll(prefs.terrainPrefs);
     addAll(prefs.activities);
     if (prefs.budgetLevel) prefTokens.add(prefs.budgetLevel.toLowerCase());
+    addAll(structured?.categories);
+    addAll(structured?.interests);
+    if (structured?.budgetTier) prefTokens.add(structured.budgetTier.toLowerCase());
+    const provinceTokens = new Set<string>(
+      (structured?.provinces ?? []).map((p) => String(p).toLowerCase()),
+    );
 
     const today = new Date().toISOString().slice(0, 10);
     const candidates = await this.trips
@@ -598,42 +624,156 @@ export class TripsService {
       .leftJoinAndSelect('t.guide', 'guide')
       .where('t.status = :st', { st: TripStatus.PUBLISHED })
       .andWhere('t.start_date >= :today', { today })
-      .orderBy('t.rating', 'DESC')
-      .take(60)
+      .take(120)
       .getMany();
 
-    const scored = candidates.map((trip) => {
+    if (candidates.length === 0) return [];
+
+    // ── Tương tác của user với các chuyến ứng viên (cho thành phần INTERACTION) ──
+    const interMap = new Map<string, TripInteraction>();
+    if (viewerId) {
+      const rows = await this.interactions.find({
+        where: { userId: viewerId },
+      });
+      rows.forEach((r) => interMap.set(r.tripId, r));
+    }
+
+    // ── Tính điểm thô từng thành phần ──
+    type Raw = {
+      trip: Trip;
+      matchRaw: number;
+      interRaw: number;
+      hotRaw: number;
+      reasons: string[];
+    };
+    const raws: Raw[] = candidates.map((trip) => {
       const reasons: string[] = [];
-      let score = 2;
+
+      // MATCH: category(+3) + mỗi tag khớp(+2) + province khớp(+3).
+      let matchRaw = 0;
       const catKey = trip.category?.key?.toLowerCase();
       if (catKey && prefTokens.has(catKey)) {
-        score += 6;
+        matchRaw += 3;
         reasons.push(`Hợp gu ${trip.category.label}`);
       }
-      const tagOverlap = (trip.tags ?? []).filter((t) =>
-        prefTokens.has(t.toLowerCase()),
-      );
+      const tagOverlap = (trip.tags ?? []).filter((t) => prefTokens.has(t.toLowerCase()));
       if (tagOverlap.length) {
-        score += tagOverlap.length * 3;
+        matchRaw += tagOverlap.length * 2;
         reasons.push(`Tag khớp: ${tagOverlap.slice(0, 3).join(', ')}`);
       }
-      // Rating tiebreaker — adds up to 2.
-      score += Math.min(2, Number(trip.rating) / 2.5);
-      return { ...trip, recommendScore: +score.toFixed(2), recommendReasons: reasons };
+      if (provinceTokens.size) {
+        const dest = (trip.destination ?? '').toLowerCase();
+        if ([...provinceTokens].some((p) => p && (dest.includes(p) || p.includes(dest)))) {
+          matchRaw += 3;
+          reasons.push(`Đúng nơi bạn thích: ${trip.destination}`);
+        }
+      }
+
+      // INTERACTION: views + 2*clicks + 4*favorite + 5*request (của chính user).
+      const it = interMap.get(trip.id);
+      const interRaw = it
+        ? it.views + it.clicks * 2 + (it.favorited ? 4 : 0) + (it.requested ? 5 : 0)
+        : 0;
+      if (interRaw > 0) reasons.push('Bạn từng quan tâm chuyến này');
+
+      // HOT: view_count + 2*click_count + 3*request_count + 2*member_count (toàn hệ thống).
+      const hotRaw =
+        (trip.viewCount ?? 0) +
+        (trip.clickCount ?? 0) * 2 +
+        (trip.requestCount ?? 0) * 3 +
+        (trip.memberCount ?? 0) * 2;
+
+      return { trip, matchRaw, interRaw, hotRaw, reasons };
+    });
+
+    // ── Min–max chuẩn hoá mỗi thành phần về [0,1] ──
+    const norm = (vals: number[]) => {
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+      const span = max - min;
+      return (v: number) => (span === 0 ? 0 : (v - min) / span);
+    };
+    const nMatch = norm(raws.map((r) => r.matchRaw));
+    const nInter = norm(raws.map((r) => r.interRaw));
+    const nHot = norm(raws.map((r) => r.hotRaw));
+
+    const scored = raws.map((r) => {
+      const match = +nMatch(r.matchRaw).toFixed(4);
+      const interaction = +nInter(r.interRaw).toFixed(4);
+      const hot = +nHot(r.hotRaw).toFixed(4);
+      const recommendScore = +(0.3 * match + 0.3 * interaction + 0.4 * hot).toFixed(4);
+      if (hot >= 0.75) r.reasons.push('Đang hot');
+      return {
+        ...r.trip,
+        recommendScore,
+        recommendReasons: r.reasons,
+        scoreBreakdown: { match, interaction, hot },
+      };
     });
 
     scored.sort((a, b) => b.recommendScore - a.recommendScore);
     const top = scored.slice(0, limit);
 
-    // Decorate isSaved for the bookmark button on the FE.
     const savedSet = await this.saved.lookupSet(
       viewerId ?? '',
       'trip',
       top.map((t) => t.id),
     );
-    return top.map((t) => ({
-      ...t,
-      isSaved: savedSet.has(t.id),
-    })) as Array<Trip & { recommendScore: number; recommendReasons: string[] }>;
+    return top.map((t) => ({ ...t, isSaved: savedSet.has(t.id) })) as Array<
+      Trip & {
+        recommendScore: number;
+        recommendReasons: string[];
+        scoreBreakdown: { match: number; interaction: number; hot: number };
+      }
+    >;
+  }
+
+  /* ───────────────────── Interaction tracking ───────────────────── */
+
+  /** Tăng view_count toàn hệ thống + ghi nhận view của user (nếu đăng nhập). */
+  async recordView(tripId: string, userId?: string): Promise<void> {
+    await this.trips.increment({ id: tripId }, 'viewCount', 1);
+    if (userId) await this.bumpInteraction(userId, tripId, 'views');
+  }
+
+  /** Tăng click_count toàn hệ thống + ghi nhận click của user (nếu đăng nhập). */
+  async recordClick(tripId: string, userId?: string): Promise<void> {
+    await this.trips.increment({ id: tripId }, 'clickCount', 1);
+    if (userId) await this.bumpInteraction(userId, tripId, 'clicks');
+  }
+
+  /** Upsert hàng trip_interactions và cộng dồn counter / set cờ. */
+  private async bumpInteraction(
+    userId: string,
+    tripId: string,
+    field: 'views' | 'clicks',
+  ): Promise<void> {
+    const row = await this.interactions.findOne({ where: { userId, tripId } });
+    if (row) {
+      row[field] += 1;
+      await this.interactions.save(row);
+    } else {
+      await this.interactions.save(
+        this.interactions.create({ userId, tripId, [field]: 1 }),
+      );
+    }
+  }
+
+  /** Đánh dấu user đã favorite / request một chuyến (gọi từ Saved / requestJoin). */
+  async markInteractionFlag(
+    userId: string,
+    tripId: string,
+    flag: 'favorited' | 'requested',
+    value = true,
+  ): Promise<void> {
+    const row = await this.interactions.findOne({ where: { userId, tripId } });
+    if (row) {
+      row[flag] = value;
+      await this.interactions.save(row);
+    } else {
+      await this.interactions.save(
+        this.interactions.create({ userId, tripId, [flag]: value }),
+      );
+    }
   }
 }

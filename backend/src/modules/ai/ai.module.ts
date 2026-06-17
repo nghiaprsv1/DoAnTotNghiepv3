@@ -5,6 +5,7 @@ import { Trip } from '@/modules/trip/entities/trip.entity';
 import { Category } from '@/modules/place/entities/category.entity';
 import { Province } from '@/modules/place/entities/province.entity';
 import { Place } from '@/modules/place/entities/place.entity';
+import { UserPreference } from '@/modules/user/entities/user-preference.entity';
 import { AiChatSession } from './entities/ai-chat-session.entity';
 import { AiChatMessage } from './entities/ai-chat-message.entity';
 import { AiService } from './ai.service';
@@ -18,7 +19,15 @@ import { TemplateProvider } from './llm/template.provider';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([Trip, Category, Province, Place, AiChatSession, AiChatMessage]),
+    TypeOrmModule.forFeature([
+      Trip,
+      Category,
+      Province,
+      Place,
+      AiChatSession,
+      AiChatMessage,
+      UserPreference,
+    ]),
     TripsModule,
   ],
   providers: [

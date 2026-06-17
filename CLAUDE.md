@@ -130,7 +130,7 @@ Trip { id, title, description, destination, category: TripCategory, coverImage, 
   startDate, endDate, durationDays, priceFrom, currency, rating, maxMembers, memberCount,
   members: TripMember[], creator: TripMember, guide?: TripGuide, tags, inclusions?,
   itinerary: ItineraryDay[], isJoined?, isOwner?, status?, joinRequestStatus?,
-  pendingRequests?, isSaved?, recommendScore?, recommendReasons? }
+  pendingRequests?, isSaved?, recommendScore?, recommendReasons?, scoreBreakdown? }
 TripGuide { id, name, avatar, region, rating, reviewCount?, yearsExperience?, languages?,
   specialties?, bio?, verified? }
 HireableGuide extends TripGuide { userId?, coverImage, gallery?, pricePerDay, currency,
@@ -274,8 +274,8 @@ useDebounce.ts      useDisclosure.ts
 | Module | Key entities | Notable |
 |---|---|---|
 | `auth` | User | JWT access 15m + refresh 7d |
-| `user` | User | follow/unfollow, TravelPreferences |
-| `trip` | Trip, TripMember, TripJoinRequest, ItineraryDay, ItineraryActivity | `assertNoDateConflict` chặn tạo trip trùng ngày với trip đã join |
+| `user` | User, UserPreference | follow/unfollow, TravelPreferences (JSONB) + `user_preferences` (cá nhân hoá gợi ý); API `GET/PUT /users/me/preferences` |
+| `trip` | Trip, TripMember, TripJoinRequest, ItineraryDay, ItineraryActivity, TripInteraction | `assertNoDateConflict` chặn tạo trip trùng ngày; **recommend() chấm điểm trọng số** 0.3 match + 0.3 interaction + 0.4 hot (min–max normalize); tracking `POST /trips/:id/view|click` |
 | `post` | Post, PostComment | feed foryou/following/trending |
 | `guide` | GuideProfile, GuideBooking, Wallet, WalletTransaction | `loadStats()` + `decorateWithStats()` + `attachStatsToGuides()` (public) — tính live rating/review từ DB |
 | `place` | Place, Category, Province | admin CRUD guard `@Roles(ADMIN)` |

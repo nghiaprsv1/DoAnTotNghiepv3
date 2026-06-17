@@ -24,6 +24,7 @@ import {
   GuideApplyDto,
   QueryGuidesDto,
   RespondBookingDto,
+  UpdateGuideProfileDto,
   WithdrawDto,
   WithdrawDecisionDto,
 } from './dto/guide.dto';
@@ -38,6 +39,23 @@ export class GuidesController {
   @Get()
   list(@Query() q: QueryGuidesDto, @CurrentUser() viewer?: JwtUserPayload) {
     return this.svc.list(q, viewer?.sub);
+  }
+
+  /** The signed-in guide's own profile (any status). Must precede `:id`. */
+  @UseGuards(JwtAuthGuard)
+  @Get('me/profile')
+  myProfile(@CurrentUser() user: JwtUserPayload) {
+    return this.svc.getMyProfile(user.sub);
+  }
+
+  /** Update the signed-in guide's own professional profile. */
+  @UseGuards(JwtAuthGuard)
+  @Put('me/profile')
+  updateMyProfile(
+    @CurrentUser() user: JwtUserPayload,
+    @Body() dto: UpdateGuideProfileDto,
+  ) {
+    return this.svc.updateMyProfile(user.sub, dto);
   }
 
   @Public()

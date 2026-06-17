@@ -11,11 +11,19 @@ let socket: Socket | null = null
 export function getChatSocket(token: string): Socket {
   if (socket && socket.connected) return socket
   if (!socket) {
-    // Vite dev server proxies HTTP traffic but socket.io needs an explicit URL
-    // when there is no proxy. Default to the API origin from axios config.
-    const apiUrl =
-      (typeof window !== 'undefined' && window.location.origin.replace(/:\d+$/, ':8080')) ||
-      'http://localhost:8080'
+    // Suy ra origin của Socket.IO từ VITE_API_BASE_URL (bỏ hậu tố "/api").
+    //  - Dev: VITE_API_BASE_URL trống → dùng origin hiện tại đổi port 8080.
+    //  - Prod: VITE_API_BASE_URL = https://api.example.com/api → origin = https://api.example.com
+    const apiBase = import.meta.env.VITE_API_BASE_URL as string | undefined
+    let apiUrl: string
+    if (apiBase && /^https?:\/\//.test(apiBase)) {
+      apiUrl = apiBase.replace(/\/api\/?$/, '')
+    } else {
+      apiUrl =
+        (typeof window !== 'undefined' &&
+          window.location.origin.replace(/:\d+$/, ':8080')) ||
+        'http://localhost:8080'
+    }
     socket = io(`${apiUrl}/chat`, {
       auth: { token },
       autoConnect: true,

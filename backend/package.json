@@ -20,6 +20,7 @@
     "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
     "seed:guides": "ts-node -r tsconfig-paths/register src/seed-guides.ts",
     "seed:trips": "ts-node -r tsconfig-paths/register src/seed-trips.ts",
+    "seed:ai-trips": "ts-node -r tsconfig-paths/register src/seed-ai-trips.ts",
     "seed:provinces": "ts-node -r tsconfig-paths/register src/seed-provinces.ts",
     "model:download": "node scripts/download-model.cjs"
   },

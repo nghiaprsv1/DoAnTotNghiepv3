@@ -11,6 +11,7 @@ import { LLM_PROVIDER, type LlmProvider } from './llm/llm-provider.interface';
 import { GeminiProvider } from './llm/gemini.provider';
 import { TripsService } from '@/modules/trip/trips.service';
 import { Place } from '@/modules/place/entities/place.entity';
+import { UserPreference } from '@/modules/user/entities/user-preference.entity';
 
 export interface ChatTurn {
   role: 'user' | 'assistant';
@@ -87,6 +88,8 @@ export class AiService {
     @InjectRepository(Place) private readonly places: Repository<Place>,
     @InjectRepository(AiChatSession) private readonly sessions: Repository<AiChatSession>,
     @InjectRepository(AiChatMessage) private readonly messages: Repository<AiChatMessage>,
+    @InjectRepository(UserPreference)
+    private readonly userPrefs: Repository<UserPreference>,
     private readonly config: ConfigService,
     @Inject(LLM_PROVIDER) private readonly llm: LlmProvider,
     private readonly gemini: GeminiProvider,
@@ -168,7 +171,7 @@ export class AiService {
     const province = await this.matchProvince(keyword, query);
 
     // BƯỚC 3 — TRẢ VỀ: viết câu trả lời / lộ trình.
-    return this.respond(query, history, task, trips, province);
+    return this.respond(query, history, task, trips, province, userId);
   }
 
   /**
@@ -487,6 +490,7 @@ Chỉ trả JSON, không markdown, không giải thích.`;
     task: ParsedTask,
     trips: Trip[],
     province: Province | null,
+    userId?: string,
   ): Promise<AskResult> {
     // Nếu user chỉ tìm chuyến và DB có sẵn → giới thiệu, không cần sinh lộ trình.
     if (task.intent === 'inform' && trips.length > 0) {
@@ -500,7 +504,7 @@ Chỉ trả JSON, không markdown, không giải thích.`;
 
     // User nhờ gợi ý / lập lộ trình → LLM sinh suggestion JSON.
     if (task.intent === 'suggest') {
-      const suggestion = await this.writeSuggestion(query, history, task, trips, province).catch(
+      const suggestion = await this.writeSuggestion(query, history, task, trips, province, userId).catch(
         () => null,
       );
       if (suggestion) {
@@ -693,6 +697,7 @@ Trả lời ngắn gọn (1-3 câu). Nếu user chưa rõ muốn gì, gợi mở
     task: ParsedTask,
     trips: Trip[],
     province: Province | null,
+    userId?: string,
   ): Promise<AiTripSuggestion | null> {
     const today = new Date().toISOString().slice(0, 10);
     // Bối cảnh từ chuyến thật (nếu có) để model bám dữ liệu sẵn có.
@@ -704,6 +709,8 @@ Trả lời ngắn gọn (1-3 câu). Nếu user chưa rõ muốn gì, gợi mở
             .join('\n')
         : 'Không có chuyến mẫu trong DB — tự dựng lộ trình hợp lý.';
     const pCtx = this.provinceContext(province);
+    // Hồ sơ sở thích cá nhân (bảng user_preferences) → cá nhân hoá lộ trình.
+    const prefCtx = await this.personalizationContext(userId);
 
     const system = `Bạn là chuyên gia lập lộ trình du lịch Việt Nam cho TripMate.
 TRẢ VỀ DUY NHẤT một JSON đúng schema (không markdown, không \`\`\`):
@@ -719,6 +726,7 @@ TRẢ VỀ DUY NHẤT một JSON đúng schema (không markdown, không \`\`\`):
   "maxMembers": số (4-12)
 }
 Ngày hôm nay: ${today}. Viết tiếng Việt. Lộ trình thực tế, mỗi ngày 2-4 hoạt động.
+Ưu tiên bám theo "SỞ THÍCH CÁ NHÂN" (nếu có) để chọn loại hình & hoạt động hợp gu.
 QUAN TRỌNG: CHỈ dùng các điểm đến và đặc sản có trong "THÔNG TIN THẬT" cho sẵn bên
 dưới. TUYỆT ĐỐI KHÔNG bịa tên thác, đảo, địa danh không có trong danh sách đó.`;
 
@@ -727,7 +735,7 @@ dưới. TUYỆT ĐỐI KHÔNG bịa tên thác, đảo, địa danh không có 
 Số ngày: ${task.days ?? '(tự đề xuất)'}
 Ngân sách: ${task.budget ? task.budget.toLocaleString('vi-VN') + ' VND' : '(không nêu)'}
 Sở thích: ${task.prefs ?? '(không nêu)'}
-${pCtx ? `\n${pCtx}\n` : ''}
+${prefCtx ? `${prefCtx}\n` : ''}${pCtx ? `\n${pCtx}\n` : ''}
 Chuyến tham khảo trong hệ thống:
 ${context}`;
 
@@ -744,6 +752,24 @@ ${context}`;
       suggestion.durationDays = task.days ?? suggestion.itinerary?.length ?? 3;
     }
     return suggestion;
+  }
+
+  /**
+   * Build a short "SỞ THÍCH CÁ NHÂN" block from the user's structured
+   * preference profile (user_preferences table). Returns '' for guests or when
+   * the user has not set any — so the prompt stays clean.
+   */
+  private async personalizationContext(userId?: string): Promise<string> {
+    if (!userId) return '';
+    const p = await this.userPrefs.findOne({ where: { userId } }).catch(() => null);
+    if (!p) return '';
+    const parts: string[] = [];
+    if (p.categories?.length) parts.push(`Loại hình thích: ${p.categories.join(', ')}`);
+    if (p.interests?.length) parts.push(`Quan tâm: ${p.interests.join(', ')}`);
+    if (p.provinces?.length) parts.push(`Hay đi: ${p.provinces.join(', ')}`);
+    if (p.budgetTier) parts.push(`Mức chi tiêu: ${p.budgetTier}`);
+    if (parts.length === 0) return '';
+    return `SỞ THÍCH CÁ NHÂN (ưu tiên bám theo):\n- ${parts.join('\n- ')}`;
   }
 
   /* ───────────────────────── Materialize a draft ───────────────────────── */
