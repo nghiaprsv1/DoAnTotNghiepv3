@@ -143,13 +143,14 @@ export class PaymentsService {
       const txnRepo = m.getRepository(WalletTransaction);
       // Idempotency: only match PENDING rows. A retried delivery for an
       // already-SUCCESS txn falls through and we return null below.
-      const pending = await txnRepo.findOne({
-        where: {
-          transferCode: code,
-          type: WalletTxnType.TOPUP,
-          status: WalletTxnStatus.PENDING,
-        },
-      });
+      // So khớp mã đã CHUẨN HOÁ: bỏ "_" ở cột DB (mã sinh ra có "_", nội dung
+      // CK ngân hàng có thể đã lọc mất "_") để hai bên luôn khớp.
+      const pending = await txnRepo
+        .createQueryBuilder('t')
+        .where("REPLACE(t.transfer_code, '_', '') = :code", { code })
+        .andWhere('t.type = :type', { type: WalletTxnType.TOPUP })
+        .andWhere('t.status = :status', { status: WalletTxnStatus.PENDING })
+        .getOne();
       if (!pending) {
         this.logger.warn(`SePay webhook: no pending intent for code ${code}`);
         return null;
@@ -232,10 +233,19 @@ export class PaymentsService {
     return `NAP_${prefix}${rand}`;
   }
 
-  /** Find the first NAP_XXXXXXXX token in the bank's transfer description. */
+  /**
+   * Find the NAP transfer code in the bank's description. Một số ngân hàng
+   * (vd MBBank) LỌC BỎ dấu "_" trong nội dung CK, nên mã "NAP_461BK1U9" về
+   * thành "NAP461BK1U9". Chấp nhận cả 2 dạng (có/không "_"), trả về dạng đã
+   * CHUẨN HOÁ (bỏ "_", in hoa) để so khớp nhất quán.
+   */
   private extractTransferCode(text: string): string | null {
-    const match = text.toUpperCase().match(/NAP_[A-Z0-9]{8}/);
-    return match?.[0] ?? null;
+    const upper = text.toUpperCase();
+    // Ưu tiên dạng có "_"; nếu không có thì bắt dạng liền (NAP + 8 ký tự).
+    const match =
+      upper.match(/NAP_?[A-Z0-9]{8}/)?.[0] ?? null;
+    if (!match) return null;
+    return match.replace(/_/g, ''); // chuẩn hoá: "NAP_461BK1U9" → "NAP461BK1U9"
   }
 
   /**
