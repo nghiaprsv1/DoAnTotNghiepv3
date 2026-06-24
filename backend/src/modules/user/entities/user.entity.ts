@@ -93,6 +93,13 @@ export class User {
   @Column({ default: false })
   verified!: boolean;
 
+  /** True once the user confirms their email via OTP at sign-up. */
+  @Column({ name: 'email_verified', default: false })
+  emailVerified!: boolean;
+
+  @Column({ name: 'email_verified_at', type: 'timestamp', nullable: true })
+  emailVerifiedAt?: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

@@ -8,7 +8,6 @@ import { ROUTES } from '@constants/routes'
 import { useAuthStore } from '@store/authStore'
 import { useCurrentUserStore } from '@store/currentUserStore'
 import { useUserProfile } from '@hooks/useUserProfile'
-import { usePlaceCategories, usePlaceProvinces } from '@hooks/usePlaces'
 import { userService } from '@services/userService'
 import { preferenceService, type UserPreferences } from '@services/preferenceService'
 import { uploadService } from '@services/uploadService'
@@ -47,8 +46,6 @@ export function EditProfilePage() {
   const currentUserId = useCurrentUserStore((s) => s.id)
   const updateCurrent = useCurrentUserStore((s) => s.update)
   const { data: profile, isLoading, refetch } = useUserProfile(currentUserId ?? undefined)
-  const { data: categoryOpts } = usePlaceCategories()
-  const { data: provinceOpts } = usePlaceProvinces()
 
   const [basic, setBasic] = useState<BasicInfoValue>({ name: '', handle: '', bio: '' })
   const [contact, setContact] = useState<ContactValue>({ email: '', phone: '', location: '' })
@@ -327,15 +324,6 @@ export function EditProfilePage() {
               <RecommendPreferencesSection
                 value={recPrefs}
                 onChange={(patch) => setRecPrefs((p) => ({ ...p, ...patch }))}
-                categoryOptions={(categoryOpts ?? []).map((c) => ({
-                  value: c.key,
-                  label: c.label,
-                  icon: c.icon,
-                }))}
-                provinceOptions={(provinceOpts ?? []).map((p) => ({
-                  value: p.name,
-                  label: p.name,
-                }))}
               />
             </div>
             <div id="social">

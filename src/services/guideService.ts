@@ -103,6 +103,7 @@ export const guideService = {
     currency: string
     idCardNumber: string
     idCardImage?: string
+    certificateImages?: string[]
   }): Promise<unknown> => {
     const res = await axiosInstance.post<ApiResponse<unknown>>('/guides/apply', body)
     return unwrap(res)

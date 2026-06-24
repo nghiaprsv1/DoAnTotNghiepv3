@@ -15,6 +15,7 @@ interface ErrorBody {
   statusCode: number;
   message: string;
   errors?: unknown;
+  [key: string]: unknown;
 }
 
 /**
@@ -32,6 +33,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let errors: unknown;
+    // Extra fields (e.g. `code`, `email`) carried on a thrown exception payload
+    // so the frontend can branch on them.
+    let extra: Record<string, unknown> = {};
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -46,6 +50,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         } else if (typeof b.message === 'string') {
           message = b.message;
         }
+        // Forward any custom fields beyond the standard ones.
+        const { message: _m, error: _e, statusCode: _s, ...rest } = b as Record<
+          string,
+          unknown
+        >;
+        extra = rest;
       }
     } else if (exception instanceof QueryFailedError) {
       status = HttpStatus.BAD_REQUEST;
@@ -62,6 +72,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       statusCode: status,
       message,
       ...(errors ? { errors } : {}),
+      ...extra,
     };
 
     res.status(status).json(body);

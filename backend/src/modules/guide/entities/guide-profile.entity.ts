@@ -96,6 +96,19 @@ export class GuideProfile {
   @Column({ name: 'id_card_image', length: 500, nullable: true, select: false })
   idCardImage?: string;
 
+  /**
+   * Ảnh chứng chỉ / thẻ hành nghề HDV (có thể nhiều mặt). `select: false` —
+   * chỉ admin pull ra khi duyệt hồ sơ, không lộ qua API công khai.
+   */
+  @Column({
+    name: 'certificate_images',
+    type: 'text',
+    array: true,
+    default: () => "'{}'::text[]",
+    select: false,
+  })
+  certificateImages!: string[];
+
   @Column({ type: 'enum', enum: GuideStatus, default: GuideStatus.PENDING })
   status!: GuideStatus;
 

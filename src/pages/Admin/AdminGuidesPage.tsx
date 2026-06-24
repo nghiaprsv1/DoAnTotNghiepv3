@@ -228,6 +228,33 @@ function DetailDialog({
             )}
           </Section>
 
+          <Section title="Chứng chỉ / thẻ hành nghề HDV">
+            {guide.certificateImages && guide.certificateImages.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {guide.certificateImages.map((src, i) => (
+                  <a
+                    key={i}
+                    href={src}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block"
+                  >
+                    <img
+                      src={src}
+                      alt={`Chứng chỉ ${i + 1}`}
+                      className="w-full aspect-[4/3] object-cover rounded-2xl border border-outline-variant/30 hover:ring-2 hover:ring-primary/40 transition"
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-on-surface-variant">
+                Ứng viên chưa tải lên ảnh chứng chỉ hành nghề.
+              </p>
+            )}
+          </Section>
+
           {(guide.coverImage || (guide.gallery && guide.gallery.length > 0)) && (
             <Section title="Ảnh đại diện & gallery">
               {guide.coverImage && (

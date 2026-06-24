@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { MultiImageUpload } from '@components/common/ImageUpload'
+import { userService } from '@services/userService'
 import { cn } from '@utils/cn'
 import type { PostVisibility } from '@types/post'
+import type { PublicProfile } from '@types/profile'
 
 interface Props {
   avatar: string
@@ -19,6 +21,7 @@ export function PostComposer({ avatar, onPost }: Props) {
   const [images, setImages] = useState<string[]>([])
   const [visibility, setVisibility] = useState<PostVisibility>('public')
   const [showImageUploader, setShowImageUploader] = useState(false)
+  const [showTagSearch, setShowTagSearch] = useState(false)
 
   const submit = () => {
     if (!text.trim()) return
@@ -27,7 +30,17 @@ export function PostComposer({ avatar, onPost }: Props) {
     setImages([])
     setVisibility('public')
     setShowImageUploader(false)
+    setShowTagSearch(false)
     setOpen(false)
+  }
+
+  // Insert a "@handle " mention into the post text.
+  const addMention = (handle: string) => {
+    setText((prev) => {
+      const sep = prev && !prev.endsWith(' ') && !prev.endsWith('\n') ? ' ' : ''
+      return `${prev}${sep}@${handle} `
+    })
+    setShowTagSearch(false)
   }
 
   return (
@@ -77,15 +90,24 @@ export function PostComposer({ avatar, onPost }: Props) {
             </div>
           )}
 
+          {showTagSearch && (
+            <div className="mt-3">
+              <TagSearch onPick={addMention} />
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-1 mt-3 pt-3 border-t border-outline-variant/15">
             <ToolButton
               icon="image"
               label={`Ảnh${images.length ? ` (${images.length}/${MAX_IMAGES})` : ''}`}
               onClick={() => setShowImageUploader((v) => !v)}
             />
-            <ToolButton icon="location_on" label="Vị trí" />
-            <ToolButton icon="mood" label="Cảm xúc" />
-            <ToolButton icon="alternate_email" label="Tag" />
+            <ToolButton
+              icon="alternate_email"
+              label="Tag"
+              active={showTagSearch}
+              onClick={() => setShowTagSearch((v) => !v)}
+            />
 
             <span className="w-px h-5 bg-outline-variant/30 mx-1" />
 
@@ -115,6 +137,7 @@ export function PostComposer({ avatar, onPost }: Props) {
                   setText('')
                   setImages([])
                   setShowImageUploader(false)
+                  setShowTagSearch(false)
                   setVisibility('public')
                 }}
                 className="px-4 py-2 rounded-full text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low"
@@ -141,19 +164,104 @@ function ToolButton({
   icon,
   label,
   onClick,
+  active,
 }: {
   icon: string
   label: string
   onClick?: () => void
+  active?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition"
+      className={cn(
+        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition',
+        active
+          ? 'text-primary bg-primary/10'
+          : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary',
+      )}
     >
       <Icon name={icon} size={18} />
       <span className="hidden sm:inline">{label}</span>
     </button>
+  )
+}
+
+/** Inline user picker for @-mentions — debounced live search, click to insert. */
+function TagSearch({ onPick }: { onPick: (handle: string) => void }) {
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState<PublicProfile[]>([])
+  const [loading, setLoading] = useState(false)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
+    const term = q.trim()
+    if (!term) {
+      setResults([])
+      return
+    }
+    setLoading(true)
+    const t = window.setTimeout(async () => {
+      try {
+        setResults(await userService.search(term, 8))
+      } catch {
+        setResults([])
+      } finally {
+        setLoading(false)
+      }
+    }, 250)
+    return () => window.clearTimeout(t)
+  }, [q])
+
+  return (
+    <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-outline-variant/15">
+        <Icon name="alternate_email" size={16} className="text-on-surface-variant" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Gắn thẻ ai đó theo tên hoặc handle…"
+          className="flex-1 bg-transparent outline-none text-sm placeholder:text-on-surface-variant/60"
+        />
+      </div>
+      {q.trim() && (
+        <div className="max-h-56 overflow-y-auto">
+          {loading ? (
+            <div className="px-3 py-3 text-sm text-on-surface-variant">Đang tìm…</div>
+          ) : results.length === 0 ? (
+            <div className="px-3 py-3 text-sm text-on-surface-variant">
+              Không tìm thấy người dùng nào.
+            </div>
+          ) : (
+            results.map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => onPick(u.handle)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-surface-container text-left transition"
+              >
+                <Avatar src={u.avatar} alt={u.name} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-headline font-bold text-on-surface truncate flex items-center gap-1">
+                    {u.name}
+                    {u.verified && (
+                      <Icon name="verified" className="text-primary fill" size={14} />
+                    )}
+                  </p>
+                  <p className="text-xs text-on-surface-variant truncate">@{u.handle}</p>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
   )
 }

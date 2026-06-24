@@ -38,10 +38,13 @@ interface BackendMessage {
 }
 
 const adaptConversation = (b: BackendConversation, currentUserId?: string): Conversation => {
+  // Defensive: some endpoints may return a conversation without the members
+  // relation hydrated — never let that throw and break navigation.
+  const members = b.members ?? []
   // For DMs, the "peer" is the other member; for groups we keep the same
   // helper but the UI should rely on groupName/groupAvatar/participants.
   const peerMember =
-    b.members.find((m) => m.userId !== currentUserId) ?? b.members[0]
+    members.find((m) => m.userId !== currentUserId) ?? members[0]
   const peer = {
     id: peerMember?.userId ?? '',
     name: peerMember?.user?.name ?? 'Người dùng',
@@ -54,7 +57,7 @@ const adaptConversation = (b: BackendConversation, currentUserId?: string): Conv
     groupName: b.groupName,
     groupAvatar: b.groupAvatar,
     tripId: b.tripId ?? undefined,
-    participants: b.members.map((m) => ({
+    participants: members.map((m) => ({
       id: m.userId,
       name: m.user?.name ?? 'Thành viên',
       avatar: m.user?.avatar ?? '',

@@ -2,53 +2,25 @@ import { useState } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { cn } from '@utils/cn'
 import { FormSection } from './FormSection'
-import { ChipSelect } from './ChipSelect'
-import { BUDGET_LEVELS } from './options'
 import type { UserPreferences } from '@services/preferenceService'
 
 interface Props {
   value: UserPreferences
   onChange: (patch: Partial<UserPreferences>) => void
-  categoryOptions: { value: string; label: string; icon?: string }[]
-  provinceOptions: { value: string; label: string }[]
 }
 
 /**
  * Sở thích phục vụ GỢI Ý chuyến đi — ghi vào bảng `user_preferences`.
- * Càng chọn đa dạng (danh mục + tỉnh + từ khoá), thuật toán càng khớp được
- * nhiều chuyến phù hợp trong tương lai.
+ * Chỉ thu thập từ khoá sở thích tự do (hashtag); thuật toán gợi ý dùng các
+ * từ khoá này để khớp với nội dung/đặc điểm chuyến đi.
  */
-export function RecommendPreferencesSection({
-  value,
-  onChange,
-  categoryOptions,
-  provinceOptions,
-}: Props) {
+export function RecommendPreferencesSection({ value, onChange }: Props) {
   return (
     <FormSection
       icon="tune"
       title="Sở thích để gợi ý chuyến đi"
-      description="Chọn càng đa dạng, hệ thống càng gợi ý được nhiều chuyến hợp gu bạn"
+      description="Thêm các từ khoá mô tả gu du lịch của bạn để nhận gợi ý hợp hơn"
     >
-      <Field
-        label="Loại hình du lịch yêu thích"
-        hint="Khớp với danh mục của chuyến đi"
-      >
-        <ChipSelect
-          options={categoryOptions}
-          value={value.categories}
-          onChange={(v) => onChange({ categories: v })}
-        />
-      </Field>
-
-      <Field label="Điểm đến mơ ước" hint="Tỉnh/thành bạn muốn được ưu tiên gợi ý">
-        <ChipSelect
-          options={provinceOptions}
-          value={value.provinces}
-          onChange={(v) => onChange({ provinces: v })}
-        />
-      </Field>
-
       <Field
         label="Từ khoá sở thích"
         hint="Nhập tự do: biển, lặn, cà phê, săn mây... (Enter để thêm)"
@@ -57,15 +29,6 @@ export function RecommendPreferencesSection({
           value={value.interests}
           onChange={(v) => onChange({ interests: v })}
           placeholder="vd: săn mây, hải sản, chụp ảnh..."
-        />
-      </Field>
-
-      <Field label="Mức ngân sách ưu tiên">
-        <ChipSelect
-          options={BUDGET_LEVELS}
-          value={value.budgetTier ? [value.budgetTier] : []}
-          onChange={(v) => onChange({ budgetTier: v[0] ?? null })}
-          single
         />
       </Field>
     </FormSection>

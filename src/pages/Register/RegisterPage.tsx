@@ -51,7 +51,11 @@ export function RegisterPage() {
         password,
         confirmPassword,
       })
-      navigate(ROUTES.HOME, { replace: true })
+      // Account created but not yet active — go confirm the email OTP.
+      navigate(ROUTES.VERIFY_EMAIL, {
+        replace: true,
+        state: { email: email.trim() },
+      })
     } catch (err) {
       const ax = err as AxiosError<{ message?: string }>
       setError(ax.response?.data?.message ?? 'Đăng ký thất bại. Vui lòng thử lại.')

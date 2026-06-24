@@ -11,6 +11,9 @@ const LoginPage = lazy(() => import('@pages/Login').then((m) => ({ default: m.Lo
 const RegisterPage = lazy(() =>
   import('@pages/Register').then((m) => ({ default: m.RegisterPage }))
 )
+const VerifyEmailPage = lazy(() =>
+  import('@pages/VerifyEmail').then((m) => ({ default: m.VerifyEmailPage }))
+)
 const ForgotPasswordPage = lazy(() =>
   import('@pages/ForgotPassword').then((m) => ({ default: m.ForgotPasswordPage }))
 )
@@ -107,6 +110,11 @@ const AdminPlacesPage = lazy(() =>
   import('@pages/Admin').then((m) => ({ default: m.AdminPlacesPage }))
 )
 
+// Chatbot RAG v2 (thử nghiệm) — trang standalone, độc lập với website hiện tại.
+const ChatbotV2Page = lazy(() =>
+  import('@pages/ChatbotV2').then((m) => ({ default: m.ChatbotV2Page }))
+)
+
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[400px]">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -175,6 +183,7 @@ export const router = createBrowserRouter([
     children: [
       { path: ROUTES.LOGIN, element: withSuspense(LoginPage) },
       { path: ROUTES.REGISTER, element: withSuspense(RegisterPage) },
+      { path: ROUTES.VERIFY_EMAIL, element: withSuspense(VerifyEmailPage) },
       { path: ROUTES.FORGOT_PASSWORD, element: withSuspense(ForgotPasswordPage) },
     ],
   },
@@ -198,6 +207,12 @@ export const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    // Chatbot RAG v2 (thử nghiệm) — standalone, KHÔNG dùng MainLayout/nav, không
+    // guard. Trang độc lập để demo pipeline RAG, không ảnh hưởng tính năng hiện tại.
+    path: ROUTES.CHATBOT_V2,
+    element: withSuspense(ChatbotV2Page),
   },
   {
     path: ROUTES.NOT_FOUND,

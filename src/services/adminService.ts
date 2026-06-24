@@ -131,6 +131,7 @@ export interface PendingGuide {
   availabilityLabel?: string
   idCardNumber?: string
   idCardImage?: string
+  certificateImages?: string[]
   status: string
   createdAt: string
   user?: { id: string; name: string; email: string; avatar?: string; phone?: string }

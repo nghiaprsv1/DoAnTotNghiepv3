@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { Button } from '@components/ui/Button'
+import { ImageUpload } from '@components/common/ImageUpload'
 import { useBroadcastNotification } from '@hooks/useAdmin'
 import { cn } from '@utils/cn'
 
@@ -104,13 +105,13 @@ export function AdminNotificationsPage() {
           </p>
         </Field>
 
-        <Field label="Ảnh kèm (URL, tuỳ chọn)">
-          <input
-            type="url"
-            value={image}
-            onChange={(e) => setImage(e.target.value)}
-            placeholder="https://..."
-            className="w-full px-4 py-2.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 outline-none focus:border-primary"
+        <Field label="Ảnh kèm (tuỳ chọn)">
+          <ImageUpload
+            label=""
+            value={image || null}
+            onChange={(url) => setImage(url ?? '')}
+            hint="Tải ảnh từ máy của bạn (banner, poster thông báo…)."
+            aspect="aspect-[16/9]"
           />
         </Field>
 

@@ -20,12 +20,30 @@ export class MessagesService {
   ) {}
 
   async listConversations(userId: string) {
-    const memberships = await this.members.find({
+    // Determine the user's conversation ids first, then load those conversations
+    // with a fully deterministic ordering. Ordering on a nested OneToMany via
+    // `find` is unreliable; and a NULL `lastMessageAt` (brand-new chat / trip
+    // group with no messages yet) needs explicit tiebreakers so the list isn't
+    // reshuffled on every reload.
+    const myMemberships = await this.members.find({
       where: { userId },
-      relations: ['conversation', 'conversation.members', 'conversation.members.user'],
-      order: { conversation: { lastMessageAt: 'DESC' } },
+      select: { conversationId: true },
     });
-    return memberships.map((m) => m.conversation);
+    const ids = myMemberships.map((m) => m.conversationId);
+    if (ids.length === 0) return [];
+
+    return this.convs
+      .createQueryBuilder('c')
+      .leftJoinAndSelect('c.members', 'm')
+      .leftJoinAndSelect('m.user', 'u')
+      .where('c.id IN (:...ids)', { ids })
+      // Most-recently-active first; NULLs (no messages yet) sink to the bottom.
+      // createdAt + id are stable tiebreakers so equal/NULL timestamps keep a
+      // consistent order across reloads.
+      .orderBy('c.lastMessageAt', 'DESC', 'NULLS LAST')
+      .addOrderBy('c.createdAt', 'DESC')
+      .addOrderBy('c.id', 'ASC')
+      .getMany();
   }
 
   async getOrCreateDirect(userId: string, peerId: string): Promise<Conversation> {
@@ -137,14 +155,70 @@ export class MessagesService {
 
   /** Get-or-create direct conversation, plus an initial page of messages. */
   async openDirectConversation(userId: string, peerId: string) {
-    const conv = await this.getOrCreateDirect(userId, peerId);
-    const messages = await this.listMessages(conv.id, userId, { limit: 50 });
-    return { conversation: conv, messages };
+    const created = await this.getOrCreateDirect(userId, peerId);
+    // Reload with members (+ eager user) so the client adapter has both
+    // participants — getOrCreateDirect returns a bare row without relations.
+    const conv = await this.convs.findOne({
+      where: { id: created.id },
+      relations: ['members', 'members.user'],
+    });
+    const messages = await this.listMessages(created.id, userId, { limit: 50 });
+    return { conversation: conv ?? created, messages };
   }
 
   /** Membership check for the realtime gateway. */
   async isMember(conversationId: string, userId: string): Promise<boolean> {
     return !!(await this.members.findOne({ where: { conversationId, userId } }));
+  }
+
+  /**
+   * Delete a single message. Only the original sender may delete it. Returns the
+   * conversation id + the refreshed last-message preview so callers can update
+   * list views and broadcast the change.
+   */
+  async deleteMessage(
+    messageId: string,
+    userId: string,
+  ): Promise<{ conversationId: string; lastMessage: string; lastMessageAt: Date | null }> {
+    const message = await this.messages.findOne({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.senderId !== userId) {
+      throw new ForbiddenException('Chỉ người gửi mới được xoá tin nhắn này');
+    }
+    const conversationId = message.conversationId;
+    await this.messages.delete({ id: messageId });
+
+    // If we just removed the most recent message, recompute the preview.
+    const latest = await this.messages.findOne({
+      where: { conversationId },
+      order: { createdAt: 'DESC' },
+    });
+    const lastMessage = latest?.content ?? '';
+    const lastMessageAt = latest?.createdAt ?? null;
+    await this.convs.update(
+      { id: conversationId },
+      { lastMessage, lastMessageAt: lastMessageAt ?? undefined },
+    );
+
+    return { conversationId, lastMessage, lastMessageAt };
+  }
+
+  /**
+   * Delete an entire conversation the caller belongs to (clears the whole thread
+   * with that person). Cascade removes messages + memberships. Returns the member
+   * ids so the gateway can notify everyone before the rooms vanish.
+   */
+  async deleteConversation(
+    conversationId: string,
+    userId: string,
+  ): Promise<{ conversationId: string; memberIds: string[] }> {
+    const member = await this.members.findOne({ where: { conversationId, userId } });
+    if (!member) throw new ForbiddenException();
+    const allMembers = await this.members.find({ where: { conversationId } });
+    const memberIds = allMembers.map((m) => m.userId);
+    // onDelete: CASCADE on members + messages clears the children.
+    await this.convs.delete({ id: conversationId });
+    return { conversationId, memberIds };
   }
 
   /** All conversation ids a user belongs to (used by gateway on connect). */

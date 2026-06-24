@@ -62,6 +62,20 @@ export class ForgotPasswordDto {
   email!: string;
 }
 
+export class VerifyEmailDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'Mã xác thực gồm 6 chữ số' })
+  code!: string;
+}
+
+export class ResendVerificationDto {
+  @IsEmail()
+  email!: string;
+}
+
 export class ResetPasswordDto {
   @IsString()
   token!: string;

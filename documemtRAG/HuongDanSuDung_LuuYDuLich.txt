@@ -1,0 +1,71 @@
+HƯỚNG DẪN SỬ DỤNG WEBSITE TRIPMATE VÀ NHỮNG LƯU Ý KHI ĐI DU LỊCH
+
+PHẦN A — GIỚI THIỆU TRIPMATE
+TripMate (còn gọi là TravelSocial) là nền tảng mạng xã hội du lịch kết hợp đặt và khám phá chuyến đi, hướng dẫn viên (HDV) và địa điểm tại Việt Nam. Trên TripMate, bạn có thể tìm các chuyến đi do người dùng khác tổ chức để tham gia, tự tạo chuyến đi mới và mời bạn bè, thuê hướng dẫn viên địa phương, khám phá địa điểm du lịch theo 63 tỉnh thành, chia sẻ bài viết và ảnh trải nghiệm trên bảng tin, cũng như trò chuyện trực tiếp với các thành viên khác. Mục tiêu của TripMate là giúp mọi chuyến đi được lên kế hoạch dễ dàng, an toàn và có thể chia sẻ cùng cộng đồng.
+
+PHẦN B — HƯỚNG DẪN SỬ DỤNG CÁC TÍNH NĂNG
+
+1. Đăng ký tài khoản và xác thực email
+Để bắt đầu, bạn vào trang Đăng ký và nhập họ tên, email và mật khẩu. Sau khi đăng ký, hệ thống sẽ gửi một mã OTP gồm 6 chữ số đến email của bạn. Bạn cần mở email, lấy mã OTP và nhập vào trang Xác thực email trong vòng 15 phút. Mỗi mã chỉ được thử tối đa 5 lần. Nếu chưa nhận được mã, bạn có thể bấm nút Gửi lại mã, nhưng phải chờ 60 giây giữa hai lần gửi. Tài khoản chỉ có thể đăng nhập sau khi email đã được xác thực thành công. Nếu bạn cố đăng nhập khi chưa xác thực, hệ thống sẽ báo lỗi và yêu cầu xác thực email trước.
+
+2. Đăng nhập và quên mật khẩu
+Sau khi xác thực email, bạn dùng email và mật khẩu để đăng nhập tại trang Đăng nhập. Nếu quên mật khẩu, hãy vào trang Quên mật khẩu để đặt lại. Phiên đăng nhập được duy trì tự động, bạn không cần đăng nhập lại thường xuyên vì hệ thống tự làm mới phiên khi cần.
+
+3. Tìm và tham gia chuyến đi
+Vào mục Chuyến đi để xem danh sách các chuyến đang mở. Bạn có thể lọc theo điểm đến, loại hình (biển, núi, ẩm thực, văn hoá, thành phố, đảo, phiêu lưu), số ngày và mức giá. Khi tìm thấy chuyến phù hợp, mở trang chi tiết để xem lịch trình từng ngày, thành viên, hướng dẫn viên và chi phí. Bấm nút Tham gia để gửi yêu cầu; người tạo chuyến (trưởng nhóm) sẽ duyệt yêu cầu của bạn. Khi được chấp nhận, bạn trở thành thành viên chính thức của chuyến.
+
+4. Tạo chuyến đi mới
+Người dùng đã đăng nhập có thể vào mục Tạo chuyến để tổ chức một chuyến đi. Bạn nhập tiêu đề, mô tả, điểm đến, loại hình, ảnh bìa, ngày khởi hành, ngày kết thúc, số người tối đa và chi phí dự kiến. Bạn cũng có thể thêm lịch trình chi tiết theo từng ngày, mỗi ngày gồm nhiều hoạt động kèm khung giờ. Lưu ý quan trọng: hệ thống sẽ chặn việc tạo chuyến nếu bạn đang tham gia một chuyến khác trùng khoảng ngày, nhằm tránh xung đột lịch. Sau khi tạo, bạn là trưởng nhóm và có quyền duyệt yêu cầu tham gia cũng như chỉnh sửa lịch trình.
+
+5. Khám phá địa điểm du lịch
+Mục Địa điểm cho phép bạn duyệt các điểm du lịch theo tỉnh thành và theo danh mục như biển, núi, văn hoá, ẩm thực, thành phố, đảo, thiên nhiên, di tích lịch sử và phiêu lưu. Mỗi địa điểm có mô tả, hình ảnh, đánh giá, thời điểm đẹp nhất để ghé thăm, giá vé tham khảo và các điểm nổi bật. Bạn có thể lưu địa điểm yêu thích để xem lại sau.
+
+6. Thuê hướng dẫn viên (HDV)
+Vào mục Hướng dẫn viên để tìm HDV địa phương theo khu vực, chuyên môn và ngôn ngữ. Mỗi HDV có hồ sơ gồm kinh nghiệm, đánh giá từ khách, giá theo ngày và tình trạng nhận khách (đang rảnh, bận, kín lịch). Bạn có thể đặt lịch với HDV; thông tin đặt được quản lý trong mục Đặt chỗ của tôi. Nếu bạn muốn trở thành HDV, hãy nộp hồ sơ qua mục Đăng ký làm HDV; quản trị viên sẽ xét duyệt.
+
+7. Ví và nạp tiền (SePay)
+Mục Ví hiển thị số dư và lịch sử giao dịch. Bạn có thể nạp tiền vào ví qua cổng SePay bằng cách quét mã QR ngân hàng. Sau khi chuyển khoản đúng nội dung, hệ thống tự động ghi nhận và cộng tiền vào ví. Số dư trong ví dùng để thanh toán các dịch vụ như đặt HDV. Hướng dẫn viên có thể rút tiền từ ví; yêu cầu rút sẽ được quản trị viên duyệt.
+
+8. Mạng xã hội và bảng tin
+Mục Bảng tin (Social) là nơi cộng đồng chia sẻ bài viết, hình ảnh và trải nghiệm du lịch. Bạn có thể đăng bài kèm ảnh, gắn thẻ, đặt chế độ hiển thị công khai hoặc chỉ bạn bè, thích và bình luận bài viết của người khác, lưu bài để đọc lại. Bạn cũng có thể theo dõi người dùng khác, xem trang cá nhân, danh sách người theo dõi và đang theo dõi.
+
+9. Tin nhắn trực tiếp
+Mục Tin nhắn cho phép bạn trò chuyện thời gian thực với thành viên khác hoặc trong nhóm chuyến đi. Tin nhắn được cập nhật ngay lập tức nhờ kết nối thời gian thực, phù hợp để trao đổi kế hoạch trước và trong chuyến đi.
+
+10. Trợ lý AI và gợi ý cá nhân hoá
+TripMate có trợ lý du lịch AI giúp bạn tìm chuyến phù hợp và gợi ý lộ trình mới dựa trên điểm đến, số ngày, ngân sách và sở thích. Bạn có thể cập nhật sở thích cá nhân trong phần Chỉnh sửa hồ sơ để hệ thống gợi ý chuyến đi hợp gu hơn. Khi trợ lý đề xuất một lộ trình, bạn có thể yêu cầu thay địa điểm, chốt ngày và số người, rồi bấm Tạo chuyến để biến lộ trình thành một chuyến đi thật.
+
+11. Lưu mục yêu thích
+Hầu hết các thẻ chuyến đi, hướng dẫn viên và bài viết đều có nút lưu hình trái tim. Những mục đã lưu được gom lại trong trang cá nhân ở tab Đã lưu, chia thành ba nhóm: Chuyến đi, Hướng dẫn viên và Bài viết.
+
+PHẦN C — NHỮNG LƯU Ý KHI ĐI DU LỊCH
+
+1. Giấy tờ tuỳ thân
+Luôn mang theo căn cước công dân hoặc hộ chiếu khi đi du lịch, đặc biệt khi nhận phòng khách sạn và khi đi máy bay. Nên chụp ảnh hoặc lưu bản sao giấy tờ quan trọng vào điện thoại và lưu thêm một bản trên email phòng khi mất bản gốc. Với chuyến đi nước ngoài, kiểm tra hạn hộ chiếu còn ít nhất 6 tháng và chuẩn bị visa nếu cần.
+
+2. Sức khoẻ và thuốc men
+Mang theo các loại thuốc cá nhân thường dùng, thuốc cảm, hạ sốt, tiêu hoá, chống dị ứng, băng cá nhân và thuốc chống say xe nếu bạn dễ say. Khi đi vùng núi cao như Sapa, Y Tý hay Hà Giang, hãy giữ ấm vì thời tiết lạnh và chênh lệch nhiệt độ ngày đêm lớn. Khi đi biển như Phú Quốc, Vũng Tàu, nhớ mang kem chống nắng, uống đủ nước và tránh nắng gắt buổi trưa.
+
+3. Thời tiết và mùa du lịch
+Tìm hiểu mùa đẹp nhất của điểm đến trước khi đi. Ví dụ, thác Bản Giốc ở Cao Bằng đẹp nhất vào tháng 8 đến tháng 11; mùa lúa chín ở Y Tý, Lào Cai vào khoảng tháng 8 đến tháng 9; mùa săn mây miền núi phía Bắc kéo dài từ tháng 9 đến tháng 4 năm sau. Các điểm biển nên đi vào mùa khô để tránh mưa bão. Luôn theo dõi dự báo thời tiết vài ngày trước khởi hành.
+
+4. An toàn cá nhân và tài sản
+Giữ tiền mặt và giấy tờ ở nhiều nơi khác nhau, không để tất cả trong một túi. Cảnh giác với móc túi ở nơi đông người, bến xe, chợ. Khi tham gia hoạt động mạo hiểm như trekking, leo núi, đi thuyền, hãy tuân thủ hướng dẫn an toàn, mặc áo phao và đi cùng người có kinh nghiệm hoặc hướng dẫn viên. Kiểm tra lịch thuỷ triều khi muốn đi bộ ra các đảo gần bờ như Hòn Bà ở Vũng Tàu.
+
+5. Tiền bạc và thanh toán
+Mang đủ tiền mặt cho các điểm chưa hỗ trợ chuyển khoản, đặc biệt ở vùng sâu vùng xa. Thông báo cho ngân hàng nếu bạn đi nước ngoài để tránh thẻ bị khoá. Trên TripMate, bạn có thể nạp sẵn tiền vào ví để thanh toán dịch vụ nhanh chóng. Luôn giữ lại biên lai và chụp màn hình xác nhận giao dịch.
+
+6. Hành lý gọn nhẹ
+Chỉ mang những thứ thật cần thiết. Ưu tiên quần áo phù hợp thời tiết điểm đến, giày đi bộ thoải mái, sạc dự phòng, áo mưa mỏng và túi chống nước cho thiết bị điện tử. Với chuyến nhiều ngày, sắp xếp hành lý theo từng ngày để dễ lấy đồ.
+
+7. Tôn trọng văn hoá và môi trường địa phương
+Khi đến các vùng có đồng bào dân tộc như người Tày, Nùng ở Cao Bằng hay các bản làng ở Lào Cai, hãy ăn mặc lịch sự, xin phép trước khi chụp ảnh người dân và tôn trọng phong tục địa phương. Không xả rác, không bẻ cây hái hoa, giữ gìn cảnh quan tại các điểm di sản như Công viên địa chất Non nước Cao Bằng. Ưu tiên trải nghiệm và tiêu dùng sản phẩm địa phương để hỗ trợ cộng đồng.
+
+8. Kết nối và liên lạc
+Lưu số điện thoại khẩn cấp, số của khách sạn và hướng dẫn viên. Ở vùng núi hoặc đảo, sóng điện thoại có thể yếu, nên tải sẵn bản đồ ngoại tuyến và thông tin lịch trình về điện thoại. Trên TripMate, bạn có thể dùng mục Tin nhắn để giữ liên lạc với nhóm và trao đổi khi có thay đổi kế hoạch.
+
+9. Lập kế hoạch và dự phòng
+Lên lịch trình rõ ràng nhưng để lại khoảng trống linh hoạt cho những thay đổi bất ngờ. Đặt phòng và phương tiện trước vào mùa cao điểm. Chuẩn bị phương án dự phòng cho thời tiết xấu. Mua bảo hiểm du lịch cho những chuyến đi xa hoặc có hoạt động mạo hiểm. Khi đi theo nhóm trên TripMate, hãy thống nhất trước về chi phí, điểm hẹn và phân công để chuyến đi suôn sẻ.
+
+10. Ẩm thực và sức khoẻ đường ruột
+Thử đặc sản địa phương là một phần thú vị của du lịch, ví dụ vịt quay bảy vị và bánh khảo ở Cao Bằng. Tuy nhiên, hãy chọn quán sạch sẽ, ăn chín uống sôi, mang theo nước uống đóng chai ở nơi nguồn nước không đảm bảo, và cẩn thận với đồ ăn lạ nếu bạn có cơ địa dễ dị ứng.

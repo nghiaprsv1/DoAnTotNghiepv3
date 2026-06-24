@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -84,5 +85,23 @@ export class MessagesController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
     return this.svc.markAsRead(id, user.sub);
+  }
+
+  /** Delete one message (sender only). */
+  @Delete('messages/:messageId')
+  deleteMessage(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('messageId', new ParseUUIDPipe()) messageId: string,
+  ) {
+    return this.svc.deleteMessage(messageId, user.sub);
+  }
+
+  /** Delete an entire conversation the caller is part of. */
+  @Delete(':id')
+  deleteConversation(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.svc.deleteConversation(id, user.sub);
   }
 }

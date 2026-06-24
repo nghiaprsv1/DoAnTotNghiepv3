@@ -35,6 +35,7 @@ export class GuideApplyDto {
   @IsString() currency!: string;
   @IsString() idCardNumber!: string;
   @IsOptional() @IsString() idCardImage?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) certificateImages?: string[];
 }
 
 export class UpdateGuideProfileDto {

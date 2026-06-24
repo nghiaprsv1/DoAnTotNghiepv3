@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@/modules/user/entities/user.entity';
 import { RefreshToken } from '@/modules/user/entities/refresh-token.entity';
+import { EmailVerification } from '@/modules/user/entities/email-verification.entity';
 import { UsersModule } from '@/modules/user/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -15,7 +16,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     ConfigModule,
     PassportModule,
     JwtModule.register({}),
-    TypeOrmModule.forFeature([User, RefreshToken]),
+    TypeOrmModule.forFeature([User, RefreshToken, EmailVerification]),
     UsersModule,
   ],
   controllers: [AuthController],

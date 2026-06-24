@@ -3,6 +3,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  VERIFY_EMAIL: '/verify-email',
   FORGOT_PASSWORD: '/forgot-password',
   TRIPS: '/trips',
   TRIP_DETAIL: '/trips/:id',
@@ -39,6 +40,7 @@ export const ROUTES = {
   ADMIN_PLACES: '/admin/places',
   DASHBOARD: '/dashboard',
   SETTINGS: '/settings',
+  CHATBOT_V2: '/chatbot-v2',
   NOT_FOUND: '*',
 } as const
 

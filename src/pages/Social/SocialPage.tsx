@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Icon } from '@components/ui/Icon'
-import { Avatar } from '@components/ui/Avatar'
 import { LoadingState } from '@components/common/LoadingState'
 import { EmptyState } from '@components/common/EmptyState'
 import { usePosts } from '@hooks/usePosts'
@@ -83,12 +82,7 @@ export function SocialPage() {
 
   return (
     <div className="max-w-screen-2xl mx-auto container-page py-4 md:py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_320px] gap-4 md:gap-6">
-        {/* Left rail */}
-        <aside className="hidden lg:block">
-          <LeftRail />
-        </aside>
-
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 md:gap-6">
         {/* Feed center */}
         <main className="space-y-4 md:space-y-6 max-w-2xl mx-auto w-full">
           {isAuthenticated && (
@@ -167,43 +161,5 @@ export function SocialPage() {
   )
 }
 
-function LeftRail() {
-  const { name, avatar } = useCurrentUserStore()
-  const items = [
-    { icon: 'home', label: 'Trang chủ', active: true },
-    { icon: 'explore', label: 'Khám phá' },
-    { icon: 'notifications', label: 'Thông báo' },
-    { icon: 'bookmark', label: 'Đã lưu' },
-    { icon: 'flight_takeoff', label: 'Chuyến đi' },
-    { icon: 'settings', label: 'Cài đặt' },
-  ]
-  return (
-    <div className="sticky top-24 bg-surface-container-lowest rounded-3xl shadow-editorial p-3 space-y-1">
-      <div className="flex items-center gap-3 p-3 mb-2">
-        <Avatar src={avatar} size="md" ring />
-        <div className="min-w-0">
-          <p className="font-headline font-extrabold text-on-surface truncate">
-            {name || 'Khách'}
-          </p>
-          <p className="text-xs text-on-surface-variant truncate">
-            {name ? '@traveler.vn' : 'Chưa đăng nhập'}
-          </p>
-        </div>
-      </div>
-      {items.map((it) => (
-        <button
-          key={it.label}
-          type="button"
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition ${
-            it.active
-              ? 'bg-primary/10 text-primary font-headline font-extrabold'
-              : 'text-on-surface hover:bg-surface-container-low'
-          }`}
-        >
-          <Icon name={it.icon} />
-          <span className="flex-1">{it.label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
+// LeftRail (Trang chủ / Khám phá / Thông báo / Đã lưu / Chuyến đi / Cài đặt)
+// tạm ẩn vì các mục điều hướng chưa hoạt động.

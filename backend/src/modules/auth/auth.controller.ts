@@ -15,6 +15,8 @@ import {
   LoginDto,
   RefreshDto,
   RegisterDto,
+  ResendVerificationDto,
+  VerifyEmailDto,
 } from './dto/auth.dto';
 import { Public } from '@/common/decorators/public.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
@@ -34,9 +36,25 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ResponseMessage('Registered')
+  @ResponseMessage('Vui lòng kiểm tra email để lấy mã xác thực')
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
+  }
+
+  @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Xác thực email thành công')
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.auth.verifyEmail(dto.email, dto.code);
+  }
+
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Đã gửi lại mã xác thực')
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.auth.resendVerification(dto.email);
   }
 
   @Public()

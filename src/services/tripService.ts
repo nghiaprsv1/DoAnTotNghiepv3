@@ -12,6 +12,21 @@ import type {
   TripMember,
 } from '@types/trip'
 
+/**
+ * Chống đếm trùng lượt view/click: cùng một (loại + tripId) bắn nhiều lần trong
+ * khoảng ngắn (StrictMode double-invoke ở dev, double-click, remount nhanh) chỉ
+ * tính 1. Khoá nhớ thời điểm bắn gần nhất; trong cửa sổ dedupe thì bỏ qua.
+ */
+const TRACK_DEDUPE_MS = 2000
+const lastTrack = new Map<string, number>()
+const shouldTrack = (key: string): boolean => {
+  const now = Date.now()
+  const prev = lastTrack.get(key)
+  if (prev && now - prev < TRACK_DEDUPE_MS) return false
+  lastTrack.set(key, now)
+  return true
+}
+
 interface BackendUser {
   id: string
   name: string
@@ -239,6 +254,7 @@ export const tripService = {
 
   /** Ghi nhận 1 lượt xem chi tiết (tăng view_count + interaction). Best-effort. */
   trackView: async (id: string): Promise<void> => {
+    if (!shouldTrack(`view:${id}`)) return
     try {
       await axiosInstance.post(`/trips/${id}/view`)
     } catch {
@@ -248,6 +264,7 @@ export const tripService = {
 
   /** Ghi nhận 1 lượt click thẻ (tăng click_count + interaction). Best-effort. */
   trackClick: async (id: string): Promise<void> => {
+    if (!shouldTrack(`click:${id}`)) return
     try {
       await axiosInstance.post(`/trips/${id}/click`)
     } catch {

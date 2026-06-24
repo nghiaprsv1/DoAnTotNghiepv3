@@ -28,7 +28,7 @@
 | State server | @tanstack/react-query 5.51 (staleTime 5m, retry 1, refetchOnWindowFocus false) |
 | HTTP | axios 1.7 — `axiosInstance` với interceptor tự gắn Bearer + auto-refresh 401 |
 | Styling | TailwindCSS 3.4 custom palette Material 3 + `cn()` (clsx+tailwind-merge) |
-| Backend | NestJS 10 + TypeORM 0.3 + PostgreSQL 16 + Passport JWT |
+| Backend | NestJS 10 + TypeORM 0.3 + PostgreSQL 16 + Passport JWT + Socket.IO (WS) + Nodemailer (OTP) |
 
 ---
 
@@ -48,7 +48,14 @@ npm run seed         # admin@tripmate.local/admin1234 · linh@tripmate.local/dem
 npm run seed:trips   # seed 200 trips (idempotent: skip nếu DB có ≥100)
 npm run seed:guides  # seed hồ sơ HDV demo
 npm run seed:provinces  # seed kho kiến thức 63 tỉnh (RAG cho AI)
+npm run rag:ingest      # [RAG v2] nạp documemtRAG/*.txt|md → chunk → Gemini embedding → vector store
 npm run model:download  # tải model LLM local (Qwen2.5-3B GGUF) về backend/models/
+
+# ⚠️ Lệch thực tế: các script seed* trong package.json đang trỏ tới file đã xóa
+#   (seed.ts, seed-guides.ts, seed-trips.ts, seed-ai-trips.ts, seed-provinces.ts).
+#   File seed duy nhất còn lại: backend/src/seed-curated-trips.ts (20 trips curated,
+#   idempotent theo title). Chạy bằng: ts-node -r tsconfig-paths/register src/seed-curated-trips.ts
+#   (script npm "seed:curated" được nhắc trong file nhưng CHƯA khai báo trong package.json).
 ```
 
 ---
@@ -72,7 +79,7 @@ src/
 ```
 
 ### Pages hiện có
-`Home, Login, Register, ForgotPassword, Trips, TripDetail, CreateTrip, EditTrip, Profile, EditProfile, Messages, Social, Places (PlaceDetail), Guides (GuideDetail, GuideApply, GuideDashboard), MyBookings (BookingDetail), Wallet, Notifications (NotificationDetail), UserProfile, NotFound`
+`Home, Login, Register, VerifyEmail, ForgotPassword, Trips, TripDetail, CreateTrip, EditTrip, Profile, EditProfile, Messages, Social, Places (PlaceDetail), Guides (GuideDetail, GuideApply, GuideDashboard), MyBookings (BookingDetail), Wallet, Notifications (NotificationDetail), UserProfile, NotFound`
 
 Admin (layout riêng `/admin/*`): `AdminOverview, AdminUsers, AdminGuides, AdminWithdrawals, AdminRevenue, AdminNotifications, AdminPosts, AdminTrips, **AdminPlaces**`
 
@@ -90,11 +97,12 @@ Admin (layout riêng `/admin/*`): `AdminOverview, AdminUsers, AdminGuides, Admin
 
 ```
 /                     HOME
-/login  /register  /forgot-password   (AuthLayout)
+/login  /register  /verify-email  /forgot-password   (AuthLayout)
 /trips              TRIPS
 /trips/create       TRIP_CREATE
 /trips/:id          TRIP_DETAIL
 /trips/:id/edit     TRIP_EDIT
+/trips/:id/joined   TRIP_JOINED
 /profile            PROFILE
 /profile/edit       PROFILE_EDIT
 /messages  /messages/:id
@@ -107,10 +115,12 @@ Admin (layout riêng `/admin/*`): `AdminOverview, AdminUsers, AdminGuides, Admin
 /users/:id  /users/:id/followers  /users/:id/following
 /admin  /admin/users  /admin/guides  /admin/withdrawals
 /admin/revenue  /admin/notifications  /admin/posts
-/admin/trips  /admin/places          ← MỚI
+/admin/trips  /admin/places
 ```
 
-**Helper functions:** `tripDetailPath(id)` `tripEditPath(id)` `guideDetailPath(id)` `messageThreadPath(id)` `bookingDetailPath(id)` `placeDetailPath(id)` `userProfilePath(id)` `userFollowersPath(id)` `userFollowingPath(id)` `notificationDetailPath(id)`
+**Helper functions:** `tripDetailPath(id)` `tripEditPath(id)` `tripJoinedPath(id)` `guideDetailPath(id)` `messageThreadPath(id)` `bookingDetailPath(id)` `placeDetailPath(id)` `userProfilePath(id)` `userFollowersPath(id)` `userFollowingPath(id)` `notificationDetailPath(id)`
+
+> **ProtectedRoute đã bật** (`src/routes/index.tsx`): nhóm public (Home, Trips, TripDetail, Social, Guides, Places, UserProfile) mở cho khách; nhóm cần đăng nhập (`/trips/create`, `/trips/:id/edit`, `/profile`, `/profile/edit`, `/messages*`, `/guides/apply`, `/guide/dashboard`, `/notifications*`, `/my-bookings`, `/bookings/:id`, `/wallet`) bọc `<ProtectedRoute>`; nhóm admin bọc `<ProtectedRoute roles={['admin']}>`.
 
 ---
 
@@ -122,6 +132,7 @@ User { id, email, name, avatar?, role: 'admin'|'user'|'moderator'|'guide', creat
 AuthTokens { accessToken, refreshToken }
 UserRole = 'admin' | 'user' | 'moderator' | 'guide'
 ```
+> BE `User` entity (`backend/.../user.entity.ts`) còn có: `handle, cover, bio, location, phone, socialLinks(jsonb), preferences(jsonb TravelPreferences), isLocked, verified, **emailVerified, emailVerifiedAt**`. Entity phụ: `RefreshToken` (lưu hash + rotate), `EmailVerification` (OTP hash), `Follow`, `UserPreference`.
 
 ### Trip (`trip.ts`)
 ```ts
@@ -196,7 +207,7 @@ export const xService = {
 ### Services hiện có
 | File | Endpoints wrap |
 |---|---|
-| `authService.ts` | `/auth/login|register|refresh|logout|profile` |
+| `authService.ts` | `/auth/login|register|verify-email|resend-verification|refresh|logout|profile|password` |
 | `tripService.ts` | `/trips` CRUD + join/leave/requests/itinerary/recommended |
 | `postService.ts` | `/posts` CRUD + like/comment/commentLike |
 | `guideService.ts` | `/guides` list/detail + bookings/wallet/apply |
@@ -212,6 +223,9 @@ export const xService = {
 | `reviewService.ts` | `/reviews` create/list/like/delete |
 | `uploadService.ts` | `/upload/image|images` |
 | `aiAssistantService.ts` | `/ai/ask` (query + history + draft) + `/ai/create-trip` |
+| `ragV2Service.ts` | `/rag-v2/status|ingest|ask` (chatbot RAG v2 thử nghiệm, độc lập) |
+| `preferenceService.ts` | `/users/me/preferences` get/update (cá nhân hoá gợi ý — `user_preferences`) |
+| `chatSocket.ts` | Socket.IO client cho messages realtime (kết nối WS gateway, không qua axios) |
 
 ### `placeService` — admin-specific exports
 ```ts
@@ -262,10 +276,14 @@ useDebounce.ts      useDisclosure.ts
 
 ## 11. Auth flow
 
-1. `authService.login/register` → `{ user, tokens }`
-2. `useAuthStore.setAuth(user, tokens)` + `currentUserStore.syncFromAuth(user)`
-3. `axiosInstance` request interceptor: gắn `Authorization: Bearer <accessToken>`
-4. Response interceptor 401: POST `/auth/refresh` → `setTokens` + retry; fail → `logout()` + redirect `/login`
+1. `authService.register` → BE tạo user `emailVerified: false`, **không trả token**, gửi OTP 6 số qua email → FE điều hướng `/verify-email`
+2. `authService.verifyEmail(email, code)` → đúng OTP → BE set `emailVerified: true` + trả `{ user, tokens }` (đăng nhập luôn). `resendVerification` gửi lại mã (cooldown 60s)
+3. `authService.login/register-after-verify` → `{ user, tokens }`. **Login bị chặn nếu chưa verify** (BE trả 401 code `EMAIL_NOT_VERIFIED`)
+4. `useAuthStore.setAuth(user, tokens)` + `currentUserStore.syncFromAuth(user)`
+5. `axiosInstance` request interceptor: gắn `Authorization: Bearer <accessToken>`
+6. Response interceptor 401: POST `/auth/refresh` → `setTokens` + retry; fail → `logout()` + redirect `/login`
+
+> OTP: TTL 15', tối đa 5 lần thử/mã, cooldown resend 60s. BE lưu **hash** OTP (`EmailVerification`) + hash refresh token (`RefreshToken`, rotate mỗi lần refresh).
 
 ---
 
@@ -273,7 +291,7 @@ useDebounce.ts      useDisclosure.ts
 
 | Module | Key entities | Notable |
 |---|---|---|
-| `auth` | User | JWT access 15m + refresh 7d |
+| `auth` | User, RefreshToken, EmailVerification | JWT access 15m + refresh 7d (rotate, lưu hash); **xác thực email OTP 6 số** trước khi cho login |
 | `user` | User, UserPreference | follow/unfollow, TravelPreferences (JSONB) + `user_preferences` (cá nhân hoá gợi ý); API `GET/PUT /users/me/preferences` |
 | `trip` | Trip, TripMember, TripJoinRequest, ItineraryDay, ItineraryActivity, TripInteraction | `assertNoDateConflict` chặn tạo trip trùng ngày; **recommend() chấm điểm trọng số** 0.3 match + 0.3 interaction + 0.4 hot (min–max normalize); tracking `POST /trips/:id/view|click` |
 | `post` | Post, PostComment | feed foryou/following/trending |
@@ -285,7 +303,9 @@ useDebounce.ts      useDisclosure.ts
 | `review` | Review | polymorphic target: place|trip|guide|member |
 | `payment` | WalletTransaction | SePay webhook |
 | `upload` | — | Firebase Storage khi có env, fallback local `uploads/` |
+| `mail` | — | Nodemailer gửi OTP xác thực email. Cấu hình `SMTP_*`; **không có SMTP → log mã ra console** (dev/demo vẫn chạy). `MailService.sendVerificationCode()` |
 | `ai` | AiChatSession, AiChatMessage | **Pipeline 3 bước (HIỂU→LÀM→TRẢ) + RAG 63 tỉnh + multi-provider LLM (local/gemini/template)**. Xem §AI bên dưới. |
+| `ragv2` | KnowledgeChunk (`rag_knowledge_chunks`) | **Chatbot RAG v2 thử nghiệm, độc lập.** Chunking + Gemini embedding (`gemini-embedding-001`) + vector store Postgres (jsonb) + cosine search. Endpoints `@Public` `/rag-v2/status|ingest|ask`. Xem §Chatbot RAG v2. |
 | `admin` | — | dashboard stats, lock/unlock users, bulk topup |
 
 ### BE circular dependency đã giải quyết
@@ -307,6 +327,12 @@ RolesGuard                  → @Roles(UserRole.ADMIN)
 ---
 
 ## 13. Tính năng đã implement (trạng thái hiện tại)
+
+### Xác thực email OTP (đăng ký 2 bước)
+- Đăng ký → BE tạo user `emailVerified: false`, gửi OTP 6 số (Nodemailer / log console nếu chưa cấu hình SMTP), **chưa cấp token**.
+- FE `RegisterPage` → điều hướng `VerifyEmailPage` (`/verify-email`): nhập OTP, nút gửi lại mã (cooldown 60s).
+- Verify đúng → BE cấp `{ user, tokens }` (đăng nhập luôn). Login chặn user chưa verify (401 `EMAIL_NOT_VERIFIED`).
+- BE: bảng `email_verifications` (hash OTP, TTL 15', max 5 lần thử) + `refresh_tokens` (hash, rotate). Xem §11.
 
 ### Bookmark / Saved
 - Nút **❤ lưu** có ở: `TripCard`, `GuideListingCard`, `FeedPostCard`
@@ -355,6 +381,16 @@ Trợ lý du lịch theo **pipeline 3 bước, KHÔNG khoá cứng vào Gemini**
 **Endpoints:** `POST /ai/ask` (Public, guest chat được; nhận `query + history + draft`) · `POST /ai/create-trip` (auth). Lịch sử lưu `AiChatSession` + `AiChatMessage`.
 
 **Tải model local:** `cd backend && npm run model:download` (script `scripts/download-model.cjs`). Env: `LLM_PROVIDER`, `LLM_MODEL_FILE`, `LLM_GPU_LAYERS`, `LLM_MAX_TOKENS`.
+
+### Chatbot RAG v2 (thử nghiệm — ĐỘC LẬP với trợ lý AI ở trên)
+Phiên bản chatbot thứ 2, tách biệt hoàn toàn, KHÔNG đụng module `ai`/`AIChatBubble`/`aiAssistantService`. Mục đích: demo pipeline RAG kinh điển **chunking → embedding → vector database → truy hồi cosine → sinh câu trả lời**, và **hiển thị rõ phương pháp thực thi** trên UI.
+
+- **Trang FE standalone:** `/chatbot-v2` (`ROUTES.CHATBOT_V2`) — route top-level NGOÀI `MainLayout`, **không có trên nav**, không guard. Component `src/pages/ChatbotV2/ChatbotV2Page.tsx`. Mỗi câu trả lời kèm **TracePanel**: bước embed query (model + số chiều + preview vector), vector search (số ứng viên, top-K, **thanh điểm cosine** từng chunk), ghép ngữ cảnh (số chunk + ký tự + nguồn), sinh trả lời (model). Có status bar + nút "Nạp / Re-index tài liệu".
+- **Service FE:** `src/services/ragV2Service.ts` → `/rag-v2/status|ingest|ask`.
+- **BE module `ragv2`** (`backend/src/modules/ragv2/`): entity `rag_knowledge_chunks` (embedding lưu `jsonb`, `ensureSchema()` tự `CREATE TABLE IF NOT EXISTS` → chạy bất kể `DB_SYNCHRONIZE`); `lib/chunker.ts` (tách đoạn + overlap), `lib/gemini-embeddings.ts` (`gemini-embedding-001`, single + batch), `lib/gemini-chat.ts` (`gemini-2.0-flash`), `lib/cosine.ts` (brute-force, không cần pgvector). Tất cả endpoint `@Public`.
+- **Embedding + sinh trả lời dùng Gemini** → cần `GEMINI_API_KEY`. Trang báo rõ nếu thiếu key / vector store rỗng.
+- **Nạp tài liệu:** `cd backend && npm run rag:ingest` (đọc `documemtRAG/*.txt|md` → chunk → embed → lưu DB) hoặc bấm nút trên trang. Tài liệu mẫu: `documemtRAG/HuongDanSuDung_LuuYDuLich.txt` (hướng dẫn dùng web + lưu ý du lịch).
+- **Env:** `RAGV2_EMBEDDING_MODEL`, `RAGV2_CHAT_MODEL`, `RAGV2_TOP_K`, `RAGV2_DOCS_DIR`.
 
 ### React Router future flags
 ```ts
@@ -423,10 +459,11 @@ Scripts: `cap:add:android` | `cap:sync` | `cap:open:android` | `android:build`
 
 ## 18. Backlog (việc cần tiếp tục)
 
-1. **ProtectedRoute** — bật cho `/profile`, `/profile/edit`, `/trips/create`, `/guide/dashboard`
+1. ✅ ~~**ProtectedRoute**~~ — ĐÃ XONG: bật cho `/profile`, `/profile/edit`, `/trips/create`, `/guide/dashboard`, `/messages*`, `/wallet`, `/my-bookings`... + admin guard `roles={['admin']}` (xem §6, `src/routes/index.tsx`)
 2. **Form validation** — react-hook-form + zod (chưa cài)
 3. **Dark mode** — `darkMode: 'class'` đã bật, cần toggle UI + token
 4. **Tests** — vitest cho services/hooks (chỉ có `test/setup.ts`)
 5. **i18n** — UI hỗn hợp Việt/Anh
 6. **Nút lưu TripDetail** — hiện chỉ có ở TripCard, chưa có trong trang chi tiết
 7. **Tab "Đánh giá"** trong Profile — hiện EmptyState "đang phát triển"
+8. **Script seed** — `package.json` còn trỏ tới file seed đã xóa; cần dọn lại hoặc thêm script `seed:curated` cho `seed-curated-trips.ts` (xem §3)

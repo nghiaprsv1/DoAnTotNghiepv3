@@ -7,6 +7,8 @@ interface Props {
   fromMe: boolean
   /** Substring to highlight in the body (case-insensitive). */
   highlight?: string
+  /** Delete this message (own messages only). */
+  onDelete?: (messageId: string) => void
 }
 
 const statusIcon: Record<MessageStatus, string> = {
@@ -45,14 +47,14 @@ function highlightText(text: string, query?: string) {
   return out
 }
 
-export function MessageBubble({ message, fromMe, highlight }: Props) {
+export function MessageBubble({ message, fromMe, highlight, onDelete }: Props) {
   const hasAttachment = !!message.attachment
   const showTextBubble = message.content.trim().length > 0
 
   return (
     <div
       className={cn(
-        'flex flex-col max-w-[78%] sm:max-w-[68%]',
+        'group/msg flex flex-col max-w-[78%] sm:max-w-[68%]',
         fromMe ? 'items-end' : 'items-start'
       )}
     >
@@ -71,18 +73,33 @@ export function MessageBubble({ message, fromMe, highlight }: Props) {
         </div>
       )}
 
-      {showTextBubble && (
-        <div
-          className={cn(
-            'px-4 py-2.5 text-sm leading-relaxed break-words',
-            fromMe
-              ? 'bg-primary text-on-primary rounded-2xl rounded-br-md'
-              : 'bg-surface-container text-on-surface rounded-2xl rounded-bl-md'
-          )}
-        >
-          {highlightText(message.content, highlight)}
-        </div>
-      )}
+      <div className={cn('flex items-center gap-1.5', fromMe ? 'flex-row' : 'flex-row-reverse')}>
+        {/* Delete affordance — own messages only, revealed on hover. */}
+        {fromMe && onDelete && (
+          <button
+            type="button"
+            onClick={() => onDelete(message.id)}
+            aria-label="Xoá tin nhắn"
+            title="Xoá tin nhắn"
+            className="opacity-0 group-hover/msg:opacity-100 focus:opacity-100 transition w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/10 shrink-0"
+          >
+            <Icon name="delete" size={16} />
+          </button>
+        )}
+
+        {showTextBubble && (
+          <div
+            className={cn(
+              'px-4 py-2.5 text-sm leading-relaxed break-words',
+              fromMe
+                ? 'bg-primary text-on-primary rounded-2xl rounded-br-md'
+                : 'bg-surface-container text-on-surface rounded-2xl rounded-bl-md'
+            )}
+          >
+            {highlightText(message.content, highlight)}
+          </div>
+        )}
+      </div>
 
       <div
         className={cn(

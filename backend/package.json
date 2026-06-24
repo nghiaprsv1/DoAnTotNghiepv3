@@ -22,6 +22,7 @@
     "seed:trips": "ts-node -r tsconfig-paths/register src/seed-trips.ts",
     "seed:ai-trips": "ts-node -r tsconfig-paths/register src/seed-ai-trips.ts",
     "seed:provinces": "ts-node -r tsconfig-paths/register src/seed-provinces.ts",
+    "rag:ingest": "ts-node -r tsconfig-paths/register src/rag-ingest.script.ts",
     "model:download": "node scripts/download-model.cjs"
   },
   "dependencies": {
@@ -50,6 +51,7 @@
     "dotenv": "^16.4.5",
     "firebase-admin": "^14.0.0",
     "node-llama-cpp": "^3.18.1",
+    "nodemailer": "^6.10.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -64,6 +66,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@types/nodemailer": "^8.0.1",
     "@typescript-eslint/eslint-plugin": "^8.13.0",
     "@typescript-eslint/parser": "^8.13.0",
     "eslint": "^8.57.1",

@@ -588,10 +588,14 @@ export class TripsService {
    *
    *   final = 0.3 * match + 0.3 * interaction + 0.4 * hot
    *
-   * Trong đó (mỗi thành phần được min–max chuẩn hoá về [0,1] trên tập ứng viên):
-   *  - match       : độ hợp sở thích — category + tag + province khớp prefs/hashtag.
+   * Trong đó:
+   *  - match       : độ hợp sở thích — chuẩn hoá TUYỆT ĐỐI theo 3 tiêu chí
+   *                  (category / tag / province), mỗi tiêu chí khớp = 1/3.
+   *                  Khớp 1 ≈ 0.33, 2 ≈ 0.67, cả 3 = 1.0.
    *  - interaction : tương tác của CHÍNH user với chuyến — views, clicks, favorite, request.
+   *                  (min–max chuẩn hoá về [0,1] trên tập ứng viên).
    *  - hot         : độ hot toàn hệ thống — view_count, click_count, request_count, member.
+   *                  (min–max chuẩn hoá về [0,1] trên tập ứng viên).
    *
    * Trả về top `limit` chuyến (điểm cao lên đầu) kèm breakdown để giải thích.
    */
@@ -668,33 +672,38 @@ export class TripsService {
     // ── Tính điểm thô từng thành phần ──
     type Raw = {
       trip: Trip;
-      matchRaw: number;
+      match: number;
       interRaw: number;
       hotRaw: number;
       reasons: string[];
     };
+    // MATCH chuẩn hoá TUYỆT ĐỐI: 3 tiêu chí (category / tag / province), mỗi
+    // tiêu chí khớp = 1/3 điểm. Khớp 1 tiêu chí ≈ 0.33, 2 ≈ 0.67, cả 3 = 1.0.
+    // (Khác min–max: điểm không phụ thuộc các chuyến khác trong danh sách.)
+    const MATCH_CRITERIA = 3;
+    const PER_CRITERION = 1 / MATCH_CRITERIA;
     const raws: Raw[] = candidates.map((trip) => {
       const reasons: string[] = [];
 
-      // MATCH: category(+3) + mỗi tag khớp(+2) + province khớp(+3).
-      let matchRaw = 0;
+      let match = 0;
       const catKey = trip.category?.key?.toLowerCase();
       if (catKey && prefTokens.has(catKey)) {
-        matchRaw += 3;
+        match += PER_CRITERION;
         reasons.push(`Hợp gu ${trip.category.label}`);
       }
       const tagOverlap = (trip.tags ?? []).filter((t) => prefTokens.has(t.toLowerCase()));
       if (tagOverlap.length) {
-        matchRaw += tagOverlap.length * 2;
+        match += PER_CRITERION;
         reasons.push(`Tag khớp: ${tagOverlap.slice(0, 3).join(', ')}`);
       }
       if (provinceTokens.size) {
         const dest = (trip.destination ?? '').toLowerCase();
         if ([...provinceTokens].some((p) => p && (dest.includes(p) || p.includes(dest)))) {
-          matchRaw += 3;
+          match += PER_CRITERION;
           reasons.push(`Đúng nơi bạn thích: ${trip.destination}`);
         }
       }
+      match = Math.min(1, match);
 
       // INTERACTION: bão hoà bằng log để lượt xem/click có lợi ích giảm dần —
       // tránh việc mở/bấm 1 chuyến nhiều lần làm điểm tăng vô hạn rồi đè các
@@ -716,22 +725,22 @@ export class TripsService {
         Math.log1p(trip.requestCount ?? 0) * 2 +
         (trip.memberCount ?? 0) * 0.3;
 
-      return { trip, matchRaw, interRaw, hotRaw, reasons };
+      return { trip, match, interRaw, hotRaw, reasons };
     });
 
-    // ── Min–max chuẩn hoá mỗi thành phần về [0,1] ──
+    // ── Min–max chuẩn hoá interaction & hot về [0,1] ──
+    // (MATCH đã là điểm tuyệt đối ở trên, không min–max nữa.)
     const norm = (vals: number[]) => {
       const min = Math.min(...vals);
       const max = Math.max(...vals);
       const span = max - min;
       return (v: number) => (span === 0 ? 0 : (v - min) / span);
     };
-    const nMatch = norm(raws.map((r) => r.matchRaw));
     const nInter = norm(raws.map((r) => r.interRaw));
     const nHot = norm(raws.map((r) => r.hotRaw));
 
     const scored = raws.map((r) => {
-      const match = +nMatch(r.matchRaw).toFixed(4);
+      const match = +r.match.toFixed(4);
       const interaction = +nInter(r.interRaw).toFixed(4);
       const hot = +nHot(r.hotRaw).toFixed(4);
       const recommendScore = +(0.3 * match + 0.3 * interaction + 0.4 * hot).toFixed(4);

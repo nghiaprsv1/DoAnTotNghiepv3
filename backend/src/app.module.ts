@@ -18,14 +18,17 @@ import { ReviewsModule } from './modules/review/reviews.module';
 import { NotificationsModule } from './modules/notification/notifications.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AiModule } from './modules/ai/ai.module';
+import { RagV2Module } from './modules/ragv2/ragv2.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { SavedModule } from './modules/saved/saved.module';
 import { PaymentsModule } from './modules/payment/payments.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
+    MailModule,
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => buildTypeOrmOptions(cfg),
@@ -41,6 +44,7 @@ import { PaymentsModule } from './modules/payment/payments.module';
     NotificationsModule,
     AdminModule,
     AiModule,
+    RagV2Module,
     UploadModule,
     SavedModule,
     PaymentsModule,

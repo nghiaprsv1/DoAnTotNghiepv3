@@ -441,12 +441,13 @@ export class AdminService {
   }
 
   pendingGuides() {
-    // idCardNumber / idCardImage are `select: false` by default. Admin needs
-    // them to verify the application — pull them in via QueryBuilder.
+    // idCardNumber / idCardImage / certificateImages are `select: false` by
+    // default. Admin needs them to verify the application — pull them in via
+    // QueryBuilder.
     return this.guides
       .createQueryBuilder('g')
       .leftJoinAndSelect('g.user', 'u')
-      .addSelect(['g.idCardNumber', 'g.idCardImage'])
+      .addSelect(['g.idCardNumber', 'g.idCardImage', 'g.certificateImages'])
       .where('g.status = :s', { s: GuideStatus.PENDING })
       .orderBy('g.createdAt', 'DESC')
       .getMany();

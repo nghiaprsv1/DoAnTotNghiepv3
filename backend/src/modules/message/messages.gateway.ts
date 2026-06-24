@@ -151,4 +151,53 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       return { ok: false };
     }
   }
+
+  /** Delete a single message (sender only); broadcast removal to the room. */
+  @SubscribeMessage('delete_message')
+  async onDeleteMessage(
+    @ConnectedSocket() client: AuthedSocket,
+    @MessageBody() body: { messageId: string },
+  ) {
+    const userId = client.data.userId;
+    if (!userId || !body?.messageId) return { ok: false };
+    try {
+      const result = await this.svc.deleteMessage(body.messageId, userId);
+      this.server.to(result.conversationId).emit('message_deleted', {
+        messageId: body.messageId,
+        conversationId: result.conversationId,
+        lastMessage: result.lastMessage,
+        lastMessageAt: result.lastMessageAt,
+      });
+      return { ok: true };
+    } catch (err) {
+      const e = err as { message?: string };
+      return { ok: false, error: e.message ?? 'delete_failed' };
+    }
+  }
+
+  /** Delete an entire conversation; notify every member, then drop the room. */
+  @SubscribeMessage('delete_conversation')
+  async onDeleteConversation(
+    @ConnectedSocket() client: AuthedSocket,
+    @MessageBody() body: { roomId: string },
+  ) {
+    const userId = client.data.userId;
+    if (!userId || !body?.roomId) return { ok: false };
+    try {
+      const { conversationId } = await this.svc.deleteConversation(
+        body.roomId,
+        userId,
+      );
+      // Notify the room (including the caller) before sockets leave it.
+      this.server
+        .to(conversationId)
+        .emit('conversation_deleted', { conversationId });
+      // Force every socket out of the now-deleted room.
+      this.server.socketsLeave(conversationId);
+      return { ok: true };
+    } catch (err) {
+      const e = err as { message?: string };
+      return { ok: false, error: e.message ?? 'delete_failed' };
+    }
+  }
 }

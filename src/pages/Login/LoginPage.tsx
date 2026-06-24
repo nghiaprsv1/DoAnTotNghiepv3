@@ -45,8 +45,16 @@ export function LoginPage() {
       const target = res?.data?.user?.role === 'admin' ? ROUTES.ADMIN : redirectTo
       navigate(target, { replace: true })
     } catch (err) {
-      const ax = err as AxiosError<{ message?: string }>
-      setError(ax.response?.data?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.')
+      const ax = err as AxiosError<{ message?: string; code?: string; email?: string }>
+      const payload = ax.response?.data
+      // Unverified accounts: bounce to the OTP screen instead of just erroring.
+      if (payload?.code === 'EMAIL_NOT_VERIFIED') {
+        navigate(ROUTES.VERIFY_EMAIL, {
+          state: { email: payload.email ?? email.trim() },
+        })
+        return
+      }
+      setError(payload?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.')
     } finally {
       setSubmitting(false)
     }

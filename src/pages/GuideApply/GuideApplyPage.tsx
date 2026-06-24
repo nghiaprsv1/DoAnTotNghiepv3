@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { Input } from '@components/ui/Input'
 import { Button } from '@components/ui/Button'
-import { ImageUpload } from '@components/common/ImageUpload'
+import { ImageUpload, MultiImageUpload } from '@components/common/ImageUpload'
 import { ROUTES } from '@constants/routes'
 import { ChipSelect } from '../EditProfile/components/ChipSelect'
 import { StepCard } from './components/StepCard'
@@ -26,6 +26,7 @@ interface FormState {
   address: string
   idCardNumber: string
   idCardImage: string
+  certificateImages: string[]
   yearsExperience: string
   languages: string[]
   region: string
@@ -43,6 +44,7 @@ const EMPTY: FormState = {
   address: '',
   idCardNumber: '',
   idCardImage: '',
+  certificateImages: [],
   yearsExperience: '',
   languages: ['vi'],
   region: '',
@@ -120,6 +122,7 @@ export function GuideApplyPage() {
         currency: 'VND',
         idCardNumber: form.idCardNumber.trim(),
         idCardImage: form.idCardImage.trim() || undefined,
+        certificateImages: form.certificateImages.length ? form.certificateImages : undefined,
       })
       setSubmitted(true)
     } catch (err) {
@@ -313,6 +316,15 @@ export function GuideApplyPage() {
                 onChange={(v) => set('languages', v)}
               />
             </div>
+            <div>
+              <MultiImageUpload
+                label="Ảnh chứng chỉ / thẻ hành nghề HDV"
+                hint="Tải lên ảnh chứng chỉ nghiệp vụ, thẻ HDV hoặc bằng cấp liên quan (tối đa 3 ảnh). Không bắt buộc nhưng giúp hồ sơ được duyệt nhanh hơn."
+                value={form.certificateImages}
+                onChange={(urls) => set('certificateImages', urls)}
+                max={3}
+              />
+            </div>
           </StepCard>
         )}
 
@@ -415,6 +427,14 @@ export function GuideApplyPage() {
               <ReviewRow label="SĐT" value={form.phone} />
               <ReviewRow label="Email" value={form.email} />
               <ReviewRow label="CCCD" value={form.idCardNumber} />
+              <ReviewRow
+                label="Ảnh chứng chỉ"
+                value={
+                  form.certificateImages.length
+                    ? `${form.certificateImages.length} ảnh`
+                    : 'Chưa tải lên'
+                }
+              />
               <ReviewRow label="Kinh nghiệm" value={`${form.yearsExperience || 0} năm`} />
               <ReviewRow label="Giá / ngày" value={`${Number(form.pricePerDay || 0).toLocaleString('vi-VN')} VND`} />
               <ReviewRow label="Vùng" value={form.regionKeys.join(', ') || '—'} />

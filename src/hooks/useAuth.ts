@@ -21,7 +21,13 @@ export function useAuth() {
   }
 
   const register = async (credentials: RegisterCredentials) => {
-    const response = await authService.register(credentials)
+    // Backend now returns { email, requiresVerification } — no tokens until the
+    // email OTP is confirmed. The caller routes the user to the verify screen.
+    return authService.register(credentials)
+  }
+
+  const verifyEmail = async (email: string, code: string) => {
+    const response = await authService.verifyEmail(email, code)
     if (response.success) {
       setAuth(response.data.user, response.data.tokens)
       syncCurrent(response.data.user)
@@ -38,5 +44,5 @@ export function useAuth() {
     }
   }
 
-  return { user, isAuthenticated, login, register, logout }
+  return { user, isAuthenticated, login, register, verifyEmail, logout }
 }

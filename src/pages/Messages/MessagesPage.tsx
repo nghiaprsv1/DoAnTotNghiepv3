@@ -59,6 +59,12 @@ export function MessagesPage() {
 
   // Track the currently-joined room so we can leave when switching threads.
   const joinedRoomRef = useRef<string | null>(null)
+  // Keep the latest routeId readable inside the socket effect without
+  // re-subscribing every navigation.
+  const routeIdRef = useRef<string | undefined>(routeId)
+  useEffect(() => {
+    routeIdRef.current = routeId
+  }, [routeId])
 
   // Establish (or refresh) the realtime socket whenever the user logs in.
   useEffect(() => {
@@ -94,12 +100,32 @@ export function MessagesPage() {
     const onReadReceipt = () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     }
+    // Một tin nhắn bị xoá — gỡ khỏi cache thread + làm mới preview sidebar.
+    const onMessageDeleted = (p: { messageId: string; conversationId: string }) => {
+      queryClient.setQueryData<ChatMessage[] | undefined>(
+        ['conversations', p.conversationId, 'messages'],
+        (prev) => prev?.filter((m) => m.id !== p.messageId),
+      )
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    }
+    // Cả hội thoại bị xoá — dọn cache; nếu đang mở thì rời thread.
+    const onConversationDeleted = (p: { conversationId: string }) => {
+      queryClient.removeQueries({
+        queryKey: ['conversations', p.conversationId, 'messages'],
+      })
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      if (routeIdRef.current === p.conversationId) {
+        navigate('/messages', { replace: true })
+      }
+    }
 
     sock.on('new_message', onNewMessage)
     sock.on('typing', onTyping)
     sock.on('stop_typing', onStopTyping)
     sock.on('member_joined', onMemberJoined)
     sock.on('read_receipt', onReadReceipt)
+    sock.on('message_deleted', onMessageDeleted)
+    sock.on('conversation_deleted', onConversationDeleted)
 
     return () => {
       sock.off('new_message', onNewMessage)
@@ -107,8 +133,10 @@ export function MessagesPage() {
       sock.off('stop_typing', onStopTyping)
       sock.off('member_joined', onMemberJoined)
       sock.off('read_receipt', onReadReceipt)
+      sock.off('message_deleted', onMessageDeleted)
+      sock.off('conversation_deleted', onConversationDeleted)
     }
-  }, [isAuthenticated, accessToken, queryClient])
+  }, [isAuthenticated, accessToken, queryClient, navigate])
 
   // Disconnect socket on logout.
   useEffect(() => {
@@ -181,6 +209,27 @@ export function MessagesPage() {
   const handleTyping = () => {
     if (!routeId || !accessToken) return
     getChatSocket(accessToken).emit('typing', { roomId: routeId })
+  }
+
+  // Delete a single message (own messages only). Server broadcasts
+  // `message_deleted` back to all clients, which prunes the cache.
+  const handleDeleteMessage = (messageId: string) => {
+    if (!accessToken) return
+    if (!window.confirm('Xoá tin nhắn này?')) return
+    getChatSocket(accessToken).emit('delete_message', { messageId })
+  }
+
+  // Delete the entire conversation with this person. Server broadcasts
+  // `conversation_deleted`, which navigates us out of the thread.
+  const handleDeleteConversation = () => {
+    if (!routeId || !accessToken) return
+    if (
+      !window.confirm(
+        'Xoá toàn bộ cuộc trò chuyện này? Hành động không thể hoàn tác.',
+      )
+    )
+      return
+    getChatSocket(accessToken).emit('delete_conversation', { roomId: routeId })
   }
 
   if (!isAuthenticated) {
@@ -273,6 +322,7 @@ export function MessagesPage() {
                     ? () => setShowMembers((s) => !s)
                     : undefined
                 }
+                onDeleteConversation={handleDeleteConversation}
               />
               {searchOpen && (
                 <div className="px-4 py-2 border-b border-outline-variant/15 bg-surface-container-low/40">
@@ -309,6 +359,7 @@ export function MessagesPage() {
                 currentUserId={currentUserId}
                 isPeerTyping={!searchOpen && !!typingPeers[activeConversation.id]}
                 highlight={historySearch.trim()}
+                onDeleteMessage={handleDeleteMessage}
               />
               <MessageComposer onSend={handleSend} onTyping={handleTyping} />
             </>
@@ -336,6 +387,7 @@ function ThreadBody({
   currentUserId,
   isPeerTyping,
   highlight,
+  onDeleteMessage,
 }: {
   messages: ChatMessage[]
   conversation: Conversation
@@ -343,6 +395,8 @@ function ThreadBody({
   isPeerTyping?: boolean
   /** Substring to highlight inside each bubble (when search is active). */
   highlight?: string
+  /** Delete a single message (own messages only). */
+  onDeleteMessage?: (messageId: string) => void
 }) {
   const isGroup = conversation.kind === 'group'
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -393,7 +447,12 @@ function ThreadBody({
                   {sender?.name ?? 'Thành viên'}
                 </Link>
               )}
-              <MessageBubble message={m} fromMe={fromMe} highlight={highlight} />
+              <MessageBubble
+                message={m}
+                fromMe={fromMe}
+                highlight={highlight}
+                onDelete={onDeleteMessage}
+              />
             </div>
           </div>
         )
