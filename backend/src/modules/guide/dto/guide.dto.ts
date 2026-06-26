@@ -48,9 +48,6 @@ export class UpdateGuideProfileDto {
   @IsOptional() @IsInt() @Min(0) yearsExperience?: number;
   @IsOptional() @IsNumber() @Min(0) pricePerDay?: number;
   @IsOptional() @IsString() currency?: string;
-  @IsOptional() @IsString() coverImage?: string;
-  @IsOptional() @IsArray() @IsString({ each: true }) gallery?: string[];
-  @IsOptional() @IsArray() @IsString({ each: true }) highlights?: string[];
 }
 
 export class CreateBookingDto {

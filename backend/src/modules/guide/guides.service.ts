@@ -67,9 +67,6 @@ export class GuidesService {
    *
    * - rating / reviewCount: top-level reviews of type GUIDE on this profile id.
    * - toursCompleted: bookings that finished (state COMPLETED).
-   * - responseTimeText: median latency between booking creation and the guide
-   *   accepting it, formatted as a Vietnamese label. `null` when the guide has
-   *   never accepted a booking.
    */
   async loadStats(guideProfileIds: string[]): Promise<
     Map<
@@ -78,13 +75,12 @@ export class GuidesService {
         rating: number;
         reviewCount: number;
         toursCompleted: number;
-        responseTimeText: string | null;
       }
     >
   > {
     const stats = new Map<
       string,
-      { rating: number; reviewCount: number; toursCompleted: number; responseTimeText: string | null }
+      { rating: number; reviewCount: number; toursCompleted: number }
     >();
     if (guideProfileIds.length === 0) return stats;
 
@@ -115,27 +111,10 @@ export class GuidesService {
       .groupBy('b.guide_id')
       .getRawMany();
 
-    // Response latency — median seconds between created_at and accepted_at on
-    // bookings the guide actually accepted (i.e. moved past PENDING_ACCEPTANCE).
-    const respRows: Array<{ guide_id: string; median_secs: string | null }> = await this.bookings
-      .createQueryBuilder('b')
-      .select('b.guide_id', 'guide_id')
-      .addSelect(
-        'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (b.accepted_at - b.created_at)))',
-        'median_secs',
-      )
-      .where('b.guide_id IN (:...ids)', { ids: guideProfileIds })
-      .andWhere('b.accepted_at IS NOT NULL')
-      .groupBy('b.guide_id')
-      .getRawMany();
-
     const reviewMap = new Map(
       reviewRows.map((r) => [r.target_id, { avg: Number(r.avg ?? 0), cnt: Number(r.cnt) }]),
     );
     const tourMap = new Map(tourRows.map((r) => [r.guide_id, Number(r.cnt)]));
-    const respMap = new Map(
-      respRows.map((r) => [r.guide_id, r.median_secs == null ? null : Number(r.median_secs)]),
-    );
 
     for (const id of guideProfileIds) {
       const rev = reviewMap.get(id);
@@ -143,21 +122,9 @@ export class GuidesService {
         rating: rev ? Math.round(rev.avg * 10) / 10 : 0,
         reviewCount: rev?.cnt ?? 0,
         toursCompleted: tourMap.get(id) ?? 0,
-        responseTimeText: this.formatResponseTime(respMap.get(id) ?? null),
       });
     }
     return stats;
-  }
-
-  /** "trong 30 phút" / "trong 2 giờ" / "trong 1 ngày" — friendly Vietnamese label. */
-  private formatResponseTime(seconds: number | null): string | null {
-    if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return null;
-    const mins = seconds / 60;
-    if (mins < 60) return `trong ${Math.max(1, Math.round(mins))} phút`;
-    const hours = mins / 60;
-    if (hours < 24) return `trong ${Math.max(1, Math.round(hours))} giờ`;
-    const days = hours / 24;
-    return `trong ${Math.max(1, Math.round(days))} ngày`;
   }
 
   /** Merge live stats onto a guide profile entity (mutates a copy). */
@@ -167,15 +134,12 @@ export class GuidesService {
       rating: number;
       reviewCount: number;
       toursCompleted: number;
-      responseTimeText: string | null;
     },
   ): GuideProfile {
     return Object.assign({}, g, {
       rating: s.rating,
       reviewCount: s.reviewCount,
       toursCompleted: s.toursCompleted,
-      // Keep the existing field name so the FE adapter doesn't change.
-      responseTime: s.responseTimeText ?? g.responseTime,
     }) as GuideProfile;
   }
 

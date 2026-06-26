@@ -137,9 +137,9 @@ export class SavedService {
     const ordered = ids
       .map((id) => rows.find((g) => g.id === id))
       .filter((g): g is GuideProfile => Boolean(g));
-    // Decorate with live rating / reviewCount / toursCompleted / responseTime
-    // so the Profile "Đã lưu" tab matches the listing page (the denormalized
-    // columns on guide_profiles are stale seed data).
+    // Decorate with live rating / reviewCount / toursCompleted so the Profile
+    // "Đã lưu" tab matches the listing page (the denormalized columns on
+    // guide_profiles are stale seed data).
     return this.guidesService.attachStatsToGuides(ordered);
   }
 }

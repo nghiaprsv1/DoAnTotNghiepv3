@@ -45,7 +45,7 @@ coverage/
 /ảnh/
 
 # Capacitor Android native project (generated; large build artifacts)
-/android/
+/frontend/android/
 
 # Local LLM models (multi-GB GGUF — never commit)
 models/

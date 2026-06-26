@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { RagEmbeddings } from './rag-llm.interface';
 
 /**
  * Client embedding Gemini cho RAG v2 — ĐỘC LẬP với module ai hiện tại.
@@ -7,12 +8,17 @@ import { ConfigService } from '@nestjs/config';
  * Gọi REST API `text-embedding-004` (hoặc model cấu hình qua RAGV2_EMBEDDING_MODEL)
  * để biến văn bản thành vector số thực. Vector này dùng cho cả lúc index tài liệu
  * lẫn lúc embed câu hỏi, rồi so khớp bằng cosine similarity.
+ *
+ * Implement RagEmbeddings để chạy song song bản OpenAI (chọn qua RAGV2_LLM_PROVIDER).
  */
 @Injectable()
-export class GeminiEmbeddings {
+export class GeminiEmbeddings extends RagEmbeddings {
+  readonly providerName = 'gemini';
   private readonly logger = new Logger(GeminiEmbeddings.name);
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService) {
+    super();
+  }
 
   get model(): string {
     return this.config.get<string>('RAGV2_EMBEDDING_MODEL') || 'gemini-embedding-001';
@@ -38,7 +44,13 @@ export class GeminiEmbeddings {
     taskType: 'RETRIEVAL_DOCUMENT' | 'RETRIEVAL_QUERY' = 'RETRIEVAL_DOCUMENT',
   ): Promise<number[]> {
     const key = this.apiKey();
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:embedContent?key=${key}`;
+    // Base URL có thể đổi sang proxy bên thứ 3 rẻ hơn qua env GEMINI_BASE_URL
+    // (vd https://v98store.com/v1beta). Mặc định endpoint chính thức của Google.
+    const base = (
+      this.config.get<string>('GEMINI_BASE_URL') ||
+      'https://generativelanguage.googleapis.com/v1beta'
+    ).replace(/\/+$/, '');
+    const url = `${base}/models/${this.model}:embedContent?key=${key}`;
     const body = {
       model: `models/${this.model}`,
       content: { parts: [{ text }] },

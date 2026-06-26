@@ -1,8 +1,6 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsLatitude,
-  IsLongitude,
   IsNumber,
   IsOptional,
   IsString,
@@ -66,35 +64,12 @@ export class CreatePlaceDto {
 
   @IsOptional()
   @IsString()
-  duration?: string;
-
-  @IsOptional()
-  @IsString()
-  bestTime?: string;
-
-  @IsOptional()
-  @IsString()
   entranceFee?: string;
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  highlights?: string[];
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsLatitude()
-  lat?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsLongitude()
-  lng?: number;
 
   @IsOptional()
   @Type(() => Number)

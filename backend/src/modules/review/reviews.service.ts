@@ -10,6 +10,7 @@ import { Review, ReviewTargetType } from './entities/review.entity';
 import { Like } from '@/modules/post/entities/like.entity';
 import { GuideProfile } from '@/modules/guide/entities/guide-profile.entity';
 import { Trip } from '@/modules/trip/entities/trip.entity';
+import { Place } from '@/modules/place/entities/place.entity';
 import { NotificationsService } from '@/modules/notification/notifications.service';
 import { NotificationType } from '@/modules/notification/entities/notification.entity';
 import { CreateReviewDto } from './dto/review.dto';
@@ -24,6 +25,7 @@ export class ReviewsService {
     @InjectRepository(GuideProfile)
     private readonly guides: Repository<GuideProfile>,
     @InjectRepository(Trip) private readonly trips: Repository<Trip>,
+    @InjectRepository(Place) private readonly places: Repository<Place>,
     private readonly notifications: NotificationsService,
     private readonly dataSource: DataSource,
   ) {}
@@ -64,12 +66,50 @@ export class ReviewsService {
     });
     if (exists) throw new ConflictException('Already reviewed this target');
     const saved = await this.repo.save(this.repo.create({ ...dto, authorId }));
+    // Cập nhật lại rating/review_count THẬT trên đối tượng (place/trip) từ bảng
+    // reviews — để con số hiển thị khớp thực tế, không phải số seed hardcode.
+    await this.recalcTarget(saved.targetType, saved.targetId).catch((e) =>
+      this.logger.warn(`Không tính lại rating: ${(e as Error).message}`),
+    );
     // Best-effort: thông báo cho chủ đối tượng được đánh giá. Không để lỗi
     // notification làm hỏng việc lưu review.
     void this.notifyTargetOwner(saved).catch((e) =>
       this.logger.warn(`Không gửi được thông báo đánh giá: ${(e as Error).message}`),
     );
     return saved;
+  }
+
+  /**
+   * Tính lại rating trung bình + số lượt đánh giá THẬT của 1 đối tượng từ bảng
+   * `reviews` (chỉ review gốc, rating > 0) rồi ghi vào cột denormalized của
+   * place/trip. Guide tính live qua GuidesService nên bỏ qua ở đây.
+   */
+  async recalcTarget(targetType: ReviewTargetType, targetId: string): Promise<void> {
+    if (
+      targetType !== ReviewTargetType.PLACE &&
+      targetType !== ReviewTargetType.TRIP
+    ) {
+      return;
+    }
+    const row = await this.repo
+      .createQueryBuilder('r')
+      .select('AVG(r.rating)', 'avg')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('r.target_type = :t', { t: targetType })
+      .andWhere('r.target_id = :id', { id: targetId })
+      .andWhere('r.parent_id IS NULL')
+      .andWhere('r.rating > 0')
+      .getRawOne<{ avg: string | null; cnt: string }>();
+
+    const avg = row?.avg ? Math.round(Number(row.avg) * 100) / 100 : 0;
+    const cnt = Number(row?.cnt ?? 0);
+
+    if (targetType === ReviewTargetType.PLACE) {
+      await this.places.update({ id: targetId }, { rating: avg, reviewCount: cnt });
+    } else {
+      // Trip entity chỉ có cột rating (không có review_count).
+      await this.trips.update({ id: targetId }, { rating: avg });
+    }
   }
 
   /**
@@ -207,7 +247,15 @@ export class ReviewsService {
     });
   }
 
-  remove(id: string, authorId: string) {
-    return this.repo.delete({ id, authorId });
+  async remove(id: string, authorId: string) {
+    const review = await this.repo.findOne({ where: { id, authorId } });
+    const res = await this.repo.delete({ id, authorId });
+    // Xoá review gốc → tính lại rating/review_count cho khớp thực tế.
+    if (review && !review.parentId) {
+      await this.recalcTarget(review.targetType, review.targetId).catch((e) =>
+        this.logger.warn(`Không tính lại rating sau xoá: ${(e as Error).message}`),
+      );
+    }
+    return res;
   }
 }

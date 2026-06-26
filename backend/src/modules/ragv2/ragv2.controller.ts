@@ -1,13 +1,41 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { IsArray, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { Public } from '@/common/decorators/public.decorator';
 import { RagV2Service } from './ragv2.service';
+
+class HistoryTurnDto {
+  @IsIn(['user', 'assistant'])
+  role!: 'user' | 'assistant';
+
+  @IsString()
+  @MaxLength(4000)
+  content!: string;
+}
 
 class RagAskDto {
   @IsString()
   @MaxLength(2000)
   question!: string;
+
+  /** Lộ trình đang dựng (nếu có) — gửi kèm để bot chỉnh sửa thay vì dựng mới. */
+  @IsOptional()
+  draft?: unknown;
+
+  /** Lịch sử hội thoại (các lượt trước) để agent hiểu câu nối tiếp. */
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HistoryTurnDto)
+  history?: HistoryTurnDto[];
 }
 
 class RagIngestDto {
@@ -45,6 +73,6 @@ export class RagV2Controller {
   @Public()
   @Post('ask')
   ask(@Body() dto: RagAskDto) {
-    return this.svc.ask(dto.question);
+    return this.svc.ask(dto.question, dto.draft as never, dto.history);
   }
 }

@@ -12,7 +12,6 @@ import {
 import { Province } from './province.entity';
 import { Category } from './category.entity';
 import { PlaceImage } from './place-image.entity';
-import { PlaceOpeningHour } from './place-opening-hour.entity';
 
 @Entity('places')
 export class Place {
@@ -61,32 +60,14 @@ export class Place {
   @Column({ name: 'review_count', default: 0 })
   reviewCount!: number;
 
-  @Column({ length: 100, nullable: true })
-  duration?: string;
-
-  @Column({ name: 'best_time', length: 200, nullable: true })
-  bestTime?: string;
-
   @Column({ name: 'entrance_fee', length: 100, nullable: true })
   entranceFee?: string;
 
   @Column({ type: 'text', array: true, default: () => "'{}'::text[]" })
   tags!: string[];
 
-  @Column({ type: 'text', array: true, default: () => "'{}'::text[]" })
-  highlights!: string[];
-
-  @Column({ type: 'double precision', nullable: true })
-  lat?: number;
-
-  @Column({ type: 'double precision', nullable: true })
-  lng?: number;
-
   @OneToMany(() => PlaceImage, (img) => img.place, { cascade: true })
   gallery!: PlaceImage[];
-
-  @OneToMany(() => PlaceOpeningHour, (h) => h.place, { cascade: true })
-  openingHours!: PlaceOpeningHour[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

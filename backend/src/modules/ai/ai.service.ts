@@ -281,7 +281,7 @@ Yêu cầu của user: ${query}`;
       .where('p.name ILIKE :n', { n: `%${name}%` })
       .getOne();
     if (place) {
-      return `${place.name} — ${place.description?.slice(0, 200) ?? ''}${place.bestTime ? ` (Thời điểm đẹp: ${place.bestTime})` : ''}`;
+      return `${place.name} — ${place.description?.slice(0, 200) ?? ''}`;
     }
     // Tìm trong highlights của tỉnh.
     const prov = await this.provinces

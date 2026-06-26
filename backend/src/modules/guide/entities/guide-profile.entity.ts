@@ -72,23 +72,11 @@ export class GuideProfile {
   @Column({ name: 'tours_completed', default: 0 })
   toursCompleted!: number;
 
-  @Column({ name: 'response_time', length: 50, nullable: true })
-  responseTime?: string;
-
-  @Column({ name: 'cover_image', length: 500, nullable: true })
-  coverImage?: string;
-
-  @Column({ type: 'text', array: true, default: () => "'{}'::text[]" })
-  gallery!: string[];
-
   @Column({ type: 'enum', enum: GuideAvailability, default: GuideAvailability.AVAILABLE })
   availability!: GuideAvailability;
 
   @Column({ name: 'availability_label', length: 100, nullable: true })
   availabilityLabel?: string;
-
-  @Column({ type: 'text', array: true, default: () => "'{}'::text[]" })
-  highlights!: string[];
 
   @Column({ name: 'id_card_number', length: 30, nullable: true, select: false })
   idCardNumber?: string;

@@ -1,0 +1,30 @@
+Hoàn tất. Cấu trúc đã sạch và git nhận diện chính xác.
+
+Kết quả tách folder
+
+Cấu trúc mới ở root:
+DoAnTotNghiepv3/
+  frontend/      ← toàn bộ React/Vite (src, configs, android, node_modules, .env*)
+  backend/       ← NestJS (giữ nguyên)
+  documemtRAG/   ← tài liệu RAG (giữ ở root)
+  docs/          ← BAO_CAO_DO_AN.md, TECH_STACK.md, Usecase.docx
+  CLAUDE.md, render.yaml, .gitignore
+
+Git: 292 file được nhận diện là rename (giữ nguyên lịch sử), cộng 2 file sửa nội dung (.gitignore, CLAUDE.md). Không mất file nào.
+
+Đã verify:
+- cd frontend && npx vite build → build thành công 4.37s (mọi alias @ + path đúng).
+- cd backend && tsc --noEmit → sạch (backend không bị ảnh hưởng).
+- .gitignore: /android/ → /frontend/android/; các file .env.* công khai vẫn track đúng, không lộ secret.
+- CLAUDE.md: cập nhật toàn bộ path src/... → frontend/src/..., ghi rõ cd frontend cho lệnh FE.
+
+⚠️ 2 việc bạn cần làm
+
+1. Vercel Dashboard → Settings → Root Directory = frontend — bắt buộc, nếu không deploy FE sẽ hỏng (không sửa được bằng code). Render không bị ảnh hưởng vì rootDir: backend giữ nguyên.
+2. Khởi động lại dev server ở vị trí mới:
+  - Frontend: cd frontend && npm run dev
+  - Backend: cd backend && npm run start:dev
+
+(Tôi đã phải dừng các tiến trình node để giải phóng khóa thư mục src lúc di chuyển.)
+
+Thay đổi đang ở trạng thái staged, chưa commit. Bạn muốn tôi commit và push lên main luôn không?

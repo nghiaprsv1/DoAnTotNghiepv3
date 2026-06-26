@@ -31,10 +31,15 @@ export class LocalLlmProvider implements LlmProvider {
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(private readonly config: ConfigService) {
-    // Nạp model nền ngay khi khởi động (không chặn bootstrap).
-    void this.ensureLoaded().catch((e) =>
-      this.logger.error(`Không nạp được model local: ${(e as Error).message}`),
-    );
+    // ⚠️ ĐỔI MẶC ĐỊNH SANG GEMINI: KHÔNG còn nạp model Qwen ngay khi khởi động.
+    // Qwen được GIỮ LẠI để chạy luân phiên đo hiệu quả với Gemini. Khi đặt
+    // LLM_PROVIDER=local, model sẽ tự nạp LAZY ở lần gọi đầu (qua ensureLoaded()
+    // trong runChat()). Bỏ comment dòng dưới nếu muốn nạp sẵn ngay lúc bootstrap
+    // (warm-up, tránh độ trễ lần gọi đầu) khi cố định chạy Qwen.
+    //
+    // void this.ensureLoaded().catch((e) =>
+    //   this.logger.error(`Không nạp được model local: ${(e as Error).message}`),
+    // );
   }
 
   isReady(): boolean {

@@ -25,8 +25,7 @@ export class PlacesService {
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.category', 'cat')
       .leftJoinAndSelect('p.province', 'prov')
-      .leftJoinAndSelect('p.gallery', 'img')
-      .leftJoinAndSelect('p.openingHours', 'oh');
+      .leftJoinAndSelect('p.gallery', 'img');
 
     if (q.category) qb.andWhere('cat.key = :cat', { cat: q.category });
     if (q.province) {
@@ -69,7 +68,7 @@ export class PlacesService {
   async findById(id: string): Promise<Place> {
     const place = await this.places.findOne({
       where: { id },
-      relations: ['category', 'province', 'gallery', 'openingHours'],
+      relations: ['category', 'province', 'gallery'],
     });
     if (!place) throw new NotFoundException('Place not found');
     return place;
@@ -78,7 +77,7 @@ export class PlacesService {
   async findBySlug(slug: string): Promise<Place> {
     const place = await this.places.findOne({
       where: { slug },
-      relations: ['category', 'province', 'gallery', 'openingHours'],
+      relations: ['category', 'province', 'gallery'],
     });
     if (!place) throw new NotFoundException('Place not found');
     return place;
@@ -105,12 +104,20 @@ export class PlacesService {
   async update(id: string, dto: UpdatePlaceDto): Promise<Place> {
     const existing = await this.findById(id);
     Object.assign(existing, dto);
+    // `category` & `province` are eager relations → `existing` still holds the
+    // OLD relation objects. On save TypeORM derives the FK from those objects
+    // and overwrites the new categoryId/provinceId from the DTO. Clear them so
+    // the *_id columns we just assigned are the source of truth.
+    existing.category = undefined as unknown as Place['category'];
+    existing.province = undefined as unknown as Place['province'];
     if (dto.gallery) {
       existing.gallery = dto.gallery.map((url, sortOrder) =>
         this.images.create({ url, sortOrder }),
       );
     }
-    return this.places.save(existing);
+    await this.places.save(existing);
+    // Reload with fresh relations so the response has category.key/province.name.
+    return this.findById(id);
   }
 
   async remove(id: string): Promise<void> {

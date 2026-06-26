@@ -36,7 +36,7 @@ import { TemplateProvider } from './llm/template.provider';
     GeminiProvider,
     TemplateProvider,
     {
-      // Chọn provider theo env LLM_PROVIDER (mặc định 'local' = self-host).
+      // Chọn provider theo env LLM_PROVIDER (mặc định 'gemini'; 'local' = Qwen self-host).
       provide: LLM_PROVIDER,
       inject: [ConfigService, LocalLlmProvider, GeminiProvider, TemplateProvider],
       useFactory: (
@@ -45,10 +45,12 @@ import { TemplateProvider } from './llm/template.provider';
         gemini: GeminiProvider,
         template: TemplateProvider,
       ) => {
-        const choice = (config.get<string>('LLM_PROVIDER') || 'local').toLowerCase();
+        // Mặc định 'gemini' (đổi từ 'local'/Qwen). Qwen được GIỮ LẠI để chạy
+        // luân phiên đo hiệu quả: đặt LLM_PROVIDER=local là quay về self-host.
+        const choice = (config.get<string>('LLM_PROVIDER') || 'gemini').toLowerCase();
         if (choice === 'gemini') return gemini;
         if (choice === 'template') return template;
-        return local;
+        return local; // 'local' = Qwen2.5-3B self-host (node-llama-cpp)
       },
     },
   ],
