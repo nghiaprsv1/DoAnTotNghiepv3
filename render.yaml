@@ -57,13 +57,24 @@ services:
       # ── CORS: điền domain Vercel sau khi có (vd https://tripmate.vercel.app) ──
       - key: CORS_ORIGINS
         sync: false
-      # ── AI: dùng Gemini (KHÔNG dùng LLM local trên cloud) ──
+      # ── AI: chat v1 dùng Gemini; RAG v2 dùng OpenAI (proxy v98store) ──
       - key: LLM_PROVIDER
         value: gemini
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
+      # RAG v2 (chatbot /chatbot-v2) chạy OpenAI — embedding/cosine khớp 1536d.
+      - key: RAGV2_LLM_PROVIDER
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false # nhập tay trong Dashboard (không commit key vào Git)
+      - key: OPENAI_BASE_URL
+        value: https://v98store.com/v1
+      - key: RAGV2_EMBEDDING_MODEL
+        value: text-embedding-3-small
+      - key: RAGV2_CHAT_MODEL
+        value: gpt-4o-mini
       # ── Firebase Storage (service account JSON) ──
       - key: FIREBASE_STORAGE_BUCKET
         value: tripmate-e062f.firebasestorage.app
