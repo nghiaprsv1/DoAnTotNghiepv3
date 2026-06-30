@@ -55,6 +55,15 @@ export function usePendingWithdrawals() {
   })
 }
 
+export function useWithdrawalHistory() {
+  const enabled = useIsAdmin()
+  return useQuery({
+    queryKey: ['admin', 'withdrawalHistory'],
+    queryFn: () => adminService.withdrawalHistory(),
+    enabled,
+  })
+}
+
 export function useLockUser() {
   const qc = useQueryClient()
   return useMutation({
@@ -99,7 +108,10 @@ export function useDecideWithdrawal() {
       action: 'approve' | 'reject'
       reason?: string
     }) => adminService.decideWithdrawal(id, action, reason),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'pendingWithdrawals'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'pendingWithdrawals'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'withdrawalHistory'] })
+    },
   })
 }
 

@@ -1192,4 +1192,48 @@ export class GuidesService {
       user: { id: r.userId, name: r.userName, email: r.userEmail, avatar: r.userAvatar },
     }));
   }
+
+  /**
+   * Lịch sử rút tiền đã xử lý (admin) — các yêu cầu đã DUYỆT (WITHDRAW_SUCCESS)
+   * hoặc TỪ CHỐI (WITHDRAW_REJECTED), mới nhất trước. Bổ sung cho pendingWithdrawals
+   * để admin xem toàn bộ lịch sử, không chỉ hàng chờ.
+   */
+  async withdrawalHistory(limit = 100) {
+    const rows = await this.txns
+      .createQueryBuilder('t')
+      .leftJoin(Wallet, 'w', 'w.id = t.wallet_id')
+      .leftJoin(User, 'u', 'u.id = w.user_id')
+      .where('t.type IN (:...types)', {
+        types: [WalletTxnType.WITHDRAW_SUCCESS, WalletTxnType.WITHDRAW_REJECTED],
+      })
+      .select([
+        't.id AS id',
+        't.wallet_id AS "walletId"',
+        't.type AS type',
+        't.amount AS amount',
+        't.currency AS currency',
+        't.note AS note',
+        't.bank_account AS "bankAccount"',
+        't.created_at AS "createdAt"',
+        'u.id AS "userId"',
+        'u.name AS "userName"',
+        'u.email AS "userEmail"',
+        'u.avatar AS "userAvatar"',
+      ])
+      .orderBy('t.created_at', 'DESC')
+      .limit(Math.min(500, Math.max(1, limit)))
+      .getRawMany();
+    return rows.map((r) => ({
+      id: r.id,
+      walletId: r.walletId,
+      // Chuẩn hoá trạng thái cho FE: success | rejected.
+      status: r.type === WalletTxnType.WITHDRAW_SUCCESS ? 'success' : 'rejected',
+      amount: Math.abs(Number(r.amount)),
+      currency: r.currency,
+      note: r.note,
+      bankAccount: r.bankAccount,
+      createdAt: r.createdAt,
+      user: { id: r.userId, name: r.userName, email: r.userEmail, avatar: r.userAvatar },
+    }));
+  }
 }

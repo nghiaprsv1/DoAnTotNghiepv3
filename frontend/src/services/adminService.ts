@@ -137,6 +137,18 @@ export interface PendingWithdrawal extends WalletTransaction {
   user: { id: string; name: string; email: string; avatar?: string }
 }
 
+export interface WithdrawalHistoryItem {
+  id: string
+  walletId: string
+  status: 'success' | 'rejected'
+  amount: number
+  currency: string
+  note?: string
+  bankAccount?: string
+  createdAt: string
+  user: { id: string; name: string; email: string; avatar?: string }
+}
+
 export interface AdminUsersQuery {
   page?: number
   pageSize?: number
@@ -280,6 +292,15 @@ export const adminService = {
   pendingWithdrawals: async (): Promise<PendingWithdrawal[]> => {
     const res = await axiosInstance.get<ApiResponse<PendingWithdrawal[]>>(
       '/guides/wallet/withdrawals/pending',
+    )
+    return unwrap(res)
+  },
+
+  /** Lịch sử rút tiền đã xử lý (duyệt / từ chối). */
+  withdrawalHistory: async (limit = 100): Promise<WithdrawalHistoryItem[]> => {
+    const res = await axiosInstance.get<ApiResponse<WithdrawalHistoryItem[]>>(
+      '/guides/wallet/withdrawals/history',
+      { params: { limit } },
     )
     return unwrap(res)
   },

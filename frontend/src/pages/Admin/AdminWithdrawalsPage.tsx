@@ -4,16 +4,18 @@ import { Avatar } from '@components/ui/Avatar'
 import { Button } from '@components/ui/Button'
 import { LoadingState } from '@components/common/LoadingState'
 import { EmptyState } from '@components/common/EmptyState'
-import { useDecideWithdrawal, usePendingWithdrawals } from '@hooks/useAdmin'
+import { useDecideWithdrawal, usePendingWithdrawals, useWithdrawalHistory } from '@hooks/useAdmin'
 import { AdminDetailDialog, AdminSection, AdminRow } from './components/AdminDetailDialog'
 
 const formatVnd = (n: number) => `₫${Math.abs(Number(n)).toLocaleString('vi-VN')}`
 
 export function AdminWithdrawalsPage() {
   const { data: list = [], isLoading } = usePendingWithdrawals()
+  const { data: history = [], isLoading: loadingHistory } = useWithdrawalHistory()
   const decide = useDecideWithdrawal()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [viewId, setViewId] = useState<string | null>(null)
+  const [tab, setTab] = useState<'pending' | 'history'>('pending')
   const detail = list.find((t) => t.id === viewId) ?? null
 
   const handleApprove = async (id: string) => {
@@ -54,72 +56,148 @@ export function AdminWithdrawalsPage() {
         </div>
       </header>
 
-      {isLoading ? (
+      {/* Tabs: Chờ xử lý / Lịch sử */}
+      <div className="inline-flex bg-surface-container rounded-full p-1 gap-1">
+        <button
+          type="button"
+          onClick={() => setTab('pending')}
+          className={`px-4 py-1.5 rounded-full text-sm font-headline font-bold transition ${
+            tab === 'pending' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'
+          }`}
+        >
+          Chờ xử lý ({list.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('history')}
+          className={`px-4 py-1.5 rounded-full text-sm font-headline font-bold transition ${
+            tab === 'history' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'
+          }`}
+        >
+          Lịch sử ({history.length})
+        </button>
+      </div>
+
+      {tab === 'pending' ? (
+        isLoading ? (
+          <LoadingState count={3} />
+        ) : list.length === 0 ? (
+          <EmptyState
+            icon="account_balance_wallet"
+            title="Không có yêu cầu rút tiền"
+            description="Khi HDV gửi yêu cầu rút, các giao dịch sẽ xuất hiện tại đây."
+          />
+        ) : (
+          <div className="space-y-3">
+            {list.map((t) => (
+              <article
+                key={t.id}
+                className="bg-surface-container-lowest rounded-3xl shadow-editorial p-5 flex flex-col md:flex-row md:items-center gap-4"
+              >
+                <div className="flex items-center gap-3 md:flex-1 min-w-0">
+                  <Avatar src={t.user?.avatar} alt={t.user?.name ?? ''} size="md" />
+                  <div className="min-w-0">
+                    <p className="font-headline font-extrabold text-on-surface truncate">
+                      {t.user?.name ?? 'Không rõ'}
+                    </p>
+                    <p className="text-sm text-on-surface-variant truncate">{t.user?.email}</p>
+                  </div>
+                </div>
+
+                <div className="text-right md:text-left">
+                  <p className="font-headline font-extrabold text-2xl text-on-surface">
+                    {formatVnd(t.amount)}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">
+                    {new Date(t.createdAt).toLocaleString('vi-VN')}
+                  </p>
+                </div>
+
+                <div className="md:max-w-xs text-sm text-on-surface-variant">
+                  <p className="text-[10px] uppercase tracking-widest">Tài khoản nhận</p>
+                  <p className="text-on-surface truncate">
+                    {t.bankAccount || 'Chưa cung cấp'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 md:ml-auto">
+                  <Button size="sm" variant="outline" rounded="full" onClick={() => setViewId(t.id)}>
+                    <Icon name="visibility" size={16} />
+                    Chi tiết
+                  </Button>
+                  <Button
+                    size="sm"
+                    rounded="full"
+                    onClick={() => handleApprove(t.id)}
+                    disabled={busyId === t.id}
+                  >
+                    <Icon name="check" size={16} />
+                    Duyệt
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    rounded="full"
+                    onClick={() => handleReject(t.id)}
+                    disabled={busyId === t.id}
+                  >
+                    <Icon name="close" size={16} />
+                    Từ chối
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )
+      ) : loadingHistory ? (
         <LoadingState count={3} />
-      ) : list.length === 0 ? (
+      ) : history.length === 0 ? (
         <EmptyState
-          icon="account_balance_wallet"
-          title="Không có yêu cầu rút tiền"
-          description="Khi HDV gửi yêu cầu rút, các giao dịch sẽ xuất hiện tại đây."
+          icon="history"
+          title="Chưa có lịch sử rút tiền"
+          description="Các yêu cầu đã duyệt hoặc từ chối sẽ hiển thị tại đây."
         />
       ) : (
         <div className="space-y-3">
-          {list.map((t) => (
+          {history.map((h) => (
             <article
-              key={t.id}
-              className="bg-surface-container-lowest rounded-3xl shadow-editorial p-5 flex flex-col md:flex-row md:items-center gap-4"
+              key={h.id}
+              className="bg-surface-container-lowest rounded-3xl shadow-editorial p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-4"
             >
               <div className="flex items-center gap-3 md:flex-1 min-w-0">
-                <Avatar src={t.user?.avatar} alt={t.user?.name ?? ''} size="md" />
+                <Avatar src={h.user?.avatar} alt={h.user?.name ?? ''} size="md" />
                 <div className="min-w-0">
                   <p className="font-headline font-extrabold text-on-surface truncate">
-                    {t.user?.name ?? 'Không rõ'}
+                    {h.user?.name ?? 'Không rõ'}
                   </p>
-                  <p className="text-sm text-on-surface-variant truncate">{t.user?.email}</p>
+                  <p className="text-sm text-on-surface-variant truncate">{h.user?.email}</p>
                 </div>
               </div>
 
               <div className="text-right md:text-left">
-                <p className="font-headline font-extrabold text-2xl text-on-surface">
-                  {formatVnd(t.amount)}
+                <p className="font-headline font-extrabold text-xl text-on-surface">
+                  {formatVnd(h.amount)}
                 </p>
                 <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">
-                  {new Date(t.createdAt).toLocaleString('vi-VN')}
+                  {new Date(h.createdAt).toLocaleString('vi-VN')}
                 </p>
               </div>
 
-              <div className="md:max-w-xs text-sm text-on-surface-variant">
+              <div className="md:max-w-xs text-sm text-on-surface-variant min-w-0">
                 <p className="text-[10px] uppercase tracking-widest">Tài khoản nhận</p>
-                <p className="text-on-surface truncate">
-                  {t.bankAccount || 'Chưa cung cấp'}
-                </p>
+                <p className="text-on-surface truncate">{h.bankAccount || '—'}</p>
               </div>
 
-              <div className="flex items-center gap-2 md:ml-auto">
-                <Button size="sm" variant="outline" rounded="full" onClick={() => setViewId(t.id)}>
-                  <Icon name="visibility" size={16} />
-                  Chi tiết
-                </Button>
-                <Button
-                  size="sm"
-                  rounded="full"
-                  onClick={() => handleApprove(t.id)}
-                  disabled={busyId === t.id}
-                >
-                  <Icon name="check" size={16} />
-                  Duyệt
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  rounded="full"
-                  onClick={() => handleReject(t.id)}
-                  disabled={busyId === t.id}
-                >
-                  <Icon name="close" size={16} />
-                  Từ chối
-                </Button>
-              </div>
+              <span
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold md:ml-auto ${
+                  h.status === 'success'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-error/10 text-error'
+                }`}
+              >
+                <Icon name={h.status === 'success' ? 'check_circle' : 'cancel'} size={14} />
+                {h.status === 'success' ? 'Đã duyệt' : 'Đã từ chối'}
+              </span>
             </article>
           ))}
         </div>

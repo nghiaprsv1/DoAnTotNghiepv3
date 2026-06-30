@@ -174,6 +174,13 @@ export class GuidesController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @Get('wallet/withdrawals/history')
+  withdrawalHistory(@Query('limit') limit?: string) {
+    return this.svc.withdrawalHistory(limit ? Number(limit) : 100);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Put('wallet/withdrawals/:id')
   decideWithdrawal(
     @Param('id', new ParseUUIDPipe()) id: string,
