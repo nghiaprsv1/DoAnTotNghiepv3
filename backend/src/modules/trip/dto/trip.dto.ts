@@ -109,3 +109,11 @@ export class JoinRequestDto {
 export class HireGuideDto {
   @IsUUID() guideId!: string;
 }
+
+export class CancelTripDto {
+  /** Lý do huỷ — lưu lại để tra cứu, đính kèm thông báo cho thành viên/HDV. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}

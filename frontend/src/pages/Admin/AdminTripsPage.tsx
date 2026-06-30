@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { Button } from '@components/ui/Button'
 import { LoadingState } from '@components/common/LoadingState'
 import { EmptyState } from '@components/common/EmptyState'
 import { useAdminTrips } from '@hooks/useAdmin'
+import { tripDetailPath } from '@constants/routes'
+import { AdminDetailDialog, AdminSection, AdminRow } from './components/AdminDetailDialog'
 import { cn } from '@utils/cn'
 
 const STATUSES: { key: string; label: string }[] = [
@@ -34,6 +37,7 @@ export function AdminTripsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string>('all')
   const [page, setPage] = useState(1)
+  const [viewId, setViewId] = useState<string | null>(null)
   const pageSize = 20
 
   const { data, isLoading } = useAdminTrips({
@@ -45,6 +49,7 @@ export function AdminTripsPage() {
 
   const trips = data?.data ?? []
   const totalPages = data?.totalPages ?? 1
+  const detail = trips.find((t) => t.id === viewId) ?? null
 
   return (
     <div className="space-y-5">
@@ -157,6 +162,13 @@ export function AdminTripsPage() {
                   )}
                 </div>
               </div>
+
+              <div className="flex md:flex-col items-start md:items-end gap-2 md:justify-center">
+                <Button size="sm" variant="outline" rounded="full" onClick={() => setViewId(t.id)}>
+                  <Icon name="visibility" size={14} />
+                  Chi tiết
+                </Button>
+              </div>
             </article>
           ))}
         </div>
@@ -188,6 +200,58 @@ export function AdminTripsPage() {
             <Icon name="chevron_right" size={16} />
           </Button>
         </div>
+      )}
+
+      {detail && (
+        <AdminDetailDialog
+          title={detail.title}
+          subtitle={`${detail.destination} · ${detail.durationDays} ngày`}
+          media={
+            <img
+              src={detail.coverImage}
+              alt={detail.title}
+              className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+            />
+          }
+          onClose={() => setViewId(null)}
+          footer={
+            <Link
+              to={tripDetailPath(detail.id)}
+              target="_blank"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full editorial-gradient text-on-primary text-sm font-bold"
+            >
+              <Icon name="open_in_new" size={16} />
+              Mở trang chuyến đi
+            </Link>
+          }
+        >
+          {detail.coverImage && (
+            <img
+              src={detail.coverImage}
+              alt={detail.title}
+              className="w-full max-h-72 object-cover rounded-2xl"
+              loading="lazy"
+            />
+          )}
+          <AdminSection title="Thông tin chuyến đi">
+            <AdminRow label="Điểm đến" value={detail.destination} />
+            <AdminRow label="Trạng thái" value={detail.status} />
+            <AdminRow
+              label="Thời gian"
+              value={`${formatDate(detail.startDate)} → ${formatDate(detail.endDate)} (${detail.durationDays} ngày)`}
+            />
+            <AdminRow label="Thành viên" value={`${detail.memberCount}/${detail.maxMembers}`} />
+            <AdminRow
+              label="Giá từ"
+              value={detail.priceFrom > 0 ? formatVnd(detail.priceFrom) : 'Miễn phí'}
+            />
+            <AdminRow label="Ngày tạo" value={formatDate(detail.createdAt)} />
+          </AdminSection>
+          <AdminSection title="Người liên quan">
+            <AdminRow label="Người tạo" value={detail.creator?.name ?? '—'} />
+            <AdminRow label="Hướng dẫn viên" value={detail.guide?.name ?? 'Chưa có'} />
+          </AdminSection>
+        </AdminDetailDialog>
       )}
     </div>
   )

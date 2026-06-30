@@ -2,6 +2,7 @@ import axiosInstance from './axiosInstance'
 import { unwrap, unwrapList } from './unwrap'
 import type { ApiResponse, PaginatedResponse } from '@types/common'
 import type { HireableGuide } from '@types/trip'
+import type { GuideTourHistory } from '@types/guideDashboard'
 
 interface BackendGuide {
   id: string
@@ -78,6 +79,14 @@ export const guideService = {
     const res = await axiosInstance.get<
       ApiResponse<Array<{ startDate: string; endDate: string }>>
     >(`/guides/${id}/busy-dates`)
+    return unwrap(res)
+  },
+
+  /** Lịch sử tour đã hoàn thành của HDV (tab "Lịch sử tour"). */
+  tourHistory: async (id: string): Promise<GuideTourHistory[]> => {
+    const res = await axiosInstance.get<ApiResponse<GuideTourHistory[]>>(
+      `/guides/${id}/tour-history`,
+    )
     return unwrap(res)
   },
 

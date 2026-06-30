@@ -26,15 +26,45 @@ NGUYÊN TẮC:
     bằng search_trips / search_places / search_guides / search_posts.
 - Hỏi CHUYẾN/tour cụ thể → search_trips. Hỏi ĐỊA ĐIỂM cụ thể → search_places. Tìm HDV cụ thể → search_guides.
   Hỏi review/kinh nghiệm → search_posts. Kiến thức nền/mùa đẹp/đặc sản/lưu ý/CÁCH DÙNG WEB → search_documents.
+- THUỘC TÍNH của một ĐỊA ĐIỂM đã biết tên (giá vé/phí vào cổng, giờ mở cửa, "phun lửa mấy giờ", có gì
+  chơi, đặc điểm…) → DÙNG search_places (thẻ địa điểm CHỨA SẴN các thông tin này). ĐỪNG đổ sang
+  search_documents cho thuộc tính địa điểm. Chỉ khi search_places trả "không tìm thấy" mới cân nhắc khác.
 - User muốn TẠO/LÊN lộ trình mới → trước hết search_places + search_documents để có dữ liệu thật,
   rồi gọi create_itinerary với context là tóm tắt dữ liệu đó.
 - CHỈ đặt browse=true khi user muốn xem DANH SÁCH CHUNG ("liệt kê tất cả địa điểm", "có những HDV nào").
   KHI user hỏi về MỘT điểm đến/chủ đề cụ thể mà công cụ trả "không tìm thấy" → ĐỪNG thử lại với
   browse=true (sẽ ra kết quả linh tinh không liên quan). Thay vào đó dùng search_documents, hoặc nói
   thật là hệ thống chưa có dữ liệu về nơi đó.
+- ĐÚNG ĐỊA PHƯƠNG (RẤT QUAN TRỌNG): khi user nêu một tỉnh/thành cụ thể (vd "ở Đà Nẵng", "chỉ Đà Nẵng"),
+  query truyền cho công cụ PHẢI chứa tên tỉnh/thành đó để lọc đúng nơi. TUYỆT ĐỐI KHÔNG liệt kê địa
+  điểm thuộc tỉnh KHÁC (vd hỏi Đà Nẵng mà trả Vịnh Hạ Long là SAI). Nếu kết quả công cụ trả về có mục
+  thuộc tỉnh khác nơi user hỏi → BỎ mục đó khỏi câu trả lời, không nhắc tới.
+- HỎI "ĐỊA ĐIỂM KHÁC / THÊM / CÒN GÌ NỮA": user muốn các mục MỚI, CHƯA được nhắc ở các lượt trước.
+  Hãy nhìn lại những tên đã liệt kê trong hội thoại và CHỌN trong kết quả công cụ những mục KHÁC (chưa
+  từng nêu). Công cụ trả nhiều hơn 4 mục → ưu tiên các mục chưa xuất hiện. Nếu đã hết mục mới thì nói
+  thật là "đã giới thiệu gần hết các địa điểm nổi bật rồi".
 - KHÔNG gọi lại một công cụ với tham số gần giống lần trước. Tối đa 1-2 công cụ là đủ cho câu hỏi thường.
 - Khi đã đủ dữ liệu, trả lời ngắn gọn, thân thiện, giới thiệu kết quả tìm được và mời user bấm thẻ
   bên dưới để xem chi tiết. Nếu không tìm thấy gì, nói thật là chưa có dữ liệu.
+
+CHỐNG BỊA (TUYỆT ĐỐI tuân thủ):
+- CHỈ dùng dữ liệu do công cụ trả về. KHÔNG thêm kiến thức ngoài, KHÔNG suy đoán.
+- search_documents trả đoạn kèm TÊN TỆP (chủ đề/địa danh của đoạn). Nếu người dùng hỏi nơi A mà
+  đoạn lại nói về nơi B (vd hỏi "Mù Cang Chải" nhưng đoạn là "CaoBang.txt") → KHÔNG được gán nội dung
+  nơi B cho nơi A. Khi không đoạn nào nói đúng nơi/chủ đề được hỏi → trả lời thật: "hệ thống chưa có
+  thông tin về <nơi đó>", và có thể gợi ý các nơi ĐÃ có tài liệu (Cao Bằng, Lào Cai, Phú Quốc, Vũng Tàu).
+- Chỉ khẳng định một HDV "nói tiếng X" / có đặc điểm nào đó khi dữ liệu công cụ GHI RÕ (trường ngôn ngữ,
+  chuyên môn…). Nếu dữ liệu không ghi, đừng suy diễn — nói rằng thông tin đó chưa được cập nhật.
+- KHÔNG biến mô tả CHUNG CHUNG thành tuyên bố CỤ THỂ. Phải GIỮ NGUYÊN mức độ chính xác của dữ liệu,
+  KHÔNG "nâng cấp" thành nhất/đầu tiên/lớn nhất/dài nhất/duy nhất nếu dữ liệu không nói y như vậy.
+  Ví dụ: dữ liệu ghi "cáp treo đạt NHIỀU KỶ LỤC thế giới" → CHỈ được viết "đạt nhiều kỷ lục thế giới",
+  TUYỆT ĐỐI KHÔNG viết "cáp treo DÀI NHẤT thế giới" (đó là bịa con số/thứ hạng cụ thể không có trong dữ
+  liệu). Khi không chắc con số/thứ hạng chính xác → diễn đạt đúng như nguồn, không tự thêm.
+- GIỮ NGUYÊN VĂN MỌI CON SỐ, ĐƠN VỊ, GIÁ TIỀN, NGÀY GIỜ trong dữ liệu — chép đúng từng chữ. TUYỆT ĐỐI
+  KHÔNG làm tròn, KHÔNG đổi đơn vị (tỉ ⇄ triệu ⇄ nghìn), KHÔNG "sửa cho hợp lý" dù con số trông vô lý.
+  Ví dụ: dữ liệu ghi "vé người lớn 7 tỉ VND" → PHẢI viết "7 tỉ VND", KHÔNG được tự đổi thành "7 triệu".
+  Nhiệm vụ của bạn là TRÍCH DẪN dữ liệu, KHÔNG phải đánh giá hay chỉnh sửa nó. Nếu thấy dữ liệu bất
+  thường, cứ nêu đúng như nguồn (có thể nói thêm "theo dữ liệu hệ thống").
 
 NGỮ CẢNH HỘI THOẠI (RẤT QUAN TRỌNG):
 - Các lượt trước CHỈ để tham khảo. TRỌNG TÂM là "CÂU HỎI HIỆN TẠI" ở cuối.
@@ -68,9 +98,16 @@ export async function runRagAgent(opts: {
   draft?: RagItinerarySuggestion | null;
   /** Lịch sử hội thoại (các lượt trước) để agent hiểu câu nối tiếp — KHÔNG gồm câu hiện tại. */
   history?: { role: 'user' | 'assistant'; content: string }[];
+  /** Router phát hiện user muốn TẠO lộ trình mới → ưu tiên tool create_itinerary. */
+  wantsItinerary?: boolean;
+  /**
+   * User ĐÃ nêu rõ số ngày (hoặc khoảng ngày đi-về) cho lộ trình chưa. Nếu CHƯA
+   * mà lại muốn tạo lộ trình → agent phải HỎI user, KHÔNG tự chọn số ngày.
+   */
+  daysSpecified?: boolean;
   logger?: Logger;
 }): Promise<AgentRunResult> {
-  const { question, chat, deps, maxSteps, draft, history } = opts;
+  const { question, chat, deps, maxSteps, draft, history, wantsItinerary, daysSpecified } = opts;
   const steps: RagStep[] = [];
   const cards: RetrievedCard[] = [];
   // KHÔNG mặc định suggestion = draft. Lộ trình CHỈ hiện lại khi lượt NÀY thực sự
@@ -97,12 +134,23 @@ export async function runRagAgent(opts: {
     .slice(-6)
     .map((h) => ({ role: h.role, content: h.content }));
 
+  // Chỉ thị TẠO lộ trình: khi Router nhận diện user muốn lập lộ trình mới, ép agent
+  // đi đúng quy trình create_itinerary (gom dữ liệu thật trước, rồi dựng) thay vì
+  // chỉ liệt kê chuyến có sẵn bằng search_trips.
+  const itineraryDirective =
+    wantsItinerary && !(draft && draft.title)
+      ? `\n\nLƯU Ý ĐIỀU HƯỚNG: Người dùng muốn TẠO/LÊN một lộ trình MỚI. Hãy: (1) gọi search_places` +
+        ` và/hoặc search_documents để lấy địa điểm/đặc sản THẬT của điểm đến; (2) sau đó BẮT BUỘC gọi` +
+        ` create_itinerary với "request" là yêu cầu nguyên văn và "context" là tóm tắt dữ liệu thật vừa thu` +
+        ` thập. ĐỪNG chỉ dừng ở việc liệt kê chuyến có sẵn — phải dựng lộ trình chi tiết theo ngày.`
+      : '';
+
   const messages: AgentMessage[] = [
     ...priorTurns,
     {
       role: 'user',
       content:
-        `${SYSTEM_PROMPT}${draftContext}` +
+        `${SYSTEM_PROMPT}${draftContext}${itineraryDirective}` +
         `\n\n=== CÂU HỎI HIỆN TẠI (hãy xử lý câu này, các lượt trên chỉ để tham khảo) ===\n${question}`,
     },
   ];
@@ -128,7 +176,9 @@ export async function runRagAgent(opts: {
   for (; round < maxSteps; round++) {
     const r0 = Date.now();
     const res = await chat.chatWithTools(messages, tools, {
-      temperature: 0.3,
+      // Temp thấp để bám dữ liệu, giảm "sáng tạo" gây bịa (vd tự nâng "nhiều kỷ
+      // lục" thành "dài nhất thế giới").
+      temperature: 0.2,
       maxTokens: 1024,
     });
 
@@ -148,6 +198,7 @@ export async function runRagAgent(opts: {
       observation: string;
       cards: number;
       suggestion: boolean;
+      docSearch?: unknown;
     }[] = [];
     for (const call of res.toolCalls) {
       const out = await executeTool(call.name, call.arguments, deps);
@@ -165,6 +216,8 @@ export async function runRagAgent(opts: {
         observation: out.observation,
         cards: out.cards?.length ?? 0,
         suggestion: !!out.suggestion,
+        // Chi tiết embedding + hybrid + rerank của search_documents → FE hiển thị.
+        docSearch: out.docSearch,
       });
     }
 
@@ -190,6 +243,19 @@ export async function runRagAgent(opts: {
           : 'Mình chưa tìm thấy thông tin phù hợp. Bạn thử hỏi rõ hơn về điểm đến, chuyến đi hoặc địa điểm nhé.';
     }
   }
+
+  // CHẶN BỊA "NHẤT/DUY NHẤT/ĐẦU TIÊN … (thế giới/Việt Nam)" — lớp deterministic
+  // sau LLM: nếu tuyên bố tuyệt đối KHÔNG có trong dữ liệu công cụ trả về thì cắt
+  // bỏ (vd dữ liệu ghi "đạt nhiều kỷ lục thế giới" mà LLM viết "cáp treo DÀI NHẤT
+  // thế giới" → cắt mệnh đề đó). Bằng chứng = mọi observation tool trong hội thoại.
+  const evidence = messages
+    .filter((m) => m.role === 'tool')
+    .map((m) => m.content ?? '')
+    .join('\n');
+  answer = stripUnsupportedSuperlatives(answer, evidence);
+  // CHẶN ĐỔI ĐƠN VỊ TIỀN: nếu LLM giữ đúng con số nhưng đổi đơn vị (vd dữ liệu
+  // "7 tỉ" → LLM viết "7 triệu" cho "hợp lý") thì trả lại đơn vị ĐÚNG theo dữ liệu.
+  answer = fixCurrencyUnits(answer, evidence);
 
   // LỌC THẺ theo câu trả lời cuối: chỉ giữ thẻ mà answer THỰC SỰ nhắc tên. Tránh
   // cảnh "answer nói Phú Quốc/Vũng Tàu (từ tài liệu) nhưng thẻ lại là Hạ Long/Sapa
@@ -224,27 +290,86 @@ function normalizeVi(s: string): string {
 }
 
 /**
- * Giữ lại thẻ mà câu trả lời CÓ nhắc tới (so khớp token tên thẻ, đã bỏ dấu).
- * Lý do: agent gom thẻ từ mọi lần gọi tool — kể cả lần browse trả rác — nhưng
- * câu trả lời thường chỉ nói về vài mục thật sự liên quan. Chỉ hiện thẻ khớp lời.
- * An toàn: nếu KHÔNG thẻ nào khớp (answer dạng liệt kê/không nêu tên) → trả [] để
- * khỏi hiện rác; nhưng nếu mọi thẻ đều bị loại mà answer rõ ràng liệt kê chung thì
- * giữ nguyên (xử lý ở dưới qua ngưỡng).
+ * Cắt các tuyên bố TUYỆT ĐỐI ("… nhất/duy nhất/đầu tiên … (thế giới|Việt Nam|…)")
+ * mà BẰNG CHỨNG (observation tool) KHÔNG hề chứa → chống LLM tự "nâng cấp" mô tả
+ * chung thành tuyên bố cụ thể (vd dữ liệu "đạt nhiều kỷ lục thế giới" → LLM viết
+ * "cáp treo DÀI NHẤT thế giới"). Cách làm: bắt cụm <đặc tính> + <phạm vi>, trích
+ * "lõi đặc tính" (vd "dài nhất" / "duy nhất"); nếu evidence CÓ lõi đó → giữ
+ * nguyên (tuyên bố có thật trong dữ liệu), nếu KHÔNG → xoá cụm tuyên bố.
+ */
+function stripUnsupportedSuperlatives(answer: string, evidence: string): string {
+  const ev = normalizeVi(evidence);
+  const SCOPE = '(?:thế giới|toàn cầu|việt nam|đông nam á|châu á|hành tinh)';
+  // Bắt: <lõi đặc tính> + [tối đa 3 từ đệm + <phạm vi>]? + [liên từ "và/cùng/,"]?
+  //   lõi = "<1 từ> nhất"  hoặc  "duy nhất|đầu tiên|số một|số 1"
+  // Scope là TÙY CHỌN (không bắt buộc đứng ngay sau) để bắt cả "dài nhất VÀ đạt
+  // nhiều kỷ lục thế giới" — nơi "dài nhất" cách "thế giới" vài từ. Liên từ phía
+  // sau được nuốt kèm để khi cắt không để lại "… và …" lủng củng.
+  const re = new RegExp(
+    `(\\p{L}+\\s+nhất|duy nhất|đầu tiên|số một|số 1)((?:\\s+\\p{L}+){0,3}?\\s+${SCOPE})?(\\s+(?:và|cùng)\\b|\\s*,)?`,
+    'giu',
+  );
+  return answer
+    .replace(re, (full: string, core: string) => {
+      const coreN = normalizeVi(core ?? '').trim();
+      // Evidence chứa đúng lõi đặc tính → tuyên bố có thật → GIỮ NGUYÊN (cả scope/liên từ).
+      if (coreN && ev.includes(coreN)) return full;
+      // Không có trong dữ liệu → BỎ cả cụm (gồm liên từ đã nuốt) để câu gọn.
+      return '';
+    })
+    // Dọn dấu/khoảng trắng/liên từ thừa sau khi xoá.
+    .replace(/\s*,\s*,/g, ',')
+    .replace(/\(\s*\)/g, '')
+    .replace(/\s+([,.;:])/g, '$1')
+    .replace(/,\s*\./g, '.')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/**
+ * Sửa ĐƠN VỊ TIỀN bị LLM đổi: khi câu trả lời giữ đúng CON SỐ nhưng đổi đơn vị
+ * (vd dữ liệu "7 tỉ VND" → LLM viết "7 triệu VND" cho "hợp lý") → trả lại đơn vị
+ * ĐÚNG theo dữ liệu. Cách làm: với mỗi cụm "<số> <đơn vị>" trong câu trả lời, nếu
+ * dữ liệu (evidence) có CÙNG con số đó nhưng đơn vị KHÁC → thay đơn vị trong câu
+ * trả lời cho khớp dữ liệu. Chỉ đụng khi con số trùng khít (tránh sửa bừa).
+ */
+function fixCurrencyUnits(answer: string, evidence: string): string {
+  const UNIT = '(?:tỉ|tỷ|triệu|nghìn|ngàn|đồng|đ|k|vnd|vnđ)';
+  const NUM = '\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d+)?';
+  const re = new RegExp(`(${NUM})\\s*(${UNIT})`, 'giu');
+  return answer.replace(re, (full: string, num: string, unit: string) => {
+    // Tìm trong evidence GỐC (CÒN DẤU) cùng con số này đi với đơn vị NÀO. Dùng
+    // \b để khớp đúng số, cho phép dấu . , giữa các nhóm nghìn.
+    const numPat = num.replace(/[.,]/g, '[.,]?');
+    const evRe = new RegExp(`\\b${numPat}\\s*(${UNIT})`, 'iu');
+    const m = evRe.exec(evidence);
+    if (!m) return full; // dữ liệu không có con số này → không đụng
+    const evUnit = m[1];
+    // Đơn vị trong dữ liệu khác đơn vị LLM viết → sửa về đơn vị dữ liệu.
+    if (evUnit.toLowerCase() !== unit.toLowerCase()) {
+      return `${num} ${evUnit}`;
+    }
+    return full;
+  });
+}
+
+/**
+ * Giu lai the ma cau tra loi THUC SU nhac toi. Truoc day khop theo token le nen
+ * cac the "ho hang" cung 1 tu chung (vd "Cau Vang", "Cau Song Han" deu co "cau")
+ * lot theo du answer khong he noi toi -> hien the thua. Nay khop CHAT theo TEN
+ * DAY DU: chi giu the khi ten (da bo dau + bo phan trong ngoac) xuat hien NHU MOT
+ * CUM LIEN trong cau tra loi. An toan: tat ca deu bi loai van tra [] (khong hien rac).
  */
 function filterCardsByAnswer(cards: RetrievedCard[], answer: string): RetrievedCard[] {
   if (cards.length === 0) return cards;
   const ans = normalizeVi(answer);
-  const kept = cards.filter((c) => {
-    // Token có nghĩa trong tên thẻ (≥3 ký tự) — cần ít nhất 1 token xuất hiện ở answer.
-    const tokens = normalizeVi(c.title)
-      .split(/\s+/)
-      .filter((w) => w.length >= 3);
-    if (tokens.length === 0) return false;
-    const hits = tokens.filter((t) => ans.includes(t)).length;
-    // Khớp khi: có ≥2 token trùng, HOẶC trùng ≥ nửa số token (tên ngắn 1-2 từ).
-    return hits >= 2 || hits >= Math.ceil(tokens.length / 2);
+  return cards.filter((c) => {
+    // Bo phan trong ngoac (vd "Cong vien Chau A (Asia Park)" -> "cong vien chau a").
+    const name = normalizeVi(c.title.replace(/\(.*?\)/g, '').trim());
+    if (!name) return false;
+    // Khop khi ten day du xuat hien nhu mot cum lien trong cau tra loi.
+    return ans.includes(name);
   });
-  return kept;
 }
 
 /** Gộp thẻ mới vào danh sách, khử trùng theo source+id (tool gọi lặp không nhân đôi). */

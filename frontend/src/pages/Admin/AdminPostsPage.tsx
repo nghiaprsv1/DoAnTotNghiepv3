@@ -5,6 +5,7 @@ import { Button } from '@components/ui/Button'
 import { LoadingState } from '@components/common/LoadingState'
 import { EmptyState } from '@components/common/EmptyState'
 import { useAdminPosts, useDeleteAdminPost } from '@hooks/useAdmin'
+import { AdminDetailDialog, AdminSection, AdminRow } from './components/AdminDetailDialog'
 
 const formatDate = (s: string) => new Date(s).toLocaleDateString('vi-VN')
 
@@ -16,6 +17,7 @@ const formatDate = (s: string) => new Date(s).toLocaleDateString('vi-VN')
 export function AdminPostsPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [viewId, setViewId] = useState<string | null>(null)
   const pageSize = 20
 
   const { data, isLoading } = useAdminPosts({
@@ -27,6 +29,7 @@ export function AdminPostsPage() {
 
   const posts = data?.data ?? []
   const totalPages = data?.totalPages ?? 1
+  const detail = posts.find((p) => p.id === viewId) ?? null
 
   const removePost = (id: string, title: string) => {
     if (!confirm(`Xoá bài viết "${title}"? Hành động không thể hoàn tác.`)) return
@@ -123,6 +126,15 @@ export function AdminPostsPage() {
               <div className="flex md:flex-col items-start md:items-end gap-2 md:justify-center">
                 <Button
                   size="sm"
+                  variant="outline"
+                  rounded="full"
+                  onClick={() => setViewId(p.id)}
+                >
+                  <Icon name="visibility" size={14} />
+                  Chi tiết
+                </Button>
+                <Button
+                  size="sm"
                   variant="ghost"
                   rounded="full"
                   className="text-error hover:bg-error/10"
@@ -164,6 +176,59 @@ export function AdminPostsPage() {
             <Icon name="chevron_right" size={16} />
           </Button>
         </div>
+      )}
+
+      {detail && (
+        <AdminDetailDialog
+          title={detail.title}
+          subtitle={`${detail.location} · ${formatDate(detail.createdAt)}`}
+          media={
+            <img
+              src={detail.image}
+              alt={detail.title}
+              className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+            />
+          }
+          onClose={() => setViewId(null)}
+          footer={
+            <Button
+              size="md"
+              variant="ghost"
+              rounded="full"
+              className="text-error hover:bg-error/10"
+              onClick={() => {
+                removePost(detail.id, detail.title)
+                setViewId(null)
+              }}
+              disabled={del.isPending}
+            >
+              <Icon name="delete" size={16} />
+              Xoá bài viết
+            </Button>
+          }
+        >
+          {detail.image && (
+            <img
+              src={detail.image}
+              alt={detail.title}
+              className="w-full max-h-72 object-cover rounded-2xl"
+              loading="lazy"
+            />
+          )}
+          <AdminSection title="Nội dung">
+            <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+              {detail.excerpt}
+            </p>
+          </AdminSection>
+          <AdminSection title="Thông tin">
+            <AdminRow label="Tác giả" value={detail.author ? `${detail.author.name} · ${detail.author.email}` : '—'} />
+            <AdminRow label="Địa điểm" value={detail.location} />
+            <AdminRow label="Hiển thị" value={detail.visibility} />
+            <AdminRow label="Lượt thích" value={String(detail.likeCount)} />
+            <AdminRow label="Bình luận" value={String(detail.commentCount)} />
+            <AdminRow label="Ngày đăng" value={formatDate(detail.createdAt)} />
+          </AdminSection>
+        </AdminDetailDialog>
       )}
     </div>
   )

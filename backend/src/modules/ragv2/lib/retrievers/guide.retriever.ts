@@ -60,6 +60,7 @@ export class GuideRetriever implements RagRetriever {
     return rows.map((g) => {
       const price = Number(g.pricePerDay).toLocaleString('vi-VN');
       const specs = g.specialties?.slice(0, 3).join(', ');
+      const langs = g.languages?.length ? g.languages.join(', ') : null;
       return {
         source: this.source,
         id: g.id,
@@ -68,7 +69,12 @@ export class GuideRetriever implements RagRetriever {
         image: g.user?.avatar ?? undefined,
         detailPath: `/guides/${g.id}`,
         score: Number(g.rating) || 0,
-        context: `Hướng dẫn viên ${g.user?.name ?? ''} khu vực ${g.region}, ${g.yearsExperience} năm kinh nghiệm, giá ${price} ${g.currency}/ngày${specs ? `, chuyên: ${specs}` : ''}.`,
+        // Đưa ngôn ngữ vào context để LLM CHỈ khẳng định "nói tiếng X" khi có dữ
+        // liệu thật (tránh bịa như câu "HDV nói tiếng Anh" khi DB không ghi).
+        context:
+          `Hướng dẫn viên ${g.user?.name ?? ''} khu vực ${g.region}, ${g.yearsExperience} năm kinh nghiệm, ` +
+          `giá ${price} ${g.currency}/ngày${specs ? `, chuyên: ${specs}` : ''}` +
+          `${langs ? `, ngôn ngữ: ${langs}` : ', ngôn ngữ: chưa cập nhật'}.`,
       };
     });
   }

@@ -8,6 +8,7 @@ import { EmptyState } from '@components/common/EmptyState'
 import { ReviewModal, type ReviewTarget } from '@components/features/ReviewModal'
 import { useGuide } from '@hooks/useGuides'
 import { reviewService } from '@services/reviewService'
+import { guideService } from '@services/guideService'
 import { ROUTES } from '@constants/routes'
 import { cn } from '@utils/cn'
 import { BookingPanel } from './components/BookingPanel'
@@ -15,10 +16,12 @@ import { Rating } from './components/Rating'
 import { AboutTab } from './tabs/AboutTab'
 import { ToursTab } from './tabs/ToursTab'
 import { ReviewsTab } from './tabs/ReviewsTab'
-import type { GuideReview, GuideTourHistory } from '@types/guideDashboard'
+import { WorkScheduleTab } from './tabs/WorkScheduleTab'
+import type { GuideReview } from '@types/guideDashboard'
 
 const TABS = [
   { key: 'about', label: 'Giới thiệu', icon: 'info' },
+  { key: 'schedule', label: 'Lịch làm việc', icon: 'calendar_month' },
   { key: 'tours', label: 'Lịch sử tour', icon: 'history' },
   { key: 'reviews', label: 'Đánh giá', icon: 'reviews' },
 ] as const
@@ -54,8 +57,12 @@ export function GuideDetailPage() {
     [reviewsRaw]
   )
 
-  // Tour history endpoint not implemented yet on the backend.
-  const tours: GuideTourHistory[] = []
+  // Tour history — booking đã COMPLETED của HDV.
+  const { data: tours = [] } = useQuery({
+    queryKey: ['guide', 'tour-history', id],
+    queryFn: () => guideService.tourHistory(id as string),
+    enabled: Boolean(id),
+  })
 
   if (isLoading) {
     return (
@@ -175,6 +182,7 @@ export function GuideDetailPage() {
 
           {/* Tab content */}
           {tab === 'about' && <AboutTab guide={guide} />}
+          {tab === 'schedule' && <WorkScheduleTab guideId={guide.id} />}
           {tab === 'tours' && <ToursTab tours={tours} />}
           {tab === 'reviews' && (
             <ReviewsTab

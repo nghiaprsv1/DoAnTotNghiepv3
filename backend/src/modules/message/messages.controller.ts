@@ -49,6 +49,18 @@ export class MessagesController {
     return this.svc.openDirectConversation(user.sub, peerId);
   }
 
+  /**
+   * Open the group conversation tied to a trip + return history. Only trip
+   * members can read it (403 otherwise); 404 if the trip has no group yet.
+   */
+  @Get('trip/:tripId')
+  openTrip(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('tripId', new ParseUUIDPipe()) tripId: string,
+  ) {
+    return this.svc.openTripConversation(tripId, user.sub);
+  }
+
   @Post('groups')
   createGroup(
     @CurrentUser() user: JwtUserPayload,

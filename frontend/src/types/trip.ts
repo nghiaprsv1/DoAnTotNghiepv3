@@ -120,6 +120,8 @@ export interface Trip {
   isOwner?: boolean
   /** Backend lifecycle status — independent from date-derived live status. */
   status?: 'draft' | 'published' | 'cancelled' | 'completed'
+  /** Lý do huỷ (chỉ có khi status = 'cancelled'). */
+  cancelReason?: string
   /** Current viewer's most recent join-request status (null if never asked). */
   joinRequestStatus?: JoinRequestStatus | null
   /** Owner-only: pending join requests waiting for response. */

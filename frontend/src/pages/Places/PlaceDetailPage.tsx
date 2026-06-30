@@ -1,15 +1,14 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
-import { Avatar } from '@components/ui/Avatar'
 import { Button } from '@components/ui/Button'
 import { ReviewModal } from '@components/features/ReviewModal'
+import { ReviewList } from '@components/features/ReviewList'
 import { LoadingState } from '@components/common/LoadingState'
 import { EmptyState } from '@components/common/EmptyState'
 import { ROUTES } from '@constants/routes'
 import { usePlace } from '@hooks/usePlaces'
-import { reviewService } from '@services/reviewService'
 import { Rating } from '../GuideDetail/components/Rating'
 
 const TABS = [
@@ -25,13 +24,7 @@ export function PlaceDetailPage() {
   const [tab, setTab] = useState<TabKey>('overview')
   const [galleryIdx, setGalleryIdx] = useState(0)
   const [openReview, setOpenReview] = useState(false)
-
-  // Reviews come from /api/reviews?targetType=place&targetId=...
-  const { data: reviews } = useQuery({
-    queryKey: ['reviews', 'place', id],
-    queryFn: () => reviewService.list('place', id as string),
-    enabled: Boolean(id),
-  })
+  const queryClient = useQueryClient()
 
   if (isLoading) {
     return (
@@ -206,50 +199,12 @@ export function PlaceDetailPage() {
                 </div>
               </div>
 
-              {!reviews || reviews.length === 0 ? (
-                <EmptyState
-                  icon="reviews"
-                  title="Chưa có đánh giá"
-                  description="Hãy là người đầu tiên chia sẻ trải nghiệm của bạn."
-                />
-              ) : (
-                reviews.map((r) => (
-                  <article
-                    key={r.id}
-                    className="bg-surface-container-lowest rounded-3xl p-5 md:p-6 shadow-editorial space-y-3"
-                  >
-                    <header className="flex items-start gap-3">
-                      <Avatar src={r.author.avatar ?? ''} alt={r.author.name} size="md" ring />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-headline font-extrabold text-on-surface">
-                            {r.author.name}
-                          </p>
-                          <Rating rating={r.rating} size={14} />
-                        </div>
-                        <p className="text-xs text-on-surface-variant mt-0.5">
-                          {new Date(r.createdAt).toLocaleDateString('vi-VN')}
-                        </p>
-                      </div>
-                    </header>
-                    {r.comment && (
-                      <p className="text-sm text-on-surface/85 leading-relaxed">{r.comment}</p>
-                    )}
-                    <footer className="flex items-center gap-4 pt-2 border-t border-outline-variant/15">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-primary font-bold"
-                      >
-                        <Icon name="thumb_up" size={16} />
-                        Hữu ích
-                        {r.helpfulCount > 0 && (
-                          <span className="text-on-surface-variant/70">({r.helpfulCount})</span>
-                        )}
-                      </button>
-                    </footer>
-                  </article>
-                ))
-              )}
+              <ReviewList
+                targetType="place"
+                targetId={id as string}
+                title={null}
+                emptyLabel="Chưa có đánh giá. Hãy là người đầu tiên chia sẻ trải nghiệm của bạn."
+              />
             </section>
           )}
 
@@ -295,9 +250,16 @@ export function PlaceDetailPage() {
         onClose={() => setOpenReview(false)}
         target={{
           kind: 'place',
+          targetId: place.id,
           name: place.name,
           image: place.coverImage,
           context: place.province,
+        }}
+        onSuccess={() => {
+          // Refresh the review list + the place itself so rating/reviewCount
+          // on the hero + sidebar update immediately (giống GuideDetailPage).
+          queryClient.invalidateQueries({ queryKey: ['reviews', 'place', id] })
+          queryClient.invalidateQueries({ queryKey: ['place', id] })
         }}
       />
     </div>

@@ -47,6 +47,20 @@ export function MultiImageUpload({
 
   const removeAt = (idx: number) => onChange(value.filter((_, i) => i !== idx))
 
+  /** Collect every image file from a paste event and upload them. */
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const files = Array.from(e.clipboardData.items)
+      .filter((it) => it.type.startsWith('image/'))
+      .map((it) => it.getAsFile())
+      .filter((f): f is File => !!f)
+    if (files.length > 0) {
+      e.preventDefault()
+      const dt = new DataTransfer()
+      files.forEach((f) => dt.items.add(f))
+      addFiles(dt.files)
+    }
+  }
+
   const canAdd = value.length < max
 
   return (
@@ -82,15 +96,17 @@ export function MultiImageUpload({
 
         {canAdd && (
           <label
+            tabIndex={0}
+            onPaste={handlePaste}
             className={cn(
-              'aspect-square flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed cursor-pointer transition',
+              'aspect-square flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed cursor-pointer transition outline-none focus:border-primary focus:ring-2 focus:ring-primary/30',
               'border-outline-variant/40 hover:border-primary/60 bg-surface-container-lowest',
               uploading && 'opacity-60 cursor-progress',
             )}
           >
             <Icon name={uploading ? 'hourglass_empty' : 'add_photo_alternate'} className="text-on-surface-variant" />
-            <span className="text-[11px] font-headline font-bold text-on-surface-variant">
-              {uploading ? 'Đang tải…' : 'Thêm ảnh'}
+            <span className="text-[11px] font-headline font-bold text-on-surface-variant text-center leading-tight">
+              {uploading ? 'Đang tải…' : 'Thêm / dán ảnh'}
             </span>
             <input
               type="file"

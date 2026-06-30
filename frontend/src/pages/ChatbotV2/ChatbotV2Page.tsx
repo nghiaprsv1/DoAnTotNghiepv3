@@ -6,6 +6,7 @@ import { cn } from '@utils/cn'
 import { useAuthStore } from '@store/authStore'
 import {
   ragV2Service,
+  type DocSearchDetail,
   type RagAskResult,
   type RagCard,
   type RagItinerary,
@@ -25,11 +26,12 @@ interface ChatItem {
 }
 
 const SAMPLE_QUESTIONS = [
-  'Có chuyến đi nào tới Sapa không?',
-  'Tạo giúp mình lộ trình Phú Quốc 3 ngày',
+  'Đà Nẵng có địa điểm nào nổi tiếng?',
+  'Giá vé vào Bà Nà Hills bao nhiêu?',
+  'Cầu Rồng phun lửa lúc mấy giờ?',
+  'Tạo giúp mình lộ trình Đà Nẵng 3 ngày',
   'Tìm hướng dẫn viên khu vực miền Trung',
   'Tôi cần lưu ý gì khi đi du lịch vùng núi?',
-  'Mùa nào đẹp nhất để đi thác Bản Giốc?',
 ]
 
 /**
@@ -201,7 +203,7 @@ export function ChatbotV2Page() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Hỏi về cách dùng web hoặc lưu ý du lịch…"
+                placeholder="Hỏi về địa điểm, chuyến đi, HDV, lộ trình hoặc cách dùng web…"
                 disabled={busy}
                 className="flex-1 px-4 py-3 rounded-2xl bg-surface-container-low text-sm outline-none focus:ring-2 focus:ring-primary/40"
               />
@@ -334,36 +336,53 @@ function Pill({
 
 /* ─────────────────────── Pipeline legend ─────────────────────── */
 
+/**
+ * Sơ đồ phương pháp — phản ánh ĐÚNG kiến trúc AGENT (tool-calling/ReAct) mà bong
+ * bóng chat đang chạy: viết lại/định tuyến → vòng lặp LLM tự chọn công cụ (4 bộ
+ * truy hồi DB + tra tài liệu vector + dựng lộ trình) → chốt câu trả lời + lọc thẻ.
+ * (KHÁC pipeline tuyến tính 7 bước cũ — chỉ chạy khi RAGV2_AGENT=false.)
+ */
 const PIPELINE_STAGES = [
-  { icon: 'alt_route', title: 'Router', sub: 'định tuyến nguồn' },
-  { icon: 'edit_note', title: 'Viết lại', sub: 'query rewriting' },
-  { icon: 'database', title: 'Truy hồi DB', sub: 'trips/places/guides…' },
-  { icon: 'travel_explore', title: 'Hybrid', sub: 'vector + BM25 · RRF' },
-  { icon: 'filter_list', title: 'Rerank', sub: 'LLM lọc top-K' },
-  { icon: 'merge', title: 'Ngữ cảnh', sub: 'gộp tài liệu + DB' },
-  { icon: 'auto_awesome', title: 'Sinh trả lời', sub: 'Gemini' },
+  { icon: 'edit_note', title: 'Viết lại + định tuyến', sub: 'rewrite + chọn nguồn' },
+  { icon: 'smart_toy', title: 'Agent (LLM)', sub: 'tự quyết gọi công cụ' },
+  { icon: 'build', title: 'Gọi công cụ', sub: 'DB / tài liệu / lộ trình' },
+  { icon: 'visibility', title: 'Quan sát', sub: 'nhồi kết quả lại LLM' },
+  { icon: 'auto_awesome', title: 'Chốt trả lời', sub: 'sinh đáp án + lọc thẻ' },
 ]
 
 function PipelineLegend() {
   return (
     <section className="bg-surface-container-lowest rounded-3xl border border-outline-variant/20 p-4">
       <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">
-        Phương pháp thực thi (RAG pipeline)
+        Phương pháp thực thi · Agent tool-calling (ReAct)
       </p>
       <div className="flex flex-wrap items-stretch gap-2">
-        {PIPELINE_STAGES.map((s, i) => (
-          <div key={s.title} className="flex items-center gap-2">
-            <div className="flex flex-col items-center text-center w-24 rounded-2xl bg-surface-container-low px-2 py-2.5">
-              <Icon name={s.icon} className="text-primary" size={20} />
-              <span className="text-[12px] font-bold mt-1 leading-tight">{s.title}</span>
-              <span className="text-[10px] text-on-surface-variant leading-tight">{s.sub}</span>
+        {PIPELINE_STAGES.map((s, i) => {
+          // Bước 2-4 là vòng lặp (có thể lặp nhiều lần) → đánh dấu mũi tên quay lại.
+          const loopBack = i === 3
+          return (
+            <div key={s.title} className="flex items-center gap-2">
+              <div className="flex flex-col items-center text-center w-24 rounded-2xl bg-surface-container-low px-2 py-2.5">
+                <Icon name={s.icon} className="text-primary" size={20} />
+                <span className="text-[12px] font-bold mt-1 leading-tight">{s.title}</span>
+                <span className="text-[10px] text-on-surface-variant leading-tight">{s.sub}</span>
+              </div>
+              {i < PIPELINE_STAGES.length - 1 && (
+                <Icon
+                  name={loopBack ? 'autorenew' : 'arrow_forward'}
+                  size={16}
+                  className={loopBack ? 'text-tertiary' : 'text-outline'}
+                />
+              )}
             </div>
-            {i < PIPELINE_STAGES.length - 1 && (
-              <Icon name="arrow_forward" size={16} className="text-outline" />
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
+      <p className="text-[11px] text-on-surface-variant mt-2.5 leading-relaxed">
+        <Icon name="autorenew" size={12} className="inline text-tertiary" /> Các bước{' '}
+        <b>Agent → Gọi công cụ → Quan sát</b> lặp lại nhiều vòng đến khi LLM đủ dữ liệu để trả lời.
+        Mỗi câu hỏi agent tự chọn công cụ phù hợp (không cố định thứ tự).
+      </p>
     </section>
   )
 }
@@ -382,10 +401,11 @@ function EmptyState({
       <span className="inline-flex w-14 h-14 rounded-2xl editorial-gradient text-on-primary items-center justify-center mb-3">
         <Icon name="neurology" />
       </span>
-      <p className="font-headline font-extrabold text-lg">Hỏi đáp dựa trên tài liệu</p>
+      <p className="font-headline font-extrabold text-lg">Hỏi đáp có hiển thị quá trình</p>
       <p className="text-[13px] text-on-surface-variant max-w-md mx-auto mt-1">
-        Mỗi câu trả lời kèm bảng chi tiết các bước RAG: viết lại câu hỏi, vector hoá, tìm kiếm lai
-        (vector + từ khoá), xếp hạng lại lọc top-K, ghép ngữ cảnh và sinh câu trả lời.
+        Đây là CÙNG bộ não với bong bóng chat trên web (agent tự gọi công cụ). Mỗi câu trả lời kèm
+        bảng "Phương pháp thực thi": viết lại câu hỏi, agent chọn & gọi công cụ nào, kết quả công cụ
+        trả về (observation), và bước chốt câu trả lời + lọc thẻ.
       </p>
       <div className="flex flex-wrap justify-center gap-2 mt-4">
         {SAMPLE_QUESTIONS.map((q) => (
@@ -896,6 +916,7 @@ function AgentToolDetail({ d }: { d: Record<string, unknown> }) {
       observation: string
       cards: number
       suggestion: boolean
+      docSearch?: DocSearchDetail
     }[]) ?? []
   return (
     <div className="text-[12px] text-on-surface-variant space-y-2">
@@ -916,6 +937,8 @@ function AgentToolDetail({ d }: { d: Record<string, unknown> }) {
               {c.cards > 0 && <KV k="Thẻ DB" v={String(c.cards)} />}
               {c.suggestion && <KV k="Lộ trình" v="đã dựng" />}
             </div>
+            {/* search_documents → hiện rõ embedding + hybrid ranking + rerank */}
+            {c.docSearch && <DocSearchDetailView d={c.docSearch} />}
             <RawBox label="Kết quả công cụ (observation nhồi lại cho LLM)" text={c.observation} />
           </div>
         ))}
@@ -924,17 +947,99 @@ function AgentToolDetail({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-/** Bước chốt: model + số vòng đã chạy + số thẻ gom được. */
+/** Chi tiết pipeline search_documents: embedding + cosine + BM25 → RRF + rerank. */
+function DocSearchDetailView({ d }: { d: DocSearchDetail }) {
+  const rerankLabel =
+    d.rerankVia === 'llm' ? 'LLM chấm 0–10' : d.rerankVia === 'disabled' ? 'tắt (giữ RRF)' : 'fallback (RRF)'
+  return (
+    <details className="mt-1 rounded-lg border border-primary/25 bg-primary/5 overflow-hidden" open>
+      <summary className="cursor-pointer select-none px-2.5 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/10 flex items-center gap-1.5">
+        <Icon name="travel_explore" size={13} />
+        Tra cứu vector: embedding → cosine + BM25 → RRF → rerank
+      </summary>
+      <div className="px-2.5 py-2 space-y-2">
+        <div className="flex flex-wrap gap-1">
+          <KV k="Embedding" v={d.embedModel} />
+          <KV k="Số chiều" v={String(d.dimensions)} />
+          <KV k="Kho chunk" v={String(d.totalChunks)} />
+          <KV k="Ứng viên" v={String(d.candidateK)} />
+          <KV k="Rerank" v={rerankLabel} />
+        </div>
+        <p className="text-[10px] text-on-surface-variant leading-relaxed">
+          Mỗi ứng viên chấm 2 điểm độc lập: <b>cosine</b> (vector ngữ nghĩa) + <b>BM25</b> (từ khoá),
+          hợp nhất bằng <b>RRF</b>, rồi <b>rerank</b> lọc top-K. Hàng <span className="text-primary font-bold">xanh</span> = được giữ.
+        </p>
+        <div className="space-y-1">
+          {d.candidates.map((c, i) => (
+            <div
+              key={i}
+              className={cn(
+                'rounded-md px-2 py-1.5 text-[10px]',
+                c.kept ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-surface-container-lowest opacity-70',
+              )}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-primary">#{i + 1}</span>
+                <span className="font-bold truncate">
+                  {c.docName} <span className="text-on-surface-variant">· chunk {c.chunkIndex}</span>
+                </span>
+                <span className="ml-auto font-bold">
+                  {c.kept ? (
+                    <span className="text-primary">✓ giữ</span>
+                  ) : (
+                    <span className="text-on-surface-variant">loại</span>
+                  )}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1 font-mono">
+                <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                  cosine {c.dense.toFixed(3)}
+                  {c.denseRank != null ? ` ·#${c.denseRank}` : ''}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary">
+                  BM25 {c.sparse.toFixed(2)}
+                  {c.sparseRank != null ? ` ·#${c.sparseRank}` : ''}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-surface-container-high">
+                  RRF {c.rrf.toFixed(4)}
+                </span>
+                {c.relevance != null && (
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 font-bold">
+                    rerank {c.relevance}/10
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-on-surface-variant line-clamp-1">{c.preview}…</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </details>
+  )
+}
+
+/** Bước chốt: model + số vòng đã chạy + số thẻ gom được → hiện sau lọc. */
 function AgentFinalDetail({ d }: { d: Record<string, unknown> }) {
+  const collected = Number(d.cardsCollected ?? 0)
+  const shown = d.cardsShown != null ? Number(d.cardsShown) : null
   return (
     <div className="text-[12px] text-on-surface-variant space-y-1.5">
       <div className="flex flex-wrap gap-1.5">
         <KV k="Model" v={String(d.model)} />
         <KV k="Số vòng đã chạy" v={String(d.rounds)} />
-        <KV k="Thẻ gom được" v={String(d.cardsCollected)} />
+        {/* Gom được → hiện ra: minh hoạ bước LỌC thẻ theo câu trả lời (bỏ thẻ thừa). */}
+        <KV
+          k="Thẻ"
+          v={shown != null ? `gom ${collected} → hiện ${shown}` : `gom ${collected}`}
+        />
         <KV k="Lộ trình" v={d.itineraryBuilt ? 'có' : 'không'} />
         <KV k="Độ dài trả lời" v={`${d.answerChars} ký tự`} />
       </div>
+      {shown != null && shown < collected && (
+        <p className="text-[11px] text-tertiary bg-tertiary/10 rounded-lg px-2 py-1">
+          Đã lọc bỏ {collected - shown} thẻ không được câu trả lời nhắc tới (chống hiện thẻ thừa).
+        </p>
+      )}
     </div>
   )
 }

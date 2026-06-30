@@ -19,14 +19,48 @@ export interface DocHit {
   score: number;
 }
 
+/**
+ * Chi tiết pipeline search_documents để HIỂN THỊ trên /chatbot-v2: embedding +
+ * hybrid (cosine + BM25 → RRF) + rerank. Phát ra để trace nhìn rõ "có embedding,
+ * ranking" thật sự, không phải hộp đen.
+ */
+export interface DocSearchDetail {
+  embedModel: string;
+  dimensions: number;
+  totalChunks: number;
+  candidateK: number;
+  rerankVia: 'llm' | 'fallback' | 'disabled';
+  /** Ứng viên sau RRF (rộng hơn topK) — kèm mọi điểm thành phần. */
+  candidates: {
+    docName: string;
+    chunkIndex: number;
+    preview: string;
+    dense: number; // cosine
+    sparse: number; // BM25
+    rrf: number;
+    denseRank?: number | null;
+    sparseRank?: number | null;
+    relevance?: number; // điểm rerank LLM (0–10)
+    kept: boolean; // có lọt top-K sau rerank không
+  }[];
+}
+
 /** Phụ thuộc executor cần — service truyền vào (tránh phụ thuộc vòng). */
 export interface ToolDeps {
   /** Map nguồn DB → retriever (trip/place/guide/post). */
   retrievers: Record<Exclude<RagSource, 'doc'>, RagRetriever>;
-  /** Tra tài liệu vector (embed → hybrid search), trả top đoạn. */
-  searchDocuments: (query: string, topK: number) => Promise<DocHit[]>;
+  /** Tra tài liệu vector (embed → hybrid → rerank); trả top đoạn + chi tiết pipeline. */
+  searchDocuments: (
+    query: string,
+    topK: number,
+  ) => Promise<{ hits: DocHit[]; detail: DocSearchDetail }>;
   /** Dựng lộ trình RAG-grounded từ yêu cầu + ngữ cảnh đã thu thập. */
   createItinerary: (request: string, context: string) => Promise<unknown | null>;
+  /**
+   * User đã nêu rõ số ngày cho lộ trình chưa. Nếu CHƯA → executor chặn cứng
+   * create_itinerary (trả observation yêu cầu hỏi user), KHÔNG tự dựng số ngày.
+   */
+  daysSpecified?: boolean;
   /** Chỉnh sửa lộ trình nháp hiện có theo yêu cầu (chỉ có khi đang có draft). */
   reviseItinerary?: (request: string) => Promise<unknown | null>;
   /** Số thẻ tối đa mỗi nguồn DB. */
@@ -43,6 +77,8 @@ export interface ToolResult {
   cards?: RetrievedCard[];
   /** Lộ trình dựng được (chỉ tool create_itinerary). */
   suggestion?: unknown;
+  /** Chi tiết pipeline tài liệu (chỉ tool search_documents) — để FE hiện rõ. */
+  docSearch?: DocSearchDetail;
 }
 
 /** Schema chung cho 4 tool tìm kiếm DB (trip/place/guide/post). */
@@ -78,7 +114,7 @@ export const RAG_TOOL_DEFS: ToolDef[] = [
   {
     name: 'search_places',
     description:
-      'Tìm ĐỊA ĐIỂM / điểm tham quan / danh lam trong hệ thống. Dùng khi user hỏi "chỗ nào đẹp ở X", "địa điểm tham quan", "có gì chơi".',
+      'Tìm ĐỊA ĐIỂM / điểm tham quan / danh lam trong hệ thống VÀ trả về thông tin của địa điểm đó: mô tả chi tiết, LOẠI HÌNH, PHÍ VÀO CỔNG / GIÁ VÉ, đặc điểm (giờ mở cửa, hoạt động…). Dùng khi user hỏi "chỗ nào đẹp ở X", "địa điểm tham quan", "có gì chơi", HOẶC hỏi về một địa điểm CỤ THỂ đã biết tên (vd "giá vé Bà Nà Hills", "Cầu Rồng phun lửa mấy giờ", "Ngũ Hành Sơn có gì"). ƯU TIÊN tool này cho mọi câu hỏi về địa điểm — KHÔNG chuyển sang search_documents trừ khi tool này không có dữ liệu.',
     parameters: dbSearchParams(),
   },
   {
@@ -169,6 +205,15 @@ export async function executeTool(
     if (name === 'create_itinerary') {
       const request = String(args.request ?? '');
       const context = String(args.context ?? '');
+      // CHỐT CHẶN: chưa biết số ngày → KHÔNG dựng, buộc agent hỏi user trước.
+      // Tránh việc LLM tự ý chọn "3 ngày" khi user không hề nêu.
+      if (deps.daysSpecified === false && !mentionsDays(request)) {
+        return {
+          observation:
+            'CHƯA dựng lộ trình: người dùng chưa cho biết số NGÀY. Hãy hỏi lại user muốn đi mấy ngày ' +
+            '(và ngày khởi hành nếu có) rồi mới dựng. TUYỆT ĐỐI không tự chọn số ngày.',
+        };
+      }
       const suggestion = await deps.createItinerary(request, context);
       if (!suggestion) {
         return { observation: 'Chưa dựng được lộ trình (thiếu thông tin điểm đến hoặc lỗi sinh).' };
@@ -182,12 +227,28 @@ export async function executeTool(
 
     if (name === 'search_documents') {
       const query = String(args.query ?? '');
-      const hits = await deps.searchDocuments(query, deps.docTopK);
-      if (hits.length === 0) return { observation: 'Không tìm thấy đoạn tài liệu liên quan.' };
-      const observation = hits
-        .map((h, i) => `[${i + 1}] (${h.docName} #${h.chunkIndex}, cosine ${h.score.toFixed(3)})\n${h.content.slice(0, 500)}`)
-        .join('\n\n');
-      return { observation };
+      const { hits, detail } = await deps.searchDocuments(query, deps.docTopK);
+      if (hits.length === 0) {
+        return { observation: 'Không tìm thấy đoạn tài liệu liên quan.', docSearch: detail };
+      }
+      // Cảnh báo chống GÁN SAI: mỗi đoạn trích từ tài liệu về MỘT chủ đề/địa danh
+      // cụ thể (tên tệp). LLM hay nhầm khi câu hỏi hỏi nơi A nhưng tài liệu nói nơi
+      // B gần giống (vd hỏi "Mù Cang Chải" → trả chunk "CaoBang.txt" vì cùng ruộng
+      // bậc thang). Nhắc rõ: chỉ dùng đoạn ĐÚNG chủ đề câu hỏi.
+      const note =
+        'LƯU Ý: mỗi đoạn dưới đây trích từ tài liệu về chủ đề/địa danh ghi trong ngoặc ' +
+        '(theo TÊN TỆP). CHỈ dùng đoạn nói ĐÚNG về nơi/chủ đề người dùng hỏi. Nếu KHÔNG ' +
+        'đoạn nào thực sự nói về nơi/chủ đề được hỏi → coi như CHƯA CÓ dữ liệu, trả lời ' +
+        'thật là hệ thống chưa có thông tin, TUYỆT ĐỐI không gán nội dung nơi này cho nơi khác.\n\n';
+      const observation =
+        note +
+        hits
+          .map(
+            (h, i) =>
+              `[${i + 1}] (tài liệu: ${h.docName} #${h.chunkIndex}, cosine ${h.score.toFixed(3)})\n${h.content.slice(0, 500)}`,
+          )
+          .join('\n\n');
+      return { observation, docSearch: detail };
     }
 
     // 4 tool DB còn lại → dùng retriever tương ứng.
@@ -228,3 +289,16 @@ const SOURCE_LABEL: Record<Exclude<RagSource, 'doc'>, string> = {
   guide: 'hướng dẫn viên',
   post: 'bài viết',
 };
+
+/**
+ * Yêu cầu (request agent truyền cho create_itinerary) có nêu số ngày không.
+ * Bắt "N ngày", "N đêm", "N ngày M đêm", hoặc khoảng ngày dd/mm-dd/mm.
+ * Dùng làm lớp chặn cuối: dù service báo daysSpecified=false, nếu chính request
+ * có số ngày thì vẫn cho dựng (an toàn 2 chiều).
+ */
+function mentionsDays(request: string): boolean {
+  const s = request.toLowerCase();
+  if (/\b\d{1,2}\s*(ngày|đêm|day|n[0-9])/.test(s)) return true;
+  if (/\d{1,2}\s*[/\-.]\s*\d{1,2}/.test(s)) return true; // có mốc ngày dd/mm
+  return false;
+}

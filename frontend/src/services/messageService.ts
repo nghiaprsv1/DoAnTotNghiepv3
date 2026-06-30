@@ -141,4 +141,24 @@ export const messageService = {
     >(`/messages/direct/${peerId}`)
     return adaptConversation(unwrap(res).conversation)
   },
+
+  /**
+   * Open the GROUP conversation tied to a trip + its message history.
+   * Used by the embedded chat on the trip detail page. The BE returns 403 if
+   * the caller is not a trip member, 404 if the trip has no group chat yet —
+   * callers should surface those as friendly empty states.
+   */
+  tripConversation: async (
+    tripId: string,
+    currentUserId?: string,
+  ): Promise<{ conversation: Conversation; messages: ChatMessage[] }> => {
+    const res = await axiosInstance.get<
+      ApiResponse<{ conversation: BackendConversation; messages: BackendMessage[] }>
+    >(`/messages/trip/${tripId}`)
+    const data = unwrap(res)
+    return {
+      conversation: adaptConversation(data.conversation, currentUserId),
+      messages: data.messages.map(adaptMessage),
+    }
+  },
 }

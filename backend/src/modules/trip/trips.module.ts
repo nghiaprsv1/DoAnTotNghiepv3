@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Trip } from './entities/trip.entity';
 import { TripMember } from './entities/trip-member.entity';
@@ -13,6 +13,7 @@ import { TripsController } from './trips.controller';
 import { NotificationsModule } from '@/modules/notification/notifications.module';
 import { MessagesModule } from '@/modules/message/messages.module';
 import { SavedModule } from '@/modules/saved/saved.module';
+import { GuidesModule } from '@/modules/guide/guides.module';
 
 @Module({
   imports: [
@@ -29,6 +30,8 @@ import { SavedModule } from '@/modules/saved/saved.module';
     NotificationsModule,
     MessagesModule,
     SavedModule,
+    // Để cancelTrip giải phóng HDV (huỷ booking + hoàn tiền) — tái dùng GuidesService.
+    forwardRef(() => GuidesModule),
   ],
   providers: [TripsService],
   controllers: [TripsController],

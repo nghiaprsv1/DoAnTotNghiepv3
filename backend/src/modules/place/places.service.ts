@@ -29,13 +29,22 @@ export class PlacesService {
 
     if (q.category) qb.andWhere('cat.key = :cat', { cat: q.category });
     if (q.province) {
-      qb.andWhere(
-        new Brackets((b) =>
-          b.where('prov.slug = :prov', { prov: q.province }).orWhere('prov.id = :prov', {
-            prov: q.province,
-          }),
-        ),
-      );
+      // q.province có thể là SLUG ("da-nang") hoặc UUID. Chỉ so prov.id khi giá
+      // trị đúng định dạng UUID — nếu không, Postgres cố cast slug → uuid và NÉM
+      // lỗi "invalid input syntax for type uuid" làm hỏng cả query (400).
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(q.province);
+      if (isUuid) {
+        qb.andWhere(
+          new Brackets((b) =>
+            b
+              .where('prov.slug = :prov', { prov: q.province })
+              .orWhere('prov.id = :provId', { provId: q.province }),
+          ),
+        );
+      } else {
+        qb.andWhere('prov.slug = :prov', { prov: q.province });
+      }
     }
     if (q.keyword) {
       qb.andWhere(

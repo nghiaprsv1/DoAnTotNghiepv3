@@ -11,6 +11,7 @@ import { useMyCreatedTrips, useMyJoinedTrips } from '@hooks/useTrips'
 import { bookingService } from '@services/bookingService'
 import { guideService } from '@services/guideService'
 import { cn } from '@utils/cn'
+import { computeTripStatus } from '@utils/tripStatus'
 import type { HireableGuide } from '@types/trip'
 
 interface Props {
@@ -62,6 +63,8 @@ export function BookingPanel({ guide, guideUserId }: Props) {
 
   // Spec: traveler must attach the booking to a trip they're a member of.
   // Combine "trips I created" + "trips I joined" so leaders see their own.
+  // CHỈ cho gán chuyến ĐANG THAM GIA và TRẠNG THÁI SẮP DIỄN RA (upcoming) —
+  // bỏ chuyến đang diễn ra / đã hoàn thành / đã huỷ (không còn ý nghĩa thuê HDV).
   const { data: createdTrips = [] } = useMyCreatedTrips(isAuthenticated)
   const { data: joinedTrips = [] } = useMyJoinedTrips(isAuthenticated)
   const myTrips = useMemo(() => {
@@ -69,7 +72,8 @@ export function BookingPanel({ guide, guideUserId }: Props) {
     return [...createdTrips, ...joinedTrips].filter((t) => {
       if (seen.has(t.id)) return false
       seen.add(t.id)
-      return true
+      // Chỉ giữ chuyến SẮP DIỄN RA trong tương lai.
+      return computeTripStatus(t) === 'upcoming'
     })
   }, [createdTrips, joinedTrips])
 

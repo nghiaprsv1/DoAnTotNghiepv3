@@ -23,6 +23,7 @@ import { JoinedPanel } from './components/JoinedPanel'
 import { ItineraryEditorModal } from './components/ItineraryEditorModal'
 import { TripReviewsList } from './components/TripReviewsList'
 import { TripMapPanel } from './components/TripMapPanel'
+import { TripGroupChat } from './components/TripGroupChat'
 
 export function TripDetailPage() {
   const { id } = useParams()
@@ -30,6 +31,8 @@ export function TripDetailPage() {
   const queryClient = useQueryClient()
   const { data: baseTrip, isLoading, isError } = useTrip(id)
   const currentUserId = useCurrentUserStore((s) => s.id)
+  // Admin được huỷ chuyến của bất kỳ ai (xử lý vi phạm/đặc biệt) — dù không phải chủ chuyến.
+  const isAdmin = useCurrentUserStore((s) => s.role) === 'admin'
 
   // Local "joined" state — initialized from server, then mutated by join/leave actions.
   const [joined, setJoined] = useState<boolean>(false)
@@ -135,13 +138,17 @@ export function TripDetailPage() {
 
   const handleCancelTrip = async () => {
     if (actionPending || !id) return
-    if (!window.confirm('Huỷ chuyến đi này? Tất cả thành viên sẽ nhận được thông báo và hành động không thể hoàn tác.')) {
-      return
-    }
+    // Nhập lý do huỷ (lưu lại để tra cứu + đính kèm thông báo cho thành viên/HDV).
+    const reason = window.prompt(
+      'Nhập lý do huỷ chuyến đi (sẽ gửi tới tất cả thành viên và HDV). Bỏ trống để huỷ không nêu lý do:',
+      '',
+    )
+    // prompt trả null khi bấm Cancel → không huỷ.
+    if (reason === null) return
     setActionPending(true)
     setActionError(null)
     try {
-      await tripService.cancel(id)
+      await tripService.cancel(id, reason.trim() || undefined)
       queryClient.invalidateQueries({ queryKey: ['trip', id] })
       queryClient.invalidateQueries({ queryKey: ['trips'] })
     } catch (err) {
@@ -204,6 +211,20 @@ export function TripDetailPage() {
           </button>
         )}
 
+        {/* Admin (không phải chủ chuyến): nút huỷ chuyến để xử lý vi phạm/đặc biệt. */}
+        {isAdmin && !isOwner && trip.status !== 'cancelled' && trip.status !== 'completed' && (
+          <button
+            type="button"
+            onClick={handleCancelTrip}
+            disabled={actionPending}
+            className="absolute top-4 right-4 md:top-6 md:right-6 inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-full bg-error/90 hover:bg-error text-white font-headline font-bold shadow-editorial-lg backdrop-blur transition active:scale-95 text-sm md:text-base disabled:opacity-60"
+            aria-label="Huỷ chuyến đi (quản trị viên)"
+          >
+            <Icon name={actionPending ? 'hourglass_top' : 'gavel'} size={18} />
+            <span className="hidden sm:inline">{actionPending ? 'Đang huỷ…' : 'Huỷ (Admin)'}</span>
+          </button>
+        )}
+
         <div className="absolute bottom-0 left-0 w-full container-page py-6 md:py-12 lg:py-16 max-w-7xl mx-auto">
           <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 md:mb-4">
             <span
@@ -235,6 +256,20 @@ export function TripDetailPage() {
       <div className="max-w-7xl mx-auto container-page py-8 md:py-12 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
         {/* Left: main content */}
         <div className="lg:col-span-8">
+          {/* Banner huỷ chuyến — hiện lý do (lưu để tra cứu) khi status = cancelled. */}
+          {trip.status === 'cancelled' && (
+            <div className="mb-6 rounded-2xl border border-error/30 bg-error/10 p-4 flex items-start gap-3">
+              <Icon name="cancel" className="text-error mt-0.5" />
+              <div>
+                <p className="font-bold text-error">Chuyến đi đã bị huỷ</p>
+                {trip.cancelReason && (
+                  <p className="text-sm text-on-surface-variant mt-0.5">
+                    Lý do: {trip.cancelReason}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
           <article className="mb-10 md:mb-16">
             <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-primary tracking-tight font-headline">
               Trải nghiệm
@@ -331,6 +366,11 @@ export function TripDetailPage() {
           />
 
           <TripReviewsList tripId={trip.id} />
+
+          {/* Group chat — only visible to trip members / owner. */}
+          {(joined || isOwner) && trip.id && (
+            <TripGroupChat tripId={trip.id} canAccess={joined || isOwner} />
+          )}
         </div>
 
         {/* Right: sidebar */}

@@ -42,6 +42,16 @@ export function ImageUpload({
     }
   }
 
+  /** Pull the first image file out of a paste event's clipboard items. */
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const item = Array.from(e.clipboardData.items).find((it) => it.type.startsWith('image/'))
+    const file = item?.getAsFile()
+    if (file) {
+      e.preventDefault()
+      upload(file)
+    }
+  }
+
   return (
     <div>
       {label && (
@@ -64,6 +74,8 @@ export function ImageUpload({
         </div>
       ) : (
         <label
+          tabIndex={0}
+          onPaste={handlePaste}
           onDragOver={(e) => {
             e.preventDefault()
             setDragOver(true)
@@ -76,7 +88,7 @@ export function ImageUpload({
             if (file) upload(file)
           }}
           className={cn(
-            'flex flex-col items-center justify-center gap-2 px-4 py-8 rounded-2xl border-2 border-dashed cursor-pointer transition',
+            'flex flex-col items-center justify-center gap-2 px-4 py-8 rounded-2xl border-2 border-dashed cursor-pointer transition outline-none focus:border-primary focus:ring-2 focus:ring-primary/30',
             aspect,
             dragOver
               ? 'border-primary bg-primary/5'
@@ -88,7 +100,7 @@ export function ImageUpload({
           </span>
           <p className="text-sm font-headline font-bold text-on-surface text-center">
             {uploading ? 'Đang tải lên…' : (
-              <>Kéo thả ảnh, hoặc <span className="text-primary">bấm để chọn</span></>
+              <>Kéo thả, dán ảnh (Ctrl+V), hoặc <span className="text-primary">bấm để chọn</span></>
             )}
           </p>
           {hint && (

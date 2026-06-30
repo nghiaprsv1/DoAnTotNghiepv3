@@ -5,6 +5,7 @@ import { Button } from '@components/ui/Button'
 import { LoadingState } from '@components/common/LoadingState'
 import { EmptyState } from '@components/common/EmptyState'
 import { useDecideWithdrawal, usePendingWithdrawals } from '@hooks/useAdmin'
+import { AdminDetailDialog, AdminSection, AdminRow } from './components/AdminDetailDialog'
 
 const formatVnd = (n: number) => `₫${Math.abs(Number(n)).toLocaleString('vi-VN')}`
 
@@ -12,6 +13,8 @@ export function AdminWithdrawalsPage() {
   const { data: list = [], isLoading } = usePendingWithdrawals()
   const decide = useDecideWithdrawal()
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [viewId, setViewId] = useState<string | null>(null)
+  const detail = list.find((t) => t.id === viewId) ?? null
 
   const handleApprove = async (id: string) => {
     if (!confirm('Phê duyệt rút tiền? Tiền đã được trừ khỏi ví khả dụng khi tạo yêu cầu.'))
@@ -93,6 +96,10 @@ export function AdminWithdrawalsPage() {
               </div>
 
               <div className="flex items-center gap-2 md:ml-auto">
+                <Button size="sm" variant="outline" rounded="full" onClick={() => setViewId(t.id)}>
+                  <Icon name="visibility" size={16} />
+                  Chi tiết
+                </Button>
                 <Button
                   size="sm"
                   rounded="full"
@@ -116,6 +123,61 @@ export function AdminWithdrawalsPage() {
             </article>
           ))}
         </div>
+      )}
+
+      {detail && (
+        <AdminDetailDialog
+          title={detail.user?.name ?? 'Không rõ'}
+          subtitle={detail.user?.email}
+          media={<Avatar src={detail.user?.avatar} alt={detail.user?.name ?? ''} size="md" ring />}
+          onClose={() => setViewId(null)}
+          footer={
+            <>
+              <Button
+                size="md"
+                variant="ghost"
+                rounded="full"
+                onClick={() => {
+                  handleReject(detail.id)
+                  setViewId(null)
+                }}
+                disabled={busyId === detail.id}
+              >
+                <Icon name="close" size={16} />
+                Từ chối
+              </Button>
+              <Button
+                size="md"
+                rounded="full"
+                onClick={() => {
+                  handleApprove(detail.id)
+                  setViewId(null)
+                }}
+                disabled={busyId === detail.id}
+              >
+                <Icon name="check" size={16} />
+                Duyệt rút tiền
+              </Button>
+            </>
+          }
+        >
+          <div className="text-center py-2">
+            <p className="font-headline font-extrabold text-4xl text-on-surface">
+              {formatVnd(detail.amount)}
+            </p>
+            <p className="text-xs uppercase tracking-widest text-on-surface-variant mt-1">
+              Số tiền yêu cầu rút
+            </p>
+          </div>
+          <AdminSection title="Thông tin yêu cầu">
+            <AdminRow label="Người yêu cầu" value={detail.user?.name ?? '—'} />
+            <AdminRow label="Email" value={detail.user?.email ?? '—'} />
+            <AdminRow label="Tài khoản nhận" value={detail.bankAccount || 'Chưa cung cấp'} />
+            <AdminRow label="Trạng thái" value={detail.status} />
+            <AdminRow label="Thời gian" value={new Date(detail.createdAt).toLocaleString('vi-VN')} />
+            {detail.note && <AdminRow label="Ghi chú" value={detail.note} />}
+          </AdminSection>
+        </AdminDetailDialog>
       )}
     </div>
   )

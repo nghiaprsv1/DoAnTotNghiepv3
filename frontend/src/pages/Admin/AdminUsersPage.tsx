@@ -7,6 +7,7 @@ import { EmptyState } from '@components/common/EmptyState'
 import { useAdminUsers, useLockUser } from '@hooks/useAdmin'
 import { TopUpDialog } from './components/TopUpDialog'
 import { BulkTopUpDialog } from './components/BulkTopUpDialog'
+import { AdminDetailDialog, AdminSection, AdminRow } from './components/AdminDetailDialog'
 import { cn } from '@utils/cn'
 import type { UserRole } from '@types/user'
 import type { AdminUser } from '@services/adminService'
@@ -37,6 +38,7 @@ export function AdminUsersPage() {
   const [status, setStatus] = useState<'all' | 'active' | 'banned'>('all')
   const [page, setPage] = useState(1)
   const [topUpUser, setTopUpUser] = useState<AdminUser | null>(null)
+  const [viewUser, setViewUser] = useState<AdminUser | null>(null)
   // Multi-select for bulk top-up. Holds selected user objects across the page.
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkOpen, setBulkOpen] = useState(false)
@@ -259,6 +261,15 @@ export function AdminUsersPage() {
                     <div className="inline-flex items-center gap-2">
                       <Button
                         size="sm"
+                        variant="outline"
+                        rounded="full"
+                        onClick={() => setViewUser(u)}
+                      >
+                        <Icon name="visibility" size={14} />
+                        Chi tiết
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="ghost"
                         rounded="full"
                         onClick={() => setTopUpUser(u)}
@@ -335,6 +346,57 @@ export function AdminUsersPage() {
         userIds={Array.from(selectedIds)}
         onDone={() => setSelectedIds(new Set())}
       />
+
+      {viewUser && (
+        <AdminDetailDialog
+          title={viewUser.name}
+          subtitle={viewUser.handle ? `@${viewUser.handle}` : viewUser.email}
+          media={<Avatar src={viewUser.avatar} alt={viewUser.name} size="md" ring />}
+          onClose={() => setViewUser(null)}
+          footer={
+            <>
+              <Button
+                size="md"
+                variant="ghost"
+                rounded="full"
+                onClick={() => {
+                  setTopUpUser(viewUser)
+                  setViewUser(null)
+                }}
+              >
+                <Icon name="add_circle" size={16} />
+                Nạp tiền
+              </Button>
+              <Button
+                size="md"
+                variant={viewUser.isLocked ? 'ghost' : 'outline'}
+                rounded="full"
+                onClick={() => {
+                  toggleLock(viewUser.id, viewUser.isLocked)
+                  setViewUser(null)
+                }}
+                disabled={lockMut.isPending}
+              >
+                <Icon name={viewUser.isLocked ? 'lock_open' : 'lock'} size={16} />
+                {viewUser.isLocked ? 'Mở khoá' : 'Khoá tài khoản'}
+              </Button>
+            </>
+          }
+        >
+          <AdminSection title="Thông tin tài khoản">
+            <AdminRow label="Tên" value={viewUser.name} />
+            <AdminRow label="Email" value={viewUser.email} />
+            {viewUser.handle && <AdminRow label="Handle" value={`@${viewUser.handle}`} />}
+            <AdminRow label="Vai trò" value={viewUser.role} />
+            <AdminRow
+              label="Trạng thái"
+              value={viewUser.isLocked ? '🔒 Đã khoá' : '✅ Hoạt động'}
+            />
+            <AdminRow label="UUID" value={<span className="font-mono text-xs">{viewUser.id}</span>} />
+            <AdminRow label="Ngày tham gia" value={new Date(viewUser.createdAt).toLocaleString('vi-VN')} />
+          </AdminSection>
+        </AdminDetailDialog>
+      )}
     </div>
   )
 }

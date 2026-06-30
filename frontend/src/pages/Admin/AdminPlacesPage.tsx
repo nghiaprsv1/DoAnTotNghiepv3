@@ -5,6 +5,7 @@ import { LoadingState } from '@components/common/LoadingState'
 import { EmptyState } from '@components/common/EmptyState'
 import { useAdminPlaces, useDeletePlace } from '@hooks/useAdminPlaces'
 import { PlaceFormDialog } from './components/PlaceFormDialog'
+import { AdminDetailDialog, AdminSection, AdminRow } from './components/AdminDetailDialog'
 import type { AdminPlaceRow } from '@services/placeService'
 
 /**
@@ -15,6 +16,7 @@ export function AdminPlacesPage() {
   const [keyword, setKeyword] = useState('')
   const [editing, setEditing] = useState<AdminPlaceRow | null>(null)
   const [creating, setCreating] = useState(false)
+  const [viewing, setViewing] = useState<AdminPlaceRow | null>(null)
 
   const { data: places = [], isLoading } = useAdminPlaces(keyword)
   const del = useDeletePlace()
@@ -88,6 +90,10 @@ export function AdminPlacesPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex items-center gap-2">
+                      <Button size="sm" variant="outline" rounded="full" onClick={() => setViewing(p)}>
+                        <Icon name="visibility" size={14} />
+                        Chi tiết
+                      </Button>
                       <Button size="sm" variant="ghost" rounded="full" onClick={() => setEditing(p)}>
                         <Icon name="edit" size={14} />
                         Sửa
@@ -119,6 +125,88 @@ export function AdminPlacesPage() {
           setEditing(null)
         }}
       />
+
+      {viewing && (
+        <AdminDetailDialog
+          title={viewing.name}
+          subtitle={`/${viewing.slug} · ${viewing.provinceName}`}
+          media={
+            <img
+              src={viewing.coverImage}
+              alt={viewing.name}
+              className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+            />
+          }
+          onClose={() => setViewing(null)}
+          footer={
+            <Button
+              size="md"
+              rounded="full"
+              onClick={() => {
+                setEditing(viewing)
+                setViewing(null)
+              }}
+            >
+              <Icon name="edit" size={16} />
+              Chỉnh sửa
+            </Button>
+          }
+        >
+          {viewing.coverImage && (
+            <img
+              src={viewing.coverImage}
+              alt={viewing.name}
+              className="w-full max-h-72 object-cover rounded-2xl"
+              loading="lazy"
+            />
+          )}
+          <AdminSection title="Thông tin">
+            <AdminRow label="Danh mục" value={viewing.categoryLabel} />
+            <AdminRow label="Tỉnh/Thành" value={viewing.provinceName} />
+            {viewing.city && <AdminRow label="Khu vực" value={viewing.city} />}
+            {viewing.address && <AdminRow label="Địa chỉ" value={viewing.address} />}
+            <AdminRow
+              label="Phí vào cổng"
+              value={viewing.entranceFee ?? 'Miễn phí'}
+            />
+            <AdminRow label="Đánh giá" value={viewing.rating != null ? `${viewing.rating}/5` : '—'} />
+          </AdminSection>
+          {viewing.tags?.length > 0 && (
+            <AdminSection title="Thẻ">
+              <div className="flex flex-wrap gap-1.5">
+                {viewing.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="px-2.5 py-1 rounded-full bg-surface-container text-xs font-bold text-on-surface-variant"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </AdminSection>
+          )}
+          <AdminSection title="Mô tả">
+            <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+              {viewing.longDescription || viewing.description}
+            </p>
+          </AdminSection>
+          {viewing.gallery?.length > 0 && (
+            <AdminSection title="Thư viện ảnh">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {viewing.gallery.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`Ảnh ${i + 1}`}
+                    className="w-full aspect-[4/3] object-cover rounded-2xl border border-outline-variant/30"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+            </AdminSection>
+          )}
+        </AdminDetailDialog>
+      )}
     </div>
   )
 }

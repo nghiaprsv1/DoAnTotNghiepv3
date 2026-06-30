@@ -42,6 +42,33 @@ const PAYMENT_DEADLINE_HOURS = 24;
 const LATE_CANCEL_HOURS = 48;
 const TRAVELER_LATE_PENALTY_RATE = 0.2;
 
+/**
+ * Chuẩn hoá giá trị ngày (Date hoặc string từ raw query) về `yyyy-mm-dd` THEO
+ * GIỜ ĐỊA PHƯƠNG. Cột kiểu `date` của Postgres có thể trả Date object → String()
+ * cho ra "Sun Jun 07 2026 …" (lệ thuộc locale, dễ lệch múi giờ). Hàm này luôn cho
+ * chuỗi ISO ổn định để FE dựng lịch không lệch ngày.
+ */
+function toIsoDate(value: unknown): string {
+  if (value instanceof Date) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, '0');
+    const d = String(value.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(value ?? '');
+  // Đã là yyyy-mm-dd (hoặc có phần giờ) → lấy 10 ký tự đầu.
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  // Chuỗi Date kiểu "Sun Jun 07 2026 …" → parse lại rồi format.
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return s;
+}
+
 @Injectable()
 export class GuidesService {
   constructor(
@@ -362,8 +389,8 @@ export class GuidesService {
       )
       .getRawMany<{ startDate: string; endDate: string }>();
     return rows.map((r) => ({
-      startDate: String(r.startDate),
-      endDate: String(r.endDate),
+      startDate: toIsoDate(r.startDate),
+      endDate: toIsoDate(r.endDate),
     }));
   }
 
@@ -419,14 +446,64 @@ export class GuidesService {
       .andWhere('b.status IN (:...st)', { st: ACTIVE_STATUSES })
       .getRawMany<{ startDate: string; endDate: string | null }>();
     const bookingRanges = rows.map((r) => ({
-      startDate: String(r.startDate),
-      endDate: String(r.endDate ?? r.startDate),
+      startDate: toIsoDate(r.startDate),
+      endDate: toIsoDate(r.endDate ?? r.startDate),
     }));
     // Gộp thêm các khoảng bận vì chuyến đi (owner/member/guide) của tài khoản HDV.
     const profile = await this.profiles.findOne({ where: { id: guideId } });
     const tripRanges = profile ? await this.tripBusyRanges(profile.userId) : [];
     return [...bookingRanges, ...tripRanges];
   }
+
+  /**
+   * Lịch sử tour CÔNG KHAI của HDV — các booking đã COMPLETED. Dùng cho tab
+   * "Lịch sử tour" ở trang chi tiết HDV. Mỗi tour kèm rating của HDV (rating
+   * hồ sơ, vì review gắn theo HDV chứ không theo từng booking).
+   */
+  async tourHistory(
+    guideId: string,
+  ): Promise<
+    Array<{
+      id: string;
+      title: string;
+      destination: string;
+      coverImage: string;
+      date: string;
+      durationDays: number;
+      groupSize: number;
+      rating: number;
+      category: string;
+    }>
+  > {
+    const profile = await this.profiles.findOne({
+      where: { id: guideId, status: GuideStatus.APPROVED },
+    });
+    if (!profile) throw new NotFoundException('Guide not found');
+
+    const rows = await this.bookings
+      .createQueryBuilder('b')
+      .where('b.guide_id = :gid', { gid: guideId })
+      .andWhere('b.status = :st', { st: BookingStatus.COMPLETED })
+      .orderBy('b.end_date', 'DESC')
+      .limit(24)
+      .getMany();
+
+    // categoryKeys[0] làm nhãn loại tour (fallback "Tour").
+    const category = profile.categoryKeys?.[0] ?? 'Tour';
+    const rating = Number(profile.rating) || 0;
+    return rows.map((b) => ({
+      id: b.id,
+      title: b.tourTitle,
+      destination: b.destination,
+      coverImage: b.tourCover,
+      date: toIsoDate(b.endDate ?? b.startDate),
+      durationDays: b.durationDays,
+      groupSize: b.groupSize,
+      rating,
+      category,
+    }));
+  }
+
 
   async createBooking(travelerId: string, dto: CreateBookingDto): Promise<GuideBooking> {
     const guide = await this.profiles.findOne({ where: { id: dto.guideId } });
@@ -451,6 +528,21 @@ export class GuidesService {
     const trip = await this.trips.findOne({ where: { id: dto.tripId } });
     if (!trip) {
       throw new NotFoundException('Trip not found');
+    }
+    // Spec: chỉ gắn booking vào chuyến ĐANG THAM GIA và SẮP DIỄN RA. Chuyến đã
+    // huỷ / hoàn thành / đang diễn ra (đã qua ngày khởi hành) không cho thuê HDV.
+    if (trip.status === TripStatus.CANCELLED) {
+      throw new BadRequestException('Chuyến đi đã bị huỷ, không thể gắn booking.');
+    }
+    if (trip.status === TripStatus.COMPLETED) {
+      throw new BadRequestException('Chuyến đi đã hoàn thành, không thể gắn booking.');
+    }
+    // Chưa khởi hành: hôm nay < ngày bắt đầu (so theo chuỗi yyyy-mm-dd).
+    const todayIso = toIsoDate(new Date());
+    if (toIsoDate(trip.startDate) <= todayIso) {
+      throw new BadRequestException(
+        'Chuyến đi đã/đang diễn ra, chỉ gắn booking cho chuyến sắp diễn ra trong tương lai.',
+      );
     }
     // Spec: booking range must be inside the trip range (inclusive). Compare
     // by date string to avoid timezone drift — Trip.startDate / endDate are
@@ -628,6 +720,57 @@ export class GuidesService {
       void this.notifyLifecycle(updated, dto.action, isGuide).catch(() => undefined);
       return updated;
     });
+  }
+
+  /**
+   * GIẢI PHÓNG HDV khi một chuyến đi bị HUỶ (gọi từ TripsService.cancelTrip).
+   * Tìm mọi booking đang "sống" gắn với tripId (chờ duyệt / chờ thanh toán / đã
+   * xác nhận), huỷ chúng và HOÀN TIỀN phần đã trả qua handleCancel (tái dùng quy
+   * tắc refund/penalty + ví). Đánh dấu là huỷ-bởi-hệ-thống (byGuide=true ⇒ full
+   * refund cho khách, không phạt — vì khách không có lỗi khi chủ chuyến/admin huỷ).
+   * KHÔNG tạo bảng mới; chỉ cập nhật `guide_bookings` sẵn có.
+   * @returns số booking đã giải phóng (để bên gọi biết có HDV để thông báo không).
+   */
+  async releaseGuideForTrip(tripId: string, reason: string): Promise<number> {
+    const live = [
+      BookingStatus.PENDING_ACCEPTANCE,
+      BookingStatus.PENDING_PAYMENT,
+      BookingStatus.CONFIRMED,
+    ];
+    const affected = await this.bookings.find({
+      where: live.map((status) => ({ tripId, status })),
+      relations: ['guide', 'guide.user'],
+    });
+    if (affected.length === 0) return 0;
+
+    for (const booking of affected) {
+      await this.dataSource.transaction(async (m) => {
+        const fresh = await m.getRepository(GuideBooking).findOne({
+          where: { id: booking.id },
+          relations: ['guide', 'guide.user'],
+        });
+        if (!fresh) return;
+        // handleCancel chỉ hoàn tiền khi đã CONFIRMED (tiền mới thực sự chuyển).
+        // byGuide=true ⇒ hoàn 100% cho khách, HDV không bị phạt.
+        await this.handleCancel(m, fresh, true);
+        fresh.status = BookingStatus.CANCELLED;
+        fresh.cancelReason = `Chuyến đi đã huỷ: ${reason}`;
+        await m.getRepository(GuideBooking).save(fresh);
+      });
+      // Thông báo HDV: chuyến bị huỷ, lịch của bạn đã được giải phóng.
+      void this.notifications
+        .push({
+          userId: booking.guide.userId,
+          type: NotificationType.BOOKING_CANCELLED,
+          title: 'Chuyến đi bị huỷ — lịch của bạn đã được giải phóng',
+          preview: `Tour "${booking.tourTitle}" đã huỷ. Lý do: ${reason}. Bạn có thể nhận chuyến khác.`,
+          ctaLabel: 'Xem chi tiết',
+          ctaHref: `/bookings/${booking.id}`,
+          image: booking.tourCover,
+        })
+        .catch(() => undefined);
+    }
+    return affected.length;
   }
 
   /** Push notifications to the *other party* on each lifecycle transition. */

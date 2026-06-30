@@ -1,9 +1,11 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -30,6 +32,8 @@ import { NotificationsService } from '@/modules/notification/notifications.servi
 import { NotificationType } from '@/modules/notification/entities/notification.entity';
 import { MessagesService } from '@/modules/message/messages.service';
 import { SavedService } from '@/modules/saved/saved.service';
+import { GuidesService } from '@/modules/guide/guides.service';
+import { UserRole } from '@/common/enums/user-role.enum';
 
 @Injectable()
 export class TripsService {
@@ -52,6 +56,10 @@ export class TripsService {
     private readonly notifications: NotificationsService,
     private readonly messages: MessagesService,
     private readonly saved: SavedService,
+    // Giải phóng HDV khi huỷ chuyến (huỷ booking + hoàn tiền). forwardRef vì
+    // TripsModule ↔ GuidesModule tham chiếu vòng qua module.
+    @Inject(forwardRef(() => GuidesService))
+    private readonly guides: GuidesService,
   ) {}
 
   /**
@@ -338,36 +346,68 @@ export class TripsService {
   }
 
   /**
-   * Cancel a trip (creator only). Marks status = cancelled, notifies every
-   * member except the creator, and posts a system message into the group chat.
-   * Cancelling is reversible-by-recreate only; we keep the row so history and
-   * reviews survive.
+   * Huỷ chuyến đi. Cho phép CHỦ CHUYẾN hoặc ADMIN huỷ (admin xử lý vi phạm/đặc biệt).
+   * Điều kiện: chuyến CHƯA khởi hành (today < startDate) và chưa completed/cancelled.
+   * Khi huỷ: status=CANCELLED + lưu lý do/thời điểm/người huỷ → thông báo thành viên
+   * → GIẢI PHÓNG HDV (huỷ booking + hoàn tiền) → thông báo HDV. requestJoin/respondJoin
+   * tự chặn sau khi status=CANCELLED nên không ai đăng ký tiếp được.
    */
-  async cancelTrip(id: string, userId: string): Promise<Trip> {
+  async cancelTrip(
+    id: string,
+    userId: string,
+    reason?: string,
+    actorRole?: UserRole,
+  ): Promise<Trip> {
     const trip = await this.findById(id);
-    if (trip.creatorId !== userId) throw new ForbiddenException('Only creator can cancel');
+    const isOwner = trip.creatorId === userId;
+    const isAdmin = actorRole === UserRole.ADMIN;
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Chỉ chủ chuyến hoặc quản trị viên mới được huỷ chuyến.');
+    }
     if (trip.status === TripStatus.CANCELLED) {
-      throw new BadRequestException('Trip already cancelled');
+      throw new BadRequestException('Chuyến đi đã được huỷ trước đó.');
     }
     if (trip.status === TripStatus.COMPLETED) {
-      throw new BadRequestException('Cannot cancel a completed trip');
+      throw new BadRequestException('Không thể huỷ chuyến đã hoàn thành.');
     }
+    // Chuyến ĐÃ KHỞI HÀNH (today >= startDate) thì không cho huỷ — chỉ huỷ khi
+    // còn ở trạng thái "đang tuyển / đã đủ thành viên nhưng chưa bắt đầu".
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(trip.startDate);
+    start.setHours(0, 0, 0, 0);
+    if (start.getTime() <= today.getTime()) {
+      throw new BadRequestException('Chuyến đi đã khởi hành nên không thể huỷ.');
+    }
+
+    const cleanReason = reason?.trim() || (isAdmin ? 'Quản trị viên xử lý.' : 'Chủ chuyến huỷ.');
     trip.status = TripStatus.CANCELLED;
+    trip.cancelReason = cleanReason;
+    trip.cancelledAt = new Date();
+    trip.cancelledById = userId;
     await this.trips.save(trip);
     const fresh = await this.findById(id);
 
-    // Notify members + post a chat notice. Best-effort, non-blocking.
-    void this.notifyMembersOfCancel(fresh, userId).catch(() => undefined);
+    // Thông báo thành viên (best-effort, không chặn response).
+    void this.notifyMembersOfCancel(fresh, userId, cleanReason, isAdmin).catch(() => undefined);
+    // Giải phóng HDV: huỷ booking gắn chuyến + hoàn tiền + báo HDV (best-effort).
+    void this.guides.releaseGuideForTrip(id, cleanReason).catch(() => undefined);
 
     return fresh;
   }
 
   /** Push a TRIP_CANCELLED notification to every member (except the actor). */
-  private async notifyMembersOfCancel(trip: Trip, actorId: string) {
+  private async notifyMembersOfCancel(
+    trip: Trip,
+    actorId: string,
+    reason: string,
+    byAdmin: boolean,
+  ) {
     const recipients = (trip.members ?? [])
       .map((m) => m.userId)
       .filter((uid) => uid && uid !== actorId);
     if (recipients.length === 0) return;
+    const who = byAdmin ? 'Quản trị viên' : 'Chủ chuyến';
     await Promise.all(
       recipients.map((uid) =>
         this.notifications.push({
@@ -375,7 +415,7 @@ export class TripsService {
           type: NotificationType.TRIP_CANCELLED,
           actorId,
           title: `Chuyến "${trip.title}" đã bị huỷ`,
-          preview: `Chủ chuyến đã huỷ chuyến đi ${trip.destination}. Rất tiếc vì sự bất tiện này.`,
+          preview: `${who} đã huỷ chuyến đi ${trip.destination}. Lý do: ${reason}`,
           ctaLabel: 'Xem chi tiết',
           ctaHref: `/trips/${trip.id}`,
           image: trip.coverImage,
@@ -386,6 +426,13 @@ export class TripsService {
 
   async requestJoin(tripId: string, userId: string, message?: string) {
     const trip = await this.findById(tripId);
+    // Chuyến đã huỷ/hoàn thành → KHÔNG cho đăng ký tham gia tiếp.
+    if (trip.status === TripStatus.CANCELLED) {
+      throw new BadRequestException('Chuyến đi đã bị huỷ, không thể đăng ký tham gia.');
+    }
+    if (trip.status === TripStatus.COMPLETED) {
+      throw new BadRequestException('Chuyến đi đã kết thúc, không thể đăng ký tham gia.');
+    }
     if (trip.memberCount >= trip.maxMembers) throw new BadRequestException('Trip is full');
     if (trip.creatorId === userId) throw new BadRequestException('Creator already in trip');
     const existingMember = await this.members.findOne({ where: { tripId, userId } });
@@ -458,6 +505,10 @@ export class TripsService {
   async respondJoin(tripId: string, requestId: string, userId: string, accept: boolean) {
     const trip = await this.findById(tripId);
     if (trip.creatorId !== userId) throw new ForbiddenException('Only creator can respond');
+    // Chuyến đã huỷ → không thể duyệt thêm thành viên.
+    if (trip.status === TripStatus.CANCELLED) {
+      throw new BadRequestException('Chuyến đi đã bị huỷ, không thể duyệt yêu cầu tham gia.');
+    }
     const req = await this.requests.findOne({ where: { id: requestId, tripId } });
     if (!req) throw new NotFoundException('Request not found');
     if (req.status !== JoinRequestStatus.PENDING) throw new BadRequestException('Already handled');

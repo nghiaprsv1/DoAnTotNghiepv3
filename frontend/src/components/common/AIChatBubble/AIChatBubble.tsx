@@ -37,10 +37,21 @@ export function AIChatBubble() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [creatingId, setCreatingId] = useState<string | null>(null)
+  const [closing, setClosing] = useState(false)
   const bodyRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  // Play the exit animation before unmounting the panel.
+  const handleClose = () => {
+    setClosing(true)
+    setMenuOpen(false)
+    window.setTimeout(() => {
+      close()
+      setClosing(false)
+    }, 190)
+  }
 
   // Auto-scroll on new message
   useEffect(() => {
@@ -155,15 +166,32 @@ export function AIChatBubble() {
     <>
       {/* FAB */}
       {!isOpen && (
-        <button
-          type="button"
-          onClick={open}
-          aria-label="Mở trợ lý AI"
-          className="fixed z-40 right-4 md:right-6 bottom-24 md:bottom-6 editorial-gradient text-on-primary w-14 h-14 rounded-full shadow-editorial-lg flex items-center justify-center active:scale-95 transition-transform hover:scale-105"
-        >
-          <Icon name="auto_awesome" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-tertiary ring-2 ring-surface" />
-        </button>
+        <div className="fixed z-40 right-4 md:right-6 bottom-24 md:bottom-6 animate-fab-pop">
+          <button
+            type="button"
+            onClick={open}
+            aria-label="Mở trợ lý AI"
+            className="group relative w-14 h-14 rounded-full editorial-gradient text-on-primary shadow-glow-primary flex items-center justify-center transition-all duration-300 hover:shadow-glow-primary-lg hover:scale-105 active:scale-95 motion-safe:animate-float"
+          >
+            {/* Expanding halo rings */}
+            <span className="pointer-events-none absolute inset-0 rounded-full editorial-gradient opacity-40 motion-safe:animate-halo-pulse" />
+            <span
+              className="pointer-events-none absolute inset-0 rounded-full editorial-gradient opacity-30 motion-safe:animate-halo-pulse"
+              style={{ animationDelay: '1.3s' }}
+            />
+            <Icon
+              name="auto_awesome"
+              className="relative fill transition-transform duration-500 group-hover:rotate-[18deg]"
+            />
+            {/* Breathing status dot */}
+            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-tertiary ring-2 ring-surface motion-safe:animate-status-pulse" />
+
+            {/* Hover label */}
+            <span className="pointer-events-none absolute right-full mr-3 whitespace-nowrap rounded-full bg-inverse-surface/95 px-3 py-1.5 text-xs font-bold text-inverse-on-surface opacity-0 translate-x-2 shadow-editorial-lg transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+              Trợ lý du lịch AI
+            </span>
+          </button>
+        </div>
       )}
 
       {/* Panel */}
@@ -171,16 +199,29 @@ export function AIChatBubble() {
         <div
           role="dialog"
           aria-label="Trợ lý du lịch AI"
-          className="fixed z-40 right-4 md:right-6 bottom-24 md:bottom-6 w-[calc(100vw-2rem)] sm:w-[380px] h-[560px] max-h-[calc(100vh-8rem)] bg-surface-container-lowest rounded-3xl shadow-editorial-lg border border-outline-variant/15 flex flex-col overflow-hidden"
+          style={{ transformOrigin: 'bottom right' }}
+          className={cn(
+            'fixed z-40 right-4 md:right-6 bottom-24 md:bottom-6 w-[calc(100vw-2rem)] sm:w-[390px] h-[580px] max-h-[calc(100vh-8rem)] bg-surface-container-lowest rounded-3xl shadow-editorial-lg ring-1 ring-outline-variant/15 flex flex-col overflow-hidden',
+            closing ? 'animate-panel-out' : 'animate-panel-in'
+          )}
         >
-          {/* Header */}
-          <header className="flex items-center gap-3 px-4 py-3 editorial-gradient text-on-primary">
-            <span className="w-9 h-9 rounded-full bg-on-primary/15 flex items-center justify-center">
-              <Icon name="auto_awesome" />
+          {/* Header — KHÔNG để overflow-hidden ở đây, nếu không dropdown menu
+              (nút "Xoá hội thoại") xổ xuống sẽ bị cắt mất. Shimmer được bọc
+              trong lớp overflow-hidden riêng bên dưới để vẫn cắt gọn trong viền. */}
+          <header className="relative flex items-center gap-3 px-4 py-3 editorial-gradient text-on-primary">
+            {/* Sweeping sheen — clip trong chính header, không ảnh hưởng menu */}
+            <span className="pointer-events-none absolute inset-0 overflow-hidden">
+              <span className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent motion-safe:animate-shimmer" />
             </span>
-            <div className="flex-1 min-w-0">
+            <span className="relative w-9 h-9 rounded-full bg-on-primary/15 ring-1 ring-on-primary/20 flex items-center justify-center">
+              <Icon name="auto_awesome" className="fill" size={20} />
+            </span>
+            <div className="relative flex-1 min-w-0">
               <p className="font-headline font-extrabold leading-tight">Trợ lý du lịch</p>
-              <p className="text-[11px] text-on-primary/80">Gợi ý chuyến đi theo ý bạn</p>
+              <p className="flex items-center gap-1.5 text-[11px] text-on-primary/85">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 motion-safe:animate-status-pulse" />
+                Luôn sẵn sàng gợi ý cho bạn
+              </p>
             </div>
 
             <div className="relative" ref={menuRef}>
@@ -188,19 +229,19 @@ export function AIChatBubble() {
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
                 aria-label="Tuỳ chọn"
-                className="w-8 h-8 rounded-full hover:bg-on-primary/15 flex items-center justify-center"
+                className="w-8 h-8 rounded-full hover:bg-on-primary/15 flex items-center justify-center transition-colors"
               >
                 <Icon name="more_vert" size={18} />
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-10 w-48 bg-surface-container-lowest text-on-surface rounded-2xl shadow-editorial-lg border border-outline-variant/15 overflow-hidden">
+                <div className="absolute right-0 top-10 z-10 w-48 bg-surface-container-lowest text-on-surface rounded-2xl shadow-editorial-lg ring-1 ring-outline-variant/15 overflow-hidden animate-msg-in">
                   <button
                     type="button"
                     onClick={() => {
                       clearMessages()
                       setMenuOpen(false)
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-surface-container-low text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-surface-container-low text-left transition-colors"
                   >
                     <Icon name="restart_alt" size={16} />
                     Xoá hội thoại
@@ -211,7 +252,7 @@ export function AIChatBubble() {
                       setMenuOpen(false)
                       setEnabled(false)
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-error/10 text-error text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-error/10 text-error text-left transition-colors"
                   >
                     <Icon name="visibility_off" size={16} />
                     Tắt trợ lý
@@ -222,9 +263,9 @@ export function AIChatBubble() {
 
             <button
               type="button"
-              onClick={close}
+              onClick={handleClose}
               aria-label="Đóng"
-              className="w-8 h-8 rounded-full hover:bg-on-primary/15 flex items-center justify-center"
+              className="relative w-8 h-8 rounded-full hover:bg-on-primary/15 flex items-center justify-center transition-colors hover:rotate-90 duration-300"
             >
               <Icon name="close" size={18} />
             </button>
@@ -245,17 +286,19 @@ export function AIChatBubble() {
             ))}
 
             {messages.length <= 1 && (
-              <div className="pt-2">
-                <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+              <div className="pt-2 animate-msg-in">
+                <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Icon name="bolt" size={13} className="text-primary fill" />
                   Gợi ý nhanh
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {QUICK_PROMPTS.map((p) => (
+                  {QUICK_PROMPTS.map((p, i) => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => handleSend(p)}
-                      className="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface hover:bg-primary hover:text-on-primary transition"
+                      style={{ animationDelay: `${120 + i * 70}ms` }}
+                      className="animate-msg-in px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface ring-1 ring-transparent hover:ring-primary/30 hover:bg-primary hover:text-on-primary hover:-translate-y-0.5 hover:shadow-editorial transition-all duration-200"
                     >
                       {p}
                     </button>
@@ -271,27 +314,27 @@ export function AIChatBubble() {
               e.preventDefault()
               handleSend(input)
             }}
-            className="border-t border-outline-variant/15 p-3 flex items-center gap-2"
+            className="border-t border-outline-variant/15 p-3 flex items-center gap-2 bg-surface-container-lowest"
           >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Hỏi về chuyến đi của bạn…"
               disabled={busy}
-              className="flex-1 px-4 py-2.5 rounded-full bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/60 outline-none focus:ring-2 focus:ring-primary/40"
+              className="flex-1 px-4 py-2.5 rounded-full bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/60 outline-none ring-1 ring-transparent transition-all duration-200 focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-lowest"
             />
             <button
               type="submit"
               disabled={busy || !input.trim()}
               aria-label="Gửi"
               className={cn(
-                'w-10 h-10 rounded-full flex items-center justify-center text-on-primary transition active:scale-95',
+                'w-10 h-10 rounded-full flex items-center justify-center text-on-primary transition-all duration-200 active:scale-90',
                 busy || !input.trim()
                   ? 'bg-surface-container-high text-on-surface-variant cursor-not-allowed'
-                  : 'editorial-gradient hover:scale-105'
+                  : 'editorial-gradient shadow-glow-primary hover:scale-110 hover:shadow-glow-primary-lg'
               )}
             >
-              <Icon name={busy ? 'hourglass_empty' : 'send'} size={18} />
+              <Icon name={busy ? 'hourglass_empty' : 'send'} size={18} className={busy ? 'animate-spin' : ''} />
             </button>
           </form>
         </div>
@@ -311,16 +354,23 @@ function MessageRow({
 }) {
   const fromUser = message.role === 'user'
   return (
-    <div className={cn('flex flex-col gap-2', fromUser ? 'items-end' : 'items-start')}>
-      <div
-        className={cn(
-          'max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap',
-          fromUser
-            ? 'bg-primary text-on-primary rounded-br-sm'
-            : 'bg-surface-container text-on-surface rounded-bl-sm'
+    <div className={cn('flex flex-col gap-2 animate-msg-in', fromUser ? 'items-end' : 'items-start')}>
+      <div className={cn('flex items-end gap-2 max-w-[88%]', fromUser && 'flex-row-reverse')}>
+        {!fromUser && (
+          <span className="flex-shrink-0 w-7 h-7 rounded-full editorial-gradient text-on-primary flex items-center justify-center shadow-editorial mb-0.5">
+            <Icon name="auto_awesome" size={15} className="fill" />
+          </span>
         )}
-      >
-        {message.pending ? <TypingDots /> : message.content}
+        <div
+          className={cn(
+            'px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-editorial',
+            fromUser
+              ? 'editorial-gradient text-on-primary rounded-br-md'
+              : 'bg-surface-container-lowest text-on-surface ring-1 ring-outline-variant/15 rounded-bl-md'
+          )}
+        >
+          {message.pending ? <TypingDots /> : message.content}
+        </div>
       </div>
 
       {message.cards && message.cards.length > 0 && (
@@ -358,18 +408,20 @@ function SuggestionCard({
   onCreate: () => void
 }) {
   return (
-    <div className="w-full bg-surface-container-lowest border border-primary/30 rounded-2xl shadow-editorial overflow-hidden">
+    <div className="group w-full bg-surface-container-lowest ring-1 ring-primary/25 rounded-2xl shadow-editorial hover:shadow-editorial-lg transition-shadow duration-300 overflow-hidden">
       {suggestion.coverImage && (
-        <img
-          src={suggestion.coverImage}
-          alt={suggestion.title}
-          className="w-full h-28 object-cover"
-          loading="lazy"
-        />
+        <div className="w-full h-28 overflow-hidden">
+          <img
+            src={suggestion.coverImage}
+            alt={suggestion.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+          />
+        </div>
       )}
       <div className="p-3 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-primary">
-          <Icon name="auto_awesome" size={12} className="fill" />
+          <Icon name="auto_awesome" size={12} className="fill motion-safe:animate-status-pulse" />
           Lộ trình AI gợi ý
         </div>
         <p className="font-headline font-extrabold text-on-surface leading-tight">
@@ -446,7 +498,7 @@ function SuggestionCard({
         {createdTripId ? (
           <Link
             to={tripDetailPath(createdTripId)}
-            className="w-full mt-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-bold bg-primary/10 text-primary hover:bg-primary/15"
+            className="w-full mt-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-bold bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
           >
             <Icon name="check_circle" size={14} className="fill" />
             Đã tạo "{createdTripTitle ?? 'chuyến mới'}" — Mở xem
@@ -457,13 +509,13 @@ function SuggestionCard({
             onClick={onCreate}
             disabled={creating}
             className={cn(
-              'w-full mt-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-bold transition active:scale-95',
+              'w-full mt-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-bold transition-all duration-200 active:scale-95',
               creating
                 ? 'bg-surface-container-high text-on-surface-variant cursor-wait'
-                : 'editorial-gradient text-on-primary hover:scale-[1.01]'
+                : 'editorial-gradient text-on-primary shadow-glow-primary hover:shadow-glow-primary-lg hover:scale-[1.02]'
             )}
           >
-            <Icon name={creating ? 'hourglass_empty' : 'add_circle'} size={14} />
+            <Icon name={creating ? 'hourglass_empty' : 'add_circle'} size={14} className={creating ? 'animate-spin' : ''} />
             {creating ? 'Đang tạo…' : 'Tạo chuyến luôn'}
           </button>
         )}
@@ -486,39 +538,52 @@ function ResultCard({ card }: { card: AiResultCard }) {
   return (
     <Link
       to={card.detailPath}
-      className="flex gap-3 p-2 rounded-2xl bg-surface-container-lowest border border-outline-variant/20 hover:border-primary/40 hover:shadow-editorial transition group"
+      className="flex gap-3 p-2 rounded-2xl bg-surface-container-lowest ring-1 ring-outline-variant/20 hover:ring-primary/40 hover:shadow-editorial hover:-translate-y-0.5 transition-all duration-200 group overflow-hidden"
     >
       {card.image ? (
-        <img
-          src={card.image}
-          alt={card.title}
-          className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-        />
+        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
+          <img
+            src={card.image}
+            alt={card.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        </div>
       ) : (
         <div className="w-16 h-16 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0">
           <Icon name={meta.icon} size={24} className="text-on-surface-variant" />
         </div>
       )}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 py-0.5">
         <span className="inline-flex items-center gap-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
           <Icon name={meta.icon} size={11} />
           {meta.label}
         </span>
-        <p className="font-headline font-bold text-sm text-on-surface line-clamp-1 group-hover:text-primary">
+        <p className="font-headline font-bold text-sm text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
           {card.title}
         </p>
         <p className="text-[11px] text-on-surface-variant mt-0.5 line-clamp-2">{card.subtitle}</p>
       </div>
+      <Icon
+        name="arrow_forward"
+        size={16}
+        className="self-center text-on-surface-variant/40 -translate-x-1 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200"
+      />
     </Link>
   )
 }
 
 function TypingDots() {
   return (
-    <span className="inline-flex items-center gap-1">
-      <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant animate-bounce [animation-delay:-0.3s]" />
-      <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant animate-bounce [animation-delay:-0.15s]" />
-      <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant animate-bounce" />
+    <span className="inline-flex items-center gap-1 py-0.5">
+      <span className="w-1.5 h-1.5 rounded-full bg-primary motion-safe:animate-typing-wave" />
+      <span
+        className="w-1.5 h-1.5 rounded-full bg-primary motion-safe:animate-typing-wave"
+        style={{ animationDelay: '0.18s' }}
+      />
+      <span
+        className="w-1.5 h-1.5 rounded-full bg-primary motion-safe:animate-typing-wave"
+        style={{ animationDelay: '0.36s' }}
+      />
     </span>
   )
 }

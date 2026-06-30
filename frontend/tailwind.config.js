@@ -90,6 +90,67 @@ export default {
             boxShadow: {
                 editorial: '0 12px 40px rgba(78, 33, 32, 0.06)',
                 'editorial-lg': '0 20px 60px rgba(78, 33, 32, 0.12)',
+                'glow-primary': '0 10px 35px -5px rgba(171, 45, 0, 0.5)',
+                'glow-primary-lg': '0 18px 50px -8px rgba(171, 45, 0, 0.6)',
+            },
+            keyframes: {
+                // FAB bounces into view with a playful overshoot.
+                'fab-pop': {
+                    '0%': { transform: 'scale(0)', opacity: '0' },
+                    '60%': { transform: 'scale(1.12)' },
+                    '100%': { transform: 'scale(1)', opacity: '1' },
+                },
+                // Panel grows out of the corner (origin set on the element).
+                'panel-in': {
+                    '0%': { opacity: '0', transform: 'translateY(20px) scale(0.92)' },
+                    '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                },
+                'panel-out': {
+                    '0%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                    '100%': { opacity: '0', transform: 'translateY(16px) scale(0.94)' },
+                },
+                // Each chat message slides up + fades in.
+                'msg-in': {
+                    '0%': { opacity: '0', transform: 'translateY(10px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+                // Expanding halo rings behind the FAB to draw the eye.
+                'halo-pulse': {
+                    '0%': { transform: 'scale(0.85)', opacity: '0.55' },
+                    '70%': { opacity: '0' },
+                    '100%': { transform: 'scale(1.9)', opacity: '0' },
+                },
+                // Diagonal sheen sweeping across the header gradient.
+                shimmer: {
+                    '0%': { transform: 'translateX(-150%) skewX(-20deg)' },
+                    '100%': { transform: 'translateX(250%) skewX(-20deg)' },
+                },
+                // Gentle idle float for the FAB.
+                float: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-5px)' },
+                },
+                // Status dot soft breathing.
+                'status-pulse': {
+                    '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                    '50%': { opacity: '0.55', transform: 'scale(0.82)' },
+                },
+                // Typing dots wave.
+                'typing-wave': {
+                    '0%, 60%, 100%': { transform: 'translateY(0)', opacity: '0.4' },
+                    '30%': { transform: 'translateY(-5px)', opacity: '1' },
+                },
+            },
+            animation: {
+                'fab-pop': 'fab-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                'panel-in': 'panel-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both',
+                'panel-out': 'panel-out 0.2s cubic-bezier(0.4, 0, 1, 1) both',
+                'msg-in': 'msg-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both',
+                'halo-pulse': 'halo-pulse 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+                shimmer: 'shimmer 4s ease-in-out infinite',
+                float: 'float 3.5s ease-in-out infinite',
+                'status-pulse': 'status-pulse 2s ease-in-out infinite',
+                'typing-wave': 'typing-wave 1.2s ease-in-out infinite',
             },
         },
     },

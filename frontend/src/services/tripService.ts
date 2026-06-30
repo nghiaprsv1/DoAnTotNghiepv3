@@ -100,6 +100,7 @@ interface BackendTrip {
   members?: BackendTripMember[]
   itinerary?: BackendItineraryDay[]
   status?: string
+  cancelReason?: string | null
   isJoined?: boolean
   isOwner?: boolean
   joinRequestStatus?: JoinRequestStatus | null
@@ -192,6 +193,7 @@ export const adaptTrip = (b: BackendTrip): Trip => ({
   isJoined: b.isJoined,
   isOwner: b.isOwner,
   status: b.status as Trip['status'] | undefined,
+  cancelReason: b.cancelReason ?? undefined,
   joinRequestStatus: b.joinRequestStatus ?? null,
   pendingRequests: b.pendingRequests ? b.pendingRequests.map(toPendingRequest) : undefined,
   isSaved: b.isSaved,
@@ -282,8 +284,10 @@ export const tripService = {
     return adaptTrip(unwrap(res))
   },
 
-  cancel: async (id: string): Promise<Trip> => {
-    const res = await axiosInstance.post<ApiResponse<BackendTrip>>(`/trips/${id}/cancel`)
+  cancel: async (id: string, reason?: string): Promise<Trip> => {
+    const res = await axiosInstance.post<ApiResponse<BackendTrip>>(`/trips/${id}/cancel`, {
+      reason,
+    })
     return adaptTrip(unwrap(res))
   },
 

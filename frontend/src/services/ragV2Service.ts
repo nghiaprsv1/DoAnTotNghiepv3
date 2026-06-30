@@ -39,6 +39,27 @@ export interface RagStep {
   detail: Record<string, unknown>
 }
 
+/** Chi tiết pipeline search_documents (embedding + cosine + BM25 → RRF + rerank). */
+export interface DocSearchDetail {
+  embedModel: string
+  dimensions: number
+  totalChunks: number
+  candidateK: number
+  rerankVia: 'llm' | 'fallback' | 'disabled'
+  candidates: {
+    docName: string
+    chunkIndex: number
+    preview: string
+    dense: number
+    sparse: number
+    rrf: number
+    denseRank?: number | null
+    sparseRank?: number | null
+    relevance?: number
+    kept: boolean
+  }[]
+}
+
 /** Thẻ kết quả truy hồi từ DB (chuyến/địa điểm/HDV/bài viết) — bấm được. */
 export interface RagCard {
   source: 'doc' | 'trip' | 'place' | 'guide' | 'post'

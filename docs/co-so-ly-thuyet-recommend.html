@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cơ sở lý thuyết — Hybrid Recommender chuyến đi · TripMate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --primary: #ab2d00; --primary-soft: #c2410c; --ink: #1c1410; --muted: #6b5d54;
+    --line: #ece4dd; --bg: #fbf7f3; --card: #ffffff; --code-bg: #2a1d15; --code-ink: #f4e9df;
+    --accent: #f0c808; --grad: linear-gradient(135deg, #ab2d00 0%, #d8541f 55%, #f0921f 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); background: var(--bg); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4 { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; line-height: 1.25; }
+  a { color: var(--primary); text-decoration: none; }
+  code { font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  .shell { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  aside { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--line); padding: 28px 20px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .brand .dot { width: 30px; height: 30px; border-radius: 9px; background: var(--grad); box-shadow: 0 4px 14px rgba(171,45,0,.35); }
+  .brand b { font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 800; }
+  .brand-sub { font-size: 12px; color: var(--muted); margin-bottom: 22px; padding-left: 2px; }
+  nav a { display: block; padding: 7px 12px; border-radius: 9px; color: var(--muted); font-size: 13.5px; font-weight: 500; transition: .15s; }
+  nav a:hover { background: #faf2ec; color: var(--primary); }
+  nav a.active { background: #fdeee6; color: var(--primary); font-weight: 700; }
+  nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #b6a99f; margin: 18px 0 6px 12px; font-weight: 700; }
+  main { padding: 0 0 90px; max-width: 940px; }
+  .hero { background: var(--grad); color: #fff; padding: 56px 56px 48px; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; right: -80px; top: -80px; width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,.10); }
+  .hero .kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; opacity: .9; }
+  .hero h1 { font-size: 36px; font-weight: 800; margin: 12px 0 14px; max-width: 680px; }
+  .hero p { font-size: 16px; max-width: 640px; opacity: .95; }
+  .hero .meta { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .hero .meta span { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); padding: 5px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 500; }
+  .wrap { padding: 44px 56px 0; }
+  section { margin-bottom: 52px; scroll-margin-top: 24px; }
+  section > h2 { font-size: 25px; font-weight: 800; display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  section > h2 .num { flex: none; width: 34px; height: 34px; border-radius: 10px; background: #fdeee6; color: var(--primary); font-size: 15px; display: grid; place-items: center; font-weight: 800; }
+  section > .lead { color: var(--muted); margin: 0 0 22px 46px; font-size: 15px; }
+  h3 { font-size: 17px; font-weight: 700; margin: 26px 0 10px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 22px; } li { margin-bottom: 6px; }
+  .inline { background: #f3ebe4; color: #8a3310; padding: 1.5px 7px; border-radius: 6px; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+  strong { color: var(--ink); font-weight: 700; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px 26px; box-shadow: 0 1px 2px rgba(28,20,16,.03); margin-bottom: 18px; }
+  .card.tip { border-left: 4px solid var(--accent); background: #fffdf3; }
+  .card.warn { border-left: 4px solid var(--primary); background: #fff6f2; }
+  .card.tip .tag, .card.warn .tag { font-weight: 700; font-size: 13px; display: block; margin-bottom: 6px; }
+  .card.tip .tag { color: #9a7b00; } .card.warn .tag { color: var(--primary); }
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 14px; padding: 20px 22px; overflow-x: auto; font-size: 13px; line-height: 1.65; margin: 0 0 18px; }
+  .c-com { color: #9c8a7a; font-style: italic; } .c-key { color: #f0921f; } .c-str { color: #8fd694; } .c-fn { color: #ffd166; } .c-num { color: #ff9e64; }
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 18px; font-size: 14px; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); }
+  th { background: #f7efe9; text-align: left; padding: 11px 14px; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 13px; color: #5b4a40; }
+  td { padding: 11px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: #fdfaf7; }
+  td code, th code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #f3ebe4; padding: 1px 6px; border-radius: 5px; color: #8a3310; }
+  .formula { background: #fffdf7; border: 1px solid #f0e6cf; border-radius: 14px; padding: 22px 24px; margin: 0 0 18px; text-align: center; }
+  .formula .eq { font-family: 'JetBrains Mono', 'Cambria Math', serif; font-size: 19px; color: #5b3d00; letter-spacing: .3px; }
+  .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 4px; }
+  .frac .top { border-bottom: 2px solid #8a6d00; padding: 0 8px 2px; } .frac .bot { padding: 3px 8px 0; }
+  .sub { font-size: .7em; vertical-align: sub; } .sup { font-size: .7em; vertical-align: super; }
+  .formula .cap { font-family: 'Inter'; font-size: 12.5px; color: var(--muted); margin-top: 12px; letter-spacing: 0; }
+  .vars { font-size: 13.5px; } .vars li { margin-bottom: 7px; }
+  .vars .v { font-family: 'JetBrains Mono', monospace; background: #f3ebe4; color: #8a3310; padding: 1px 7px; border-radius: 5px; font-size: 12.5px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .mini { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .mini h4 { font-size: 14px; color: var(--primary); margin-bottom: 8px; } .mini p { font-size: 13.5px; color: var(--muted); margin: 0; }
+  .pill { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #fdeee6; color: var(--primary); }
+  /* weight bar */
+  .wbar { display: flex; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); margin: 6px 0 8px; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 14px; }
+  .wbar div { padding: 16px 12px; text-align: center; color: #fff; }
+  .wseg-m { background: #2a4b8d; flex: 0 0 30%; } .wseg-i { background: #c2410c; flex: 0 0 30%; } .wseg-h { background: #166534; flex: 0 0 40%; }
+  .wbar small { display:block; font-weight: 500; font-size: 11px; opacity: .9; margin-top: 3px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 6px; margin-left: 8px; vertical-align: middle; }
+  .badge.m { background: #e6f0ff; color: #2a4b8d; } .badge.i { background: #ffe9dd; color: #c2410c; } .badge.h { background: #ecfdf3; color: #166534; }
+  .steps { counter-reset: s; }
+  .stp { display: flex; gap: 14px; margin-bottom: 14px; }
+  .stp .n { flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--grad); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 14px; }
+  .stp .bd { flex: 1; } .stp .bd h4 { font-size: 15px; } .stp .bd p { font-size: 13.5px; color: var(--muted); margin: 3px 0 0; }
+  footer { margin: 30px 56px 0; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  @media (max-width: 880px) {
+    .shell { grid-template-columns: 1fr; } aside { display: none; }
+    .hero, .wrap, footer { padding-left: 24px; padding-right: 24px; }
+    .grid2, .grid3 { grid-template-columns: 1fr; } .hero h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><div class="dot"></div><b>TripMate</b></div>
+    <div class="brand-sub">Hybrid Recommender chuyến đi</div>
+    <nav id="nav">
+      <div class="grp">Nền tảng</div>
+      <a href="#intro">1. Bài toán gợi ý</a>
+      <a href="#taxonomy">2. Phân loại RecSys</a>
+      <a href="#hybrid">3. Hybrid &amp; kiểu lai</a>
+      <div class="grp">Mô hình hệ thống</div>
+      <a href="#model">4. Công thức tổng</a>
+      <a href="#match">5. Match (content-based)</a>
+      <a href="#interaction">6. Interaction (cá nhân hoá)</a>
+      <a href="#hot">7. Hot (popularity)</a>
+      <div class="grp">Kỹ thuật</div>
+      <a href="#normalize">8. Chuẩn hoá điểm</a>
+      <a href="#pipeline">9. Luồng tính toán</a>
+      <a href="#map">10. Lý thuyết → code</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <div class="kicker">Recommender System · Đồ án tốt nghiệp</div>
+      <h1>Cơ sở lý thuyết — Hệ gợi ý lai chuyến đi</h1>
+      <p>Mô hình gợi ý chuyến đi của TripMate kết hợp 3 tín hiệu: hợp sở thích (content-based), tương tác cá nhân (implicit feedback) và độ phổ biến (popularity) — hợp nhất bằng tổng có trọng số.</p>
+      <div class="meta">
+        <span>⚖️ Weighted hybrid</span>
+        <span>🎯 final = 0.3·match + 0.3·interaction + 0.4·hot</span>
+        <span>📊 Min–max normalize</span>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <section id="intro">
+        <h2><span class="num">1</span> Bài toán gợi ý (Recommendation)</h2>
+        <p class="lead">Recommender System dự đoán mức độ phù hợp của một item với một người dùng, để xếp hạng và đề xuất.</p>
+        <p>Hình thức hoá: với tập người dùng <span class="vars"><span class="v">U</span></span> và tập item (chuyến đi) <span class="vars"><span class="v">I</span></span>, ta cần một hàm tính điểm (utility / score):</p>
+        <div class="formula">
+          <div class="eq">s : U × I → ℝ,&nbsp;&nbsp; rec(u) = argtop<span class="sub">k</span> &nbsp;s(u, i)&nbsp;&nbsp;∀ i ∈ I<span class="sub">u</span></div>
+          <div class="cap">Trả về k item có điểm cao nhất. <span class="vars"><span class="v">I<sub>u</sub></span></span> = tập ứng viên hợp lệ cho u (đã lọc bỏ chuyến u tạo / đã tham gia / quá hạn).</div>
+        </div>
+        <p>Thách thức kinh điển: <strong>cold-start</strong> (người dùng/ item mới chưa có dữ liệu), <strong>sparsity</strong> (ma trận tương tác thưa), và <strong>popularity bias</strong> (chỉ toàn đề xuất item hot). Mô hình lai được chọn chính để giảm các điểm yếu này.</p>
+      </section>
+
+      <section id="taxonomy">
+        <h2><span class="num">2</span> Phân loại Recommender System</h2>
+        <p class="lead">Ba họ phương pháp nền tảng — mỗi họ mạnh/yếu khác nhau.</p>
+        <div class="grid3">
+          <div class="mini"><h4>Content-based</h4><p>Gợi ý item <em>giống</em> những gì user đã thích, dựa trên <strong>thuộc tính item</strong> (thể loại, tag, địa điểm) và hồ sơ sở thích user. Không cần dữ liệu user khác.</p></div>
+          <div class="mini"><h4>Collaborative Filtering</h4><p>Gợi ý dựa trên <strong>hành vi của những user tương tự</strong> ("người giống bạn cũng thích…"). Cần ma trận user–item lớn; mạnh nhưng khổ vì cold-start &amp; sparsity.</p></div>
+          <div class="mini"><h4>Popularity / Knowledge</h4><p>Xếp theo <strong>độ phổ biến toàn hệ thống</strong> hoặc luật miền. Đơn giản, là <em>baseline</em> tốt và là cứu cánh cho cold-start.</p></div>
+        </div>
+        <div class="card warn">
+          <span class="tag">⚠️ Phân biệt quan trọng (để bảo vệ đồ án)</span>
+          Hệ thống này dùng tương tác của <strong>chính user đó</strong> (implicit feedback cá nhân) — đây là <strong>cá nhân hoá theo lịch sử bản thân</strong>, KHÔNG phải Collaborative Filtering thuần (vốn cần tính độ tương đồng <em>giữa các user</em> qua ma trận user–item). Trình bày đúng để tránh bị hỏi vặn.
+        </div>
+      </section>
+
+      <section id="hybrid">
+        <h2><span class="num">3</span> Hệ lai (Hybrid) &amp; các kiểu lai</h2>
+        <p class="lead">Hybrid kết hợp nhiều phương pháp để bù khuyết điểm cho nhau (Burke, 2002).</p>
+        <p>Các kiểu lai phổ biến: <strong>Weighted</strong> (cộng điểm có trọng số), <strong>Switching</strong> (đổi phương pháp theo ngữ cảnh), <strong>Mixed</strong> (trộn kết quả), <strong>Feature combination</strong>, <strong>Cascade</strong> (lọc tầng).</p>
+        <div class="card tip">
+          <span class="tag">💡 TripMate dùng kiểu WEIGHTED HYBRID</span>
+          Mỗi chuyến được chấm bởi 3 thành phần độc lập (match · interaction · hot), rồi hợp nhất bằng <strong>tổng tuyến tính có trọng số</strong>. Đơn giản, minh bạch (giải thích được lý do gợi ý), và dễ tinh chỉnh trọng số.
+        </div>
+        <p>Vì sao lai 3 tín hiệu này hợp nhau:</p>
+        <ul>
+          <li><span class="badge m">match</span> cá nhân hoá theo <em>sở thích khai báo</em> — chính xác nhưng cần user có hồ sơ.</li>
+          <li><span class="badge i">interaction</span> cá nhân hoá theo <em>hành vi thật</em> — bắt được ý định ngầm.</li>
+          <li><span class="badge h">hot</span> độ phổ biến — <strong>cứu cold-start</strong>: user mới chưa có sở thích/ hành vi vẫn nhận được gợi ý hợp lý (nên trọng số hot cao nhất = 0.4).</li>
+        </ul>
+      </section>
+
+      <section id="model">
+        <h2><span class="num">4</span> Mô hình tổng — tổng có trọng số</h2>
+        <p class="lead">Điểm gợi ý cuối của mỗi chuyến i với user u.</p>
+        <div class="formula">
+          <div class="eq">
+            score(u, i) = w<span class="sub">m</span>·match(u,i) + w<span class="sub">i</span>·inter(u,i) + w<span class="sub">h</span>·hot(i)
+          </div>
+          <div class="cap" style="margin-top:14px">
+            = <span style="color:#2a4b8d;font-weight:700">0.3</span>·match + <span style="color:#c2410c;font-weight:700">0.3</span>·interaction + <span style="color:#166534;font-weight:700">0.4</span>·hot
+          </div>
+        </div>
+        <div class="wbar">
+          <div class="wseg-m">match · 0.3<small>hợp sở thích</small></div>
+          <div class="wseg-i">interaction · 0.3<small>tương tác cá nhân</small></div>
+          <div class="wseg-h">hot · 0.4<small>độ phổ biến</small></div>
+        </div>
+        <ul class="vars">
+          <li>Cả 3 thành phần đều ∈ <span class="v">[0, 1]</span> → <span class="v">score ∈ [0, 1]</span> (vì tổng trọng số = 1).</li>
+          <li><span class="v">w<sub>m</sub>=0.3</span>, <span class="v">w<sub>i</sub>=0.3</span>, <span class="v">w<sub>h</sub>=0.4</span> — hot nặng nhất để phục vụ cold-start (xem mục 3).</li>
+          <li>Xếp hạng giảm dần theo score → lấy top-k (mặc định 6).</li>
+        </ul>
+        <div class="card tip">
+          <span class="tag">💡 Vì sao tổng tuyến tính chứ không phải model học máy?</span>
+          Với quy mô đồ án + yêu cầu <strong>giải thích được</strong> (mỗi gợi ý kèm <code class="inline">recommendReasons</code> + <code class="inline">scoreBreakdown</code>), tổng có trọng số minh bạch và đủ tốt. Không cần huấn luyện, không cold-start ở phía model, dễ tinh chỉnh trọng số bằng tay.
+        </div>
+      </section>
+
+      <section id="match">
+        <h2><span class="num">5</span> Thành phần MATCH <span class="badge m">content-based</span></h2>
+        <p class="lead">Độ hợp giữa thuộc tính chuyến và hồ sơ sở thích user — chuẩn hoá TUYỆT ĐỐI theo 3 tiêu chí.</p>
+        <p>Gọi <span class="vars"><span class="v">P(u)</span></span> = tập token sở thích của user (gộp từ <code class="inline">preferences</code> JSONB + bảng <code class="inline">user_preferences</code>: travelStyles, tripPurposes, activities, categories, interests, budget…). Mỗi tiêu chí khớp được <span class="vars"><span class="v">1/3</span></span> điểm:</p>
+        <div class="formula">
+          <div class="eq">
+            match(u,i) = min( 1, &nbsp;
+            <span class="frac"><span class="top">1</span><span class="bot">3</span></span>
+            · [ 𝟙<span class="sub">cat</span> + 𝟙<span class="sub">tag</span> + 𝟙<span class="sub">prov</span> ] )
+          </div>
+          <div class="cap">𝟙 = hàm chỉ thị (1 nếu khớp, 0 nếu không). Khớp 1 tiêu chí ≈ 0.33, 2 ≈ 0.67, cả 3 = 1.0.</div>
+        </div>
+        <table>
+          <tr><th>Tiêu chí</th><th>Điều kiện khớp (𝟙 = 1)</th><th>Lý do hiển thị</th></tr>
+          <tr><td><code>cat</code> — thể loại</td><td><code>trip.category.key</code> ∈ P(u)</td><td>"Hợp gu {label}"</td></tr>
+          <tr><td><code>tag</code> — thẻ</td><td>tồn tại tag của chuyến ∈ P(u)</td><td>"Tag khớp: …"</td></tr>
+          <tr><td><code>prov</code> — địa điểm</td><td>destination khớp tỉnh ưa thích (substring 2 chiều)</td><td>"Đúng nơi bạn thích: …"</td></tr>
+        </table>
+        <div class="card">
+          <span class="pill">Điểm tuyệt đối</span>
+          <p style="margin:12px 0 0;font-size:14px">Match KHÔNG min–max chuẩn hoá — điểm của một chuyến <strong>không phụ thuộc các chuyến khác</strong> trong danh sách. Điều này giữ ngữ nghĩa "hợp gu 2/3 tiêu chí" ổn định, tránh việc một danh sách toàn chuyến lệch gu bị kéo điểm match lên giả tạo.</p>
+        </div>
+      </section>
+
+      <section id="interaction">
+        <h2><span class="num">6</span> Thành phần INTERACTION <span class="badge i">implicit feedback</span></h2>
+        <p class="lead">Tương tác của CHÍNH user với từng chuyến — cá nhân hoá theo hành vi thật.</p>
+        <p>Dữ liệu từ bảng <code class="inline">trip_interactions</code> (views, clicks, favorited, requested). Điểm thô bão hoà bằng <strong>logarit</strong> để lợi ích giảm dần:</p>
+        <div class="formula">
+          <div class="eq">
+            inter<span class="sub">raw</span> = ln(1+views) + 1.5·ln(1+clicks) + 2·𝟙<span class="sub">fav</span> + 2.5·𝟙<span class="sub">req</span>
+          </div>
+          <div class="cap">Hệ số phản ánh cường độ ý định: xem &lt; bấm &lt; thích &lt; xin tham gia. favorite/request là ý định mạnh → cộng thẳng (không nhân log, không lặp).</div>
+        </div>
+        <ul class="vars">
+          <li><strong>Vì sao log?</strong> <span class="v">ln(1+x)</span> (log1p) chống "spam tương tác": mở/bấm một chuyến 100 lần không làm điểm tăng tuyến tính vô hạn rồi đè các chuyến khác. Lợi ích cận biên giảm dần — đúng trực giác.</li>
+          <li>Sau đó <span class="v">inter<sub>raw</sub></span> được <strong>min–max chuẩn hoá</strong> về [0,1] trên tập ứng viên (mục 8).</li>
+          <li>Khách chưa đăng nhập / chuyến chưa từng tương tác → inter = 0.</li>
+        </ul>
+        <div class="card warn">
+          <span class="tag">⚠️ Đây là implicit feedback cá nhân, không phải CF</span>
+          Tín hiệu lấy từ lịch sử của <em>riêng user đang xem</em>, không so với user khác. Là dạng <strong>content/behavior-based personalization</strong>.
+        </div>
+      </section>
+
+      <section id="hot">
+        <h2><span class="num">7</span> Thành phần HOT <span class="badge h">popularity</span></h2>
+        <p class="lead">Độ phổ biến toàn hệ thống của chuyến — không phụ thuộc user nào.</p>
+        <div class="formula">
+          <div class="eq">
+            hot<span class="sub">raw</span> = ln(1+V) + 1.5·ln(1+C) + 2·ln(1+R) + 0.3·M
+          </div>
+          <div class="cap">V = view_count, C = click_count, R = request_count (toàn hệ thống); M = member_count.</div>
+        </div>
+        <ul class="vars">
+          <li>View / click / request tăng <strong>không giới hạn</strong> → bão hoà bằng <span class="v">log1p</span>. Hệ số tăng dần theo độ "nghiêm túc" của hành vi (request nặng nhất).</li>
+          <li>member_count nhỏ và hữu hạn → giữ <strong>tuyến tính nhẹ</strong> (×0.3), không log.</li>
+          <li>Sau đó min–max chuẩn hoá về [0,1]. Chuyến có <span class="v">hot ≥ 0.75</span> được gắn nhãn "Đang hot".</li>
+        </ul>
+        <div class="card tip">
+          <span class="tag">💡 Vai trò chống cold-start</span>
+          Với user mới (chưa có sở thích lẫn lịch sử), match = interaction = 0, nhưng hot vẫn cho điểm → hệ thống vẫn gợi ý được chuyến chất lượng. Đây là lý do <strong>w<sub>h</sub> = 0.4 là trọng số cao nhất</strong>.
+        </div>
+      </section>
+
+      <section id="normalize">
+        <h2><span class="num">8</span> Chuẩn hoá điểm (Min–Max)</h2>
+        <p class="lead">Đưa các thang điểm thô khác nhau về cùng [0,1] để cộng trọng số có nghĩa.</p>
+        <p>interaction và hot có thang thô tuỳ ý (phụ thuộc log của lượt tương tác) → phải chuẩn hoá trước khi hợp nhất. Dùng <strong>min–max</strong> trên tập ứng viên:</p>
+        <div class="formula">
+          <div class="eq">
+            x̂ =
+            <span class="frac">
+              <span class="top">x − min(X)</span>
+              <span class="bot">max(X) − min(X)</span>
+            </span>
+          </div>
+          <div class="cap">X = tập điểm thô của toàn bộ ứng viên cho thành phần đó. Nếu max = min (span = 0) → trả 0 (tránh chia 0).</div>
+        </div>
+        <div class="grid2">
+          <div class="mini"><h4>Chuẩn hoá tương đối</h4><p><strong>interaction</strong> &amp; <strong>hot</strong>: min–max — điểm phụ thuộc các chuyến khác trong danh sách (so bó). Hợp lý vì "hot" là khái niệm so sánh.</p></div>
+          <div class="mini"><h4>Chuẩn hoá tuyệt đối</h4><p><strong>match</strong>: KHÔNG min–max — đã là tỉ lệ k/3 tiêu chí khớp, độc lập danh sách (mục 5).</p></div>
+        </div>
+        <div class="card warn">
+          <span class="tag">⚠️ Hạn chế đã biết của min–max</span>
+          Nhạy với outlier (một chuyến cực hot kéo giãn thang, nén phần còn lại về gần 0) và điểm <em>tương đối theo lô</em> nên không so sánh được giữa các lần gọi khác tập ứng viên. Chấp nhận được ở quy mô đồ án; hướng cải tiến: z-score hoặc chuẩn hoá theo phân vị.
+        </div>
+      </section>
+
+      <section id="pipeline">
+        <h2><span class="num">9</span> Luồng tính toán</h2>
+        <p class="lead">Các bước trong <code class="inline">TripsService.recommend()</code>.</p>
+        <div class="card">
+          <div class="steps">
+            <div class="stp"><div class="n">1</div><div class="bd"><h4>Lấy hồ sơ sở thích</h4><p>Gộp <code>preferences</code> (JSONB) + <code>user_preferences</code> → tập token P(u) + tập tỉnh ưa thích.</p></div></div>
+            <div class="stp"><div class="n">2</div><div class="bd"><h4>Lọc ứng viên</h4><p>Trip <code>status=published</code>, còn hạn (<code>start_date ≥ hôm nay</code>), loại chuyến user tạo / đã là member. Lấy tối đa 120.</p></div></div>
+            <div class="stp"><div class="n">3</div><div class="bd"><h4>Nạp tương tác cá nhân</h4><p>Đọc <code>trip_interactions</code> của user cho các ứng viên.</p></div></div>
+            <div class="stp"><div class="n">4</div><div class="bd"><h4>Chấm điểm thô</h4><p>match (tuyệt đối) · inter<sub>raw</sub> (log) · hot<sub>raw</sub> (log) cho từng chuyến, kèm gom lý do.</p></div></div>
+            <div class="stp"><div class="n">5</div><div class="bd"><h4>Chuẩn hoá &amp; hợp nhất</h4><p>Min–max inter &amp; hot → 0.3·match + 0.3·inter + 0.4·hot.</p></div></div>
+            <div class="stp"><div class="n">6</div><div class="bd"><h4>Xếp hạng &amp; trả về</h4><p>Sort giảm dần, lấy top-k, đính kèm <code>recommendScore</code>, <code>recommendReasons</code>, <code>scoreBreakdown</code>.</p></div></div>
+          </div>
+        </div>
+        <div class="card tip">
+          <span class="tag">💡 Tính giải thích được (explainability)</span>
+          Mỗi chuyến trả kèm <code class="inline">scoreBreakdown {match, interaction, hot}</code> + danh sách lý do tiếng Việt → FE hiển thị "vì sao gợi ý", tăng độ tin cậy. Đây là ưu điểm lớn của hybrid tuyến tính so với model hộp đen.
+        </div>
+      </section>
+
+      <section id="map">
+        <h2><span class="num">10</span> Bản đồ lý thuyết → code</h2>
+        <p class="lead">Mọi công thức khớp với <code class="inline">backend/src/modules/trip/trips.service.ts</code>.</p>
+        <table>
+          <tr><th>Khái niệm</th><th>Vị trí code</th></tr>
+          <tr><td>Hàm gợi ý chính</td><td><code>trips.service.ts:602</code> recommend()</td></tr>
+          <tr><td>Công thức tổng (0.3/0.3/0.4)</td><td><code>trips.service.ts:746</code></td></tr>
+          <tr><td>MATCH — 3 tiêu chí, 1/3 mỗi cái</td><td><code>trips.service.ts:683-706</code></td></tr>
+          <tr><td>Pool token sở thích P(u)</td><td><code>trips.service.ts:622-636</code></td></tr>
+          <tr><td>INTERACTION — log1p + fav/req</td><td><code>trips.service.ts:711-717</code></td></tr>
+          <tr><td>HOT — log1p toàn hệ thống</td><td><code>trips.service.ts:722-726</code></td></tr>
+          <tr><td>Min–max normalize</td><td><code>trips.service.ts:733-740</code></td></tr>
+          <tr><td>Lọc ứng viên (status/hạn/loại owner)</td><td><code>trips.service.ts:639-659</code></td></tr>
+          <tr><td>scoreBreakdown + reasons</td><td><code>trips.service.ts:747-753</code></td></tr>
+          <tr><td>Entity tương tác</td><td><code>trip-interaction.entity.ts</code></td></tr>
+        </table>
+      </section>
+
+      <footer>
+        Nguồn sự thật: <code>backend/src/modules/trip/trips.service.ts</code> · <code>recommend()</code><br/>
+        Tham khảo lý thuyết: Burke (2002) Hybrid Recommender Systems · Ricci et al. Recommender Systems Handbook · Cập nhật 2026-06-28
+      </footer>
+
+    </div><!-- /wrap -->
+  </main>
+</div>
+
+<script>
+  const links = [...document.querySelectorAll('#nav a')];
+  const map = {};
+  links.forEach(a => { const id = a.getAttribute('href').slice(1); const el = document.getElementById(id); if (el) map[id] = a; });
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { links.forEach(l => l.classList.remove('active')); const a = map[e.target.id]; if (a) a.classList.add('active'); } });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  Object.keys(map).forEach(id => obs.observe(document.getElementById(id)));
+</script>
+</body>
+</html>

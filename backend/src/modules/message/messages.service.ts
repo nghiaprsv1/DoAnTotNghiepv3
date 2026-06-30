@@ -166,6 +166,27 @@ export class MessagesService {
     return { conversation: conv ?? created, messages };
   }
 
+  /**
+   * Open the GROUP conversation tied to a trip + return its message history.
+   * Used by the embedded chat on the trip detail page.
+   *   - 404 if the trip has no group conversation yet (legacy trips created
+   *     before ensureTripGroup, or trips that never had one).
+   *   - 403 if the caller is not a member of that conversation (i.e. not a
+   *     trip member) — enforced transitively by listMessages' membership check.
+   */
+  async openTripConversation(tripId: string, userId: string) {
+    const conv = await this.convs.findOne({
+      where: { tripId },
+      relations: ['members', 'members.user'],
+    });
+    if (!conv) {
+      throw new NotFoundException('Chuyến đi này chưa có nhóm chat.');
+    }
+    // listMessages throws ForbiddenException when the caller is not a member.
+    const messages = await this.listMessages(conv.id, userId, { limit: 50 });
+    return { conversation: conv, messages };
+  }
+
   /** Membership check for the realtime gateway. */
   async isMember(conversationId: string, userId: string): Promise<boolean> {
     return !!(await this.members.findOne({ where: { conversationId, userId } }));

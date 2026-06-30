@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tiền xử lý dữ liệu RAG — TripMate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --primary: #ab2d00;
+    --primary-soft: #c2410c;
+    --ink: #1c1410;
+    --muted: #6b5d54;
+    --line: #ece4dd;
+    --bg: #fbf7f3;
+    --card: #ffffff;
+    --code-bg: #2a1d15;
+    --code-ink: #f4e9df;
+    --accent: #f0c808;
+    --grad: linear-gradient(135deg, #ab2d00 0%, #d8541f 55%, #f0921f 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--ink); background: var(--bg); line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3,h4 { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; line-height: 1.25; }
+  a { color: var(--primary); text-decoration: none; }
+  code { font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace; }
+  /* layout */
+  .shell { display: grid; grid-template-columns: 270px 1fr; min-height: 100vh; }
+  /* sidebar */
+  aside {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    background: #fff; border-right: 1px solid var(--line); padding: 28px 20px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .brand .dot { width: 30px; height: 30px; border-radius: 9px; background: var(--grad); box-shadow: 0 4px 14px rgba(171,45,0,.35); }
+  .brand b { font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 800; }
+  .brand-sub { font-size: 12px; color: var(--muted); margin-bottom: 22px; padding-left: 2px; }
+  nav a { display: block; padding: 7px 12px; border-radius: 9px; color: var(--muted); font-size: 13.5px; font-weight: 500; transition: .15s; }
+  nav a:hover { background: #faf2ec; color: var(--primary); }
+  nav a.active { background: #fdeee6; color: var(--primary); font-weight: 700; }
+  nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #b6a99f; margin: 18px 0 6px 12px; font-weight: 700; }
+  /* main */
+  main { padding: 0 0 90px; max-width: 920px; }
+  .hero { background: var(--grad); color: #fff; padding: 56px 56px 48px; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; right: -80px; top: -80px; width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,.10); }
+  .hero::before { content: ""; position: absolute; right: 80px; bottom: -120px; width: 260px; height: 260px; border-radius: 50%; background: rgba(255,255,255,.07); }
+  .hero .kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; opacity: .9; }
+  .hero h1 { font-size: 38px; font-weight: 800; margin: 12px 0 14px; max-width: 640px; }
+  .hero p { font-size: 16px; max-width: 600px; opacity: .95; }
+  .hero .meta { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .hero .meta span { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); padding: 5px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 500; backdrop-filter: blur(4px); }
+  .wrap { padding: 44px 56px 0; }
+  section { margin-bottom: 52px; scroll-margin-top: 24px; }
+  section > h2 { font-size: 25px; font-weight: 800; display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  section > h2 .num { flex: none; width: 34px; height: 34px; border-radius: 10px; background: #fdeee6; color: var(--primary); font-size: 15px; display: grid; place-items: center; font-weight: 800; }
+  section > .lead { color: var(--muted); margin: 0 0 22px 46px; font-size: 15px; }
+  h3 { font-size: 17px; font-weight: 700; margin: 26px 0 10px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+  .inline { background: #f3ebe4; color: #8a3310; padding: 1.5px 7px; border-radius: 6px; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+  strong { color: var(--ink); font-weight: 700; }
+  /* card */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px 26px; box-shadow: 0 1px 2px rgba(28,20,16,.03); margin-bottom: 18px; }
+  .card.tip { border-left: 4px solid var(--accent); background: #fffdf3; }
+  .card.warn { border-left: 4px solid var(--primary); background: #fff6f2; }
+  .card.tip .tag, .card.warn .tag { font-weight: 700; font-size: 13px; display: block; margin-bottom: 6px; }
+  .card.tip .tag { color: #9a7b00; }
+  .card.warn .tag { color: var(--primary); }
+  /* code */
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 14px; padding: 20px 22px; overflow-x: auto; font-size: 13px; line-height: 1.65; margin: 0 0 18px; }
+  pre code { font-family: 'JetBrains Mono', monospace; }
+  .c-com { color: #9c8a7a; font-style: italic; }
+  .c-key { color: #f0921f; }
+  .c-str { color: #8fd694; }
+  .c-fn  { color: #ffd166; }
+  /* pipeline */
+  .pipe { display: flex; flex-direction: column; gap: 0; margin: 8px 0 6px; }
+  .step { display: flex; align-items: stretch; gap: 16px; }
+  .step .rail { display: flex; flex-direction: column; align-items: center; flex: none; }
+  .step .bub { width: 40px; height: 40px; border-radius: 12px; background: var(--grad); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 15px; box-shadow: 0 4px 12px rgba(171,45,0,.28); }
+  .step .ln { width: 2px; flex: 1; background: linear-gradient(#e6b9a4, #f0c8b6); margin: 4px 0; min-height: 14px; }
+  .step:last-child .ln { display: none; }
+  .step .body { padding-bottom: 22px; flex: 1; }
+  .step .body h4 { font-size: 16px; font-weight: 700; }
+  .step .body p { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+  .step .body .ec { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--primary-soft); background: #fdeee6; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 7px; }
+  /* table */
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 18px; font-size: 14px; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); }
+  th { background: #f7efe9; text-align: left; padding: 11px 14px; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 13px; color: #5b4a40; }
+  td { padding: 11px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: #fdfaf7; }
+  td code, th code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #f3ebe4; padding: 1px 6px; border-radius: 5px; color: #8a3310; }
+  .big { font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace; }
+  /* chunk demo */
+  .demo { display: flex; flex-direction: column; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .row .lbl { width: 78px; flex: none; color: var(--muted); font-family: 'Inter'; font-weight: 600; font-size: 12.5px; }
+  .sent { padding: 5px 11px; border-radius: 8px; background: #eef4ff; border: 1px solid #d6e2fb; color: #2a4b8d; }
+  .sent.ov { background: #fff1d6; border-color: #f3d98a; color: #8a5b00; font-weight: 600; }
+  .pill { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #fdeee6; color: var(--primary); }
+  /* two columns */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .mini { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .mini h4 { font-size: 14px; color: var(--primary); margin-bottom: 8px; }
+  .mini p { font-size: 13.5px; color: var(--muted); margin: 0; }
+  footer { margin: 30px 56px 0; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  .formula { background: #fffdf7; border: 1px solid #f0e6cf; border-radius: 14px; padding: 22px 24px; margin: 0 0 18px; text-align: center; }
+  .formula .eq { font-family: 'JetBrains Mono', 'Cambria Math', serif; font-size: 19px; color: #5b3d00; letter-spacing: .3px; }
+  .formula .eq .big { font-size: 24px; font-family: 'JetBrains Mono', monospace; }
+  .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 4px; }
+  .frac .top { border-bottom: 2px solid #8a6d00; padding: 0 8px 2px; }
+  .frac .bot { padding: 3px 8px 0; }
+  .sub { font-size: .7em; vertical-align: sub; }
+  .sup { font-size: .7em; vertical-align: super; }
+  .formula .cap { font-family: 'Inter'; font-size: 12.5px; color: var(--muted); margin-top: 12px; letter-spacing: 0; }
+  .vars { font-size: 13.5px; }
+  .vars li { margin-bottom: 7px; }
+  .vars .v { font-family: 'JetBrains Mono', monospace; background: #f3ebe4; color: #8a3310; padding: 1px 7px; border-radius: 5px; font-size: 12.5px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 6px; margin-left: 8px; vertical-align: middle; }
+  .badge.dense { background: #e6f0ff; color: #2a4b8d; }
+  .badge.sparse { background: #fff1d6; color: #8a5b00; }
+  .badge.fuse { background: #ecfdf3; color: #166534; }
+  .badge.new { background: #fde7ef; color: #9d174d; }
+  /* compare two-track */
+  .vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: stretch; margin: 4px 0 18px; }
+  .vs .track { border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 14px; background: #fff; }
+  .vs .track.old { border-color: #e7d9cd; }
+  .vs .track.new { border-color: #f3c5d8; background: #fffafc; }
+  .vs .track h4 { font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+  .vs .track .tg { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+  .vs .track.old .tg { background: #f3ebe4; color: #8a6d56; }
+  .vs .track.new .tg { background: #fde7ef; color: #9d174d; }
+  .vs .mid { display: grid; place-items: center; padding: 0 14px; color: var(--primary); font-weight: 800; font-size: 22px; }
+  .flowbox { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: #fbf6f2; border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px; margin-bottom: 7px; color: #5b4a40; }
+  .flowbox.hot { background: #fff1f5; border-color: #f3c5d8; color: #9d174d; font-weight: 600; }
+  .flowbox .ar { color: #c2410c; }
+  .sql { background: var(--code-bg); color: var(--code-ink); border-radius: 14px; padding: 18px 20px; overflow-x: auto; font-size: 12.5px; line-height: 1.7; margin: 0 0 18px; font-family: 'JetBrains Mono', monospace; }
+  .sql .kw { color: #f0921f; } .sql .op { color: #ff7eb6; font-weight: 700; } .sql .co { color: #9c8a7a; font-style: italic; } .sql .st { color: #8fd694; }
+  @media (max-width: 880px) {
+    .shell { grid-template-columns: 1fr; }
+    aside { display: none; }
+    .hero, .wrap, footer { padding-left: 24px; padding-right: 24px; }
+    .grid2, .vs { grid-template-columns: 1fr; }
+    .vs .mid { padding: 8px; transform: rotate(90deg); }
+    .hero h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><div class="dot"></div><b>TripMate</b></div>
+    <div class="brand-sub">Tiền xử lý dữ liệu RAG v2</div>
+    <nav id="nav">
+      <div class="grp">Tổng quan</div>
+      <a href="#tldr">TL;DR — 2 nhánh dữ liệu</a>
+      <a href="#pipeline">Pipeline tổng thể</a>
+      <div class="grp">Nhánh tài liệu</div>
+      <a href="#doc">1. Đọc &amp; chuẩn hoá</a>
+      <a href="#chunk">2. Chunking theo câu</a>
+      <a href="#embed">3. Embedding &amp; lưu trữ</a>
+      <div class="grp">Nhánh khác</div>
+      <a href="#query">4. Tiền xử lý query-time</a>
+      <a href="#db">5. Dữ liệu có cấu trúc (DB)</a>
+      <div class="grp">Tra cứu</div>
+      <a href="#theory">6. Cơ sở lý thuyết</a>
+      <a href="#vectordb">7. Vector Database (pgvector)</a>
+      <a href="#env">8. Tham số &amp; env</a>
+      <a href="#map">9. Lý thuyết → code</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <div class="kicker">Chatbot RAG v2 · Đồ án tốt nghiệp</div>
+      <h1>Tiền xử lý dữ liệu cho RAG</h1>
+      <p>Từ tài liệu thô trong <code>documemtRAG/</code> đến vector lưu trong vector store, sẵn sàng truy hồi — toàn bộ khâu chuẩn hoá, chunking, embedding và tokenize.</p>
+      <div class="meta">
+        <span>📂 5 tài liệu nguồn</span>
+        <span>✂️ Chunk theo câu trọn vẹn</span>
+        <span>🧮 Gemini embedding</span>
+        <span>🗄️ Postgres jsonb vector</span>
+        <span>🚀 Thiết kế pgvector + HNSW</span>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <section id="tldr">
+        <h2><span class="num">★</span> TL;DR — Hai nhánh dữ liệu</h2>
+        <p class="lead">Hệ thống truy hồi từ 2 nguồn, nên có 2 cách tiền xử lý khác nhau.</p>
+        <div class="grid2">
+          <div class="card">
+            <span class="pill">Nhánh A · Offline</span>
+            <h3 style="margin-top:12px">Tài liệu phi cấu trúc</h3>
+            <p style="color:var(--muted);font-size:14px"><code class="inline">documemtRAG/*.txt|md</code> — phải tiền xử lý trước qua lệnh <code class="inline">npm run rag:ingest</code>:</p>
+            <p style="font-size:13.5px;margin-top:8px">đọc file → chuẩn hoá → chunk theo câu (có overlap) → embedding → lưu vector vào bảng <code class="inline">rag_knowledge_chunks</code>.</p>
+          </div>
+          <div class="card">
+            <span class="pill">Nhánh B · Online</span>
+            <h3 style="margin-top:12px">Dữ liệu có cấu trúc</h3>
+            <p style="color:var(--muted);font-size:14px">Bảng <code class="inline">trips / places / guides / posts</code> — <strong>KHÔNG cần ingest trước</strong>.</p>
+            <p style="font-size:13.5px;margin-top:8px">Tiền xử lý realtime ngay lúc hỏi: chuẩn hoá câu hỏi → tokenize → khớp <code class="inline">ILIKE</code> + token. <strong>0 token LLM.</strong></p>
+          </div>
+        </div>
+        <div class="card tip">
+          <span class="tag">💡 Lớp thứ ba — query-time</span>
+          Ngoài 2 nhánh trên, mọi câu hỏi người dùng còn qua một lớp tiền xử lý chung (tokenize, bỏ stopword, hạ chữ thường) để phục vụ BM25 và DB search. Xem mục 4.
+        </div>
+      </section>
+
+      <section id="pipeline">
+        <h2><span class="num">⇄</span> Pipeline tổng thể (nhánh tài liệu)</h2>
+        <p class="lead">Điều phối ở <code class="inline">RagV2Service.ingest()</code> · chạy <code class="inline">cd backend &amp;&amp; npm run rag:ingest</code></p>
+        <div class="card">
+          <div class="pipe">
+            <div class="step"><div class="rail"><div class="bub">1</div><div class="ln"></div></div><div class="body"><h4>Đọc &amp; lọc file</h4><p>Chỉ nhận <code class="inline">.txt</code> / <code class="inline">.md</code> trong thư mục nguồn.</p><span class="ec">regex /\.(txt|md)$/i · fs.readFileSync(utf8)</span></div></div>
+            <div class="step"><div class="rail"><div class="bub">2</div><div class="ln"></div></div><div class="body"><h4>Chuẩn hoá văn bản</h4><p>Xuống dòng <code class="inline">\r\n→\n</code>, trim, gộp dòng mềm trong đoạn.</p><span class="ec">\r\n → \n · split đoạn theo dòng trống</span></div></div>
+            <div class="step"><div class="rail"><div class="bub">3</div><div class="ln"></div></div><div class="body"><h4>Tách câu (sentence split)</h4><p>Tôn trọng số thứ tự "6." và số "1.500" — không cắt nhầm.</p><span class="ec">lookbehind: ký tự trước dấu kết câu ≠ chữ số</span></div></div>
+            <div class="step"><div class="rail"><div class="bub">4</div><div class="ln"></div></div><div class="body"><h4>Gói câu thành chunk</h4><p>Mỗi chunk bắt đầu &amp; kết thúc ở ranh giới câu, có overlap.</p><span class="ec">maxChars 900 · minChars 350 · overlap 160</span></div></div>
+            <div class="step"><div class="rail"><div class="bub">5</div><div class="ln"></div></div><div class="body"><h4>Embedding theo batch</h4><p>Mỗi chunk → một vector số thực.</p><span class="ec">Gemini / OpenAI · taskType=RETRIEVAL_DOCUMENT</span></div></div>
+            <div class="step"><div class="rail"><div class="bub">6</div><div class="ln"></div></div><div class="body"><h4>Re-index &amp; lưu</h4><p>Xoá chunk cũ cùng tên file → lưu chunk mới (idempotent).</p><span class="ec">rag_knowledge_chunks · save batch 50</span></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="doc">
+        <h2><span class="num">1</span> Đọc &amp; chuẩn hoá văn bản</h2>
+        <p class="lead">Bước chuẩn bị để việc tách câu/chunk diễn ra chính xác trên mọi OS.</p>
+
+        <h3>Đọc file nguồn</h3>
+        <ul>
+          <li>Thư mục: <code class="inline">RAGV2_DOCS_DIR</code> (env), mặc định <code class="inline">../documemtRAG</code> tính từ <code class="inline">process.cwd()</code> của backend.</li>
+          <li>Chỉ nhận đuôi <code class="inline">.txt</code> / <code class="inline">.md</code>.</li>
+          <li><code class="inline">ingest(only?)</code>: truyền danh sách tên file → chỉ re-index các file đó (re-index từng phần).</li>
+        </ul>
+        <div class="card">
+          <h4 style="margin-top:0">5 tài liệu nguồn hiện có</h4>
+          <table>
+            <tr><th>File</th><th>Loại nội dung</th></tr>
+            <tr><td><code>CaoBang.txt</code></td><td>Kiến thức điểm đến — thác Bản Giốc, đèo Mã Phục…</td></tr>
+            <tr><td><code>LaoCai.txt</code></td><td>Kiến thức điểm đến — Y Tý, Sapa…</td></tr>
+            <tr><td><code>PhuQuoc.txt</code></td><td>Kiến thức điểm đến — VinWonders, cáp treo Hòn Thơm…</td></tr>
+            <tr><td><code>Vungtau.txt</code></td><td>Kiến thức điểm đến — Hòn Bà, Hồ Mây…</td></tr>
+            <tr><td><code>HuongDanSuDung_LuuYDuLich.txt</code></td><td>Hướng dẫn sử dụng website &amp; lưu ý du lịch</td></tr>
+          </table>
+        </div>
+
+        <h3>4 bước chuẩn hoá (trong <code class="inline">chunkText</code>)</h3>
+        <pre><code><span class="c-key">const</span> text = raw.<span class="c-fn">replace</span>(/\r\n/g, <span class="c-str">'\n'</span>).<span class="c-fn">trim</span>();   <span class="c-com">// (1) chuẩn hoá xuống dòng + (2) cắt khoảng trắng thừa</span>
+
+<span class="c-com">// (3) tách theo đoạn — ranh giới là 1+ dòng trống</span>
+<span class="c-key">for</span> (<span class="c-key">const</span> block <span class="c-key">of</span> text.<span class="c-fn">split</span>(/\n\s*\n+/)) {
+  <span class="c-com">// (4) gộp dòng mềm (wrap) trong cùng đoạn thành một dòng dài</span>
+  <span class="c-key">const</span> oneLine = block.<span class="c-fn">replace</span>(/\s*\n\s*/g, <span class="c-str">' '</span>).<span class="c-fn">trim</span>();
+  <span class="c-key">if</span> (oneLine) sentences.<span class="c-fn">push</span>(...<span class="c-fn">splitToSentences</span>(oneLine));
+}</code></pre>
+        <div class="card warn">
+          <span class="tag">⚠️ Không bỏ dấu tiếng Việt ở khâu này</span>
+          Văn bản gốc giữ nguyên dấu để embedding nắm đúng ngữ nghĩa và hiển thị nguyên văn cho người dùng. Việc bỏ dấu câu / hạ chữ thường chỉ xảy ra ở khâu tokenize cho BM25 (mục 4).
+        </div>
+      </section>
+
+      <section id="chunk">
+        <h2><span class="num">2</span> Chunking theo câu trọn vẹn</h2>
+        <p class="lead">File <code class="inline">lib/chunker.ts</code> — chiến lược sentence-aware + overlap theo câu.</p>
+
+        <h3>Vì sao phải chunk?</h3>
+        <p>Tài liệu dài 8–15 KB không thể embed nguyên khối: vector sẽ "loãng" và lúc truy hồi không định vị được đoạn liên quan. Chunk nhỏ → mỗi vector mang một ý cô đọng → truy hồi trúng hơn.</p>
+
+        <h3>Tham số mặc định</h3>
+        <table>
+          <tr><th>Tham số</th><th>Giá trị</th><th>Ý nghĩa</th></tr>
+          <tr><td><code>maxChars</code></td><td class="big">900</td><td>Kích thước tối đa mỗi chunk (ký tự)</td></tr>
+          <tr><td><code>minChars</code></td><td class="big">350</td><td>Đuôi ngắn hơn ngưỡng này sẽ gộp vào chunk trước (tránh chunk vụn)</td></tr>
+          <tr><td><code>overlapChars</code></td><td class="big">160</td><td>Số ký tự gối đầu giữa 2 chunk (làm tròn LÊN theo câu trọn)</td></tr>
+        </table>
+
+        <h3>Điểm tinh tế: tách câu không cắt nhầm số</h3>
+        <pre><code><span class="c-key">const</span> SENTENCE_SPLIT = /(?&lt;=[^\d\s][.!?…])\s+/u;</code></pre>
+        <div class="grid2">
+          <div class="mini"><h4>✓ "6. Di tích…"</h4><p>Số thứ tự đầu mục — KHÔNG bị tách nhầm thành câu mới (ký tự trước dấu chấm là chữ số).</p></div>
+          <div class="mini"><h4>✓ "1.500.000" · "3,5 km"</h4><p>Số tiền / số đo — KHÔNG bị cắt giữa số.</p></div>
+        </div>
+
+        <h3>Minh hoạ overlap theo câu</h3>
+        <div class="card">
+          <div class="demo">
+            <div class="row"><span class="lbl">Đoạn gốc</span><span class="sent">Câu A</span><span class="sent">Câu B</span><span class="sent">Câu C</span><span class="sent">Câu D</span><span class="sent">Câu E</span></div>
+            <div class="row"><span class="lbl">Chunk 0</span><span class="sent">Câu A</span><span class="sent">Câu B</span><span class="sent ov">Câu C</span></div>
+            <div class="row"><span class="lbl">Chunk 1</span><span class="sent ov">Câu C</span><span class="sent">Câu D</span><span class="sent">Câu E</span></div>
+          </div>
+          <p style="margin:14px 0 0;font-size:13.5px;color:var(--muted)"><span style="color:#8a5b00;font-weight:600">Câu C</span> lặp lại ở cả 2 chunk = phần overlap, giữ mạch ngữ cảnh bắc cầu. Chunk sau luôn <strong>bắt đầu từ đầu một câu</strong>, không cắt giữa câu.</p>
+        </div>
+
+        <h3>Các luật còn lại</h3>
+        <ul>
+          <li><strong>Câu siêu dài</strong> (≥ maxChars): để câu đó đứng riêng thành một chunk — vẫn trọn câu.</li>
+          <li><strong>Gộp đuôi ngắn</strong>: chunk cuối &lt; minChars → nối vào chunk liền trước.</li>
+          <li>Kết quả mỗi chunk: <code class="inline">{ index, content, charCount }</code>.</li>
+        </ul>
+
+        <h3>Tên gọi phương pháp</h3>
+        <div class="card">
+          <p style="margin:0 0 10px"><strong>Hệ thống hiện dùng DUY NHẤT một phương pháp chunking:</strong></p>
+          <p style="margin:0;font-size:15px"><span class="pill" style="font-size:13px">Sentence-aware fixed-size chunking + sentence-level overlap</span></p>
+          <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">Tức là <strong>cắt theo kích thước cố định (~900 ký tự)</strong> nhưng <strong>tôn trọng ranh giới câu</strong> (không xẻ giữa câu) và <strong>gối đầu theo câu trọn (~160 ký tự)</strong>. Chưa áp dụng semantic chunking (cắt theo độ tương đồng embedding) — đây thuần xử lý chuỗi, <strong>không tốn lần gọi LLM nào</strong> ở khâu chunk.</p>
+        </div>
+
+        <h3>Khi nào chunking được chạy?</h3>
+        <p>Chunking <strong>chỉ chạy ở khâu nạp tài liệu (ingest), OFFLINE</strong> — không chạy lúc người dùng hỏi. Cụ thể được gọi tại 2 thời điểm:</p>
+        <div class="grid2">
+          <div class="mini">
+            <h4>① Lệnh CLI</h4>
+            <p><code>cd backend &amp;&amp; npm run rag:ingest</code><br/>→ <code>rag-ingest.script.ts</code> → <code>RagV2Service.ingest()</code> → gọi <code>chunkText(raw)</code> cho từng file.</p>
+          </div>
+          <div class="mini">
+            <h4>② Nút trên trang</h4>
+            <p>Bấm "Nạp tài liệu" ở <code>/chatbot-v2</code> → <code>POST /rag-v2/ingest</code> → cùng <code>ingest()</code> đó.</p>
+          </div>
+        </div>
+        <div class="card tip">
+          <span class="tag">💡 Chunking KHÔNG chạy lúc trả lời câu hỏi</span>
+          Khi người dùng hỏi, hệ thống chỉ <strong>embed câu hỏi</strong> rồi so cosine với các chunk <strong>đã được cắt &amp; lưu sẵn</strong> trong bảng <code class="inline">rag_knowledge_chunks</code>. Câu hỏi người dùng đi theo lớp tiền xử lý query-time (tokenize/stopword ở mục 4), <strong>không qua chunker</strong>.
+        </div>
+        <div class="card warn">
+          <span class="tag">⚠️ Chỉ áp cho nhánh tài liệu</span>
+          Dữ liệu có cấu trúc (<code class="inline">trips/places/guides/posts</code>) <strong>KHÔNG đi qua chunking</strong> — query trực tiếp bảng DB (xem mục 5). Chunking chỉ dành cho tài liệu phi cấu trúc trong <code class="inline">documemtRAG/</code>.
+        </div>
+      </section>
+
+      <section id="embed">
+        <h2><span class="num">3</span> Embedding &amp; lưu trữ vector</h2>
+        <p class="lead">Biến mỗi chunk thành vector số thực rồi lưu vào Postgres.</p>
+
+        <h3>Sinh embedding</h3>
+        <ul>
+          <li><strong>Provider trừu tượng</strong> <code class="inline">RagEmbeddings</code> — chọn qua env <code class="inline">RAGV2_LLM_PROVIDER</code>. Đổi provider không phải sửa pipeline ingest.</li>
+          <li><strong>Model mặc định</strong>: <code class="inline">gemini-embedding-001</code> (OpenAI: <code class="inline">text-embedding-3-small</code>).</li>
+          <li><strong>taskType = RETRIEVAL_DOCUMENT</strong> khi index tài liệu (vs <code class="inline">RETRIEVAL_QUERY</code> khi embed câu hỏi) — gợi ý model tối ưu vector cho đúng vai trò.</li>
+          <li><strong>Embed theo batch</strong>: gọi tuần tự từng chunk, có giãn cách <code class="inline">RAGV2_EMBED_GAP_MS</code> (1200ms) chống vượt rate limit free tier.</li>
+          <li><strong>Retry + exponential backoff</strong> với 429/5xx: 2s → 4s → 8s → 16s → 32s (tối đa 5 lần).</li>
+        </ul>
+        <div class="card warn">
+          <span class="tag">⚠️ Số chiều embedding khác nhau giữa provider</span>
+          Gemini và OpenAI (1536) có số chiều vector khác nhau. Đổi <code class="inline">RAGV2_LLM_PROVIDER</code> <strong>bắt buộc chạy lại</strong> <code class="inline">npm run rag:ingest</code>, nếu không cosine sẽ lệch chiều.
+        </div>
+
+        <h3>Lưu trữ (vector store)</h3>
+        <p>Entity <code class="inline">KnowledgeChunk</code> → bảng <code class="inline">rag_knowledge_chunks</code>:</p>
+        <table>
+          <tr><th>Cột</th><th>Kiểu</th><th>Ý nghĩa</th></tr>
+          <tr><td><code>id</code></td><td>uuid</td><td>Khoá chính</td></tr>
+          <tr><td><code>doc_name</code></td><td>varchar · indexed</td><td>Tên file nguồn</td></tr>
+          <tr><td><code>chunk_index</code></td><td>int</td><td>Thứ tự chunk trong tài liệu (0-based)</td></tr>
+          <tr><td><code>content</code></td><td>text</td><td>Nội dung chunk (nguyên văn)</td></tr>
+          <tr><td><code>char_count</code></td><td>int</td><td>Số ký tự (thống kê)</td></tr>
+          <tr><td><code>embedding_model</code></td><td>varchar</td><td>Model đã dùng (biết khi đổi provider)</td></tr>
+          <tr><td><code>embedding</code></td><td><code>jsonb</code></td><td>Vector <code>number[]</code></td></tr>
+          <tr><td><code>created_at</code></td><td>timestamptz</td><td>Thời điểm index</td></tr>
+        </table>
+        <div class="grid2">
+          <div class="mini"><h4>Vì sao jsonb chứ không pgvector?</h4><p>Không cần cài extension, chạy ngay trên Postgres hiện có (phù hợp quy mô đồ án). Đổi lại cosine tính brute-force trong Node, không có ANN index.</p></div>
+          <div class="mini"><h4>Re-index idempotent</h4><p>Mỗi file: xoá toàn bộ chunk cũ cùng <code>docName</code> → save chunk mới (batch 50). Chạy lại nhiều lần không nhân bản.</p></div>
+        </div>
+      </section>
+
+      <section id="query">
+        <h2><span class="num">4</span> Tiền xử lý tại thời điểm truy vấn</h2>
+        <p class="lead">File <code class="inline">lib/lexical.ts</code> — áp lúc người dùng hỏi, dùng cho BM25 (sparse) và DB search.</p>
+
+        <h3>Tokenize tiếng Việt</h3>
+        <pre><code>text.<span class="c-fn">toLowerCase</span>()
+    .<span class="c-fn">replace</span>(/[^\p{L}\p{N}\s]/gu, <span class="c-str">' '</span>)   <span class="c-com">// bỏ dấu câu, giữ chữ + số mọi ngôn ngữ</span>
+    .<span class="c-fn">split</span>(/\s+/)
+    .<span class="c-fn">filter</span>(t =&gt; t.length &gt;= <span class="c-key">2</span> &amp;&amp; !STOPWORDS.<span class="c-fn">has</span>(t));</code></pre>
+        <ol>
+          <li><strong>Hạ chữ thường.</strong></li>
+          <li><strong>Bỏ dấu câu / ký tự đặc biệt</strong>, giữ chữ và số (Unicode-aware <code class="inline">\p{L}\p{N}</code>).</li>
+          <li><strong>Tách theo khoảng trắng.</strong></li>
+          <li><strong>Lọc token ngắn</strong> (&lt; 2 ký tự) <strong>và stopword.</strong></li>
+        </ol>
+        <div class="card tip">
+          <span class="tag">💡 Giữ nguyên dấu tiếng Việt (không bỏ dấu)</span>
+          <code class="inline">"núi"</code> ≠ <code class="inline">"nui"</code> → khớp chính xác hơn cho tài liệu tiếng Việt có dấu.
+        </div>
+        <h3>Stopword</h3>
+        <p>Danh sách ~70 từ dừng tiếng Việt + Anh phổ biến (<code class="inline">và, là, của, có, cho, các, một, được, the, a, is, to…</code>). Loại bỏ để token mang nghĩa (địa danh, đặc sản, danh từ riêng) nổi lên, tăng tín hiệu cho BM25.</p>
+        <h3>Áp dụng cho cả hai phía</h3>
+        <div class="grid2">
+          <div class="mini"><h4>Câu hỏi người dùng</h4><p>Tokenize qua <code>tokenize()</code> trong <code>bm25Scores()</code>.</p></div>
+          <div class="mini"><h4>Toàn bộ chunk</h4><p>Tokenize thành <code>LexicalDoc { id, tokens, length }</code> để chấm BM25 — bổ trợ cho cosine (hybrid search).</p></div>
+        </div>
+      </section>
+
+      <section id="db">
+        <h2><span class="num">5</span> Tiền xử lý nhánh dữ liệu có cấu trúc</h2>
+        <p class="lead">Nguồn <code class="inline">trips / places / guides / posts</code> — không qua ingest/embedding.</p>
+        <p>Dữ liệu DB đã "sạch và có cấu trúc" sẵn, nên tiền xử lý chỉ là <strong>chuẩn hoá câu hỏi → token → khớp cột</strong>, diễn ra realtime mỗi truy vấn:</p>
+        <ul>
+          <li><code class="inline">searchTokens()</code> tách câu hỏi/keyword thành token để dựng điều kiện <code class="inline">ILIKE</code> + so token trên các cột text của entity.</li>
+          <li>Mỗi retriever lọc theo trạng thái hợp lệ: Trip <code class="inline">status=published</code>, Guide <code class="inline">status=approved</code>, Post <code class="inline">visibility=public</code>.</li>
+          <li><strong>Chế độ browse</strong>: không có từ khoá lọc (ý định liệt kê chung) → bỏ điều kiện khớp text, trả top-N theo <code class="inline">rating</code>.</li>
+        </ul>
+        <div class="card tip">
+          <span class="tag">⚡ 0 token LLM ở bước này</span>
+          Toàn bộ là SQL + xử lý chuỗi thuần — nhanh, rẻ, không phụ thuộc quota LLM.
+        </div>
+      </section>
+
+      <section id="theory">
+        <h2><span class="num">6</span> Cơ sở lý thuyết</h2>
+        <p class="lead">Công thức các thuật toán/phương pháp dùng trong khâu tiền xử lý &amp; truy hồi. Mọi công thức khớp đúng với code trong <code class="inline">lib/</code>.</p>
+
+        <h3>6.1 · Embedding — biểu diễn vector <span class="badge dense">dense</span></h3>
+        <p>Hàm embedding ánh xạ một đoạn văn bản thành vector số thực <span class="vars"><span class="v">ℝ<sup>d</sup></span></span> sao cho hai đoạn gần nghĩa nằm gần nhau trong không gian vector:</p>
+        <div class="formula">
+          <div class="eq">E : text → ℝ<sup class="sup">d</sup>,&nbsp;&nbsp; v = E(chunk)</div>
+          <div class="cap">d = số chiều (Gemini <code>gemini-embedding-001</code> · OpenAI <code>text-embedding-3-small</code> = 1536). Index tài liệu dùng taskType <code>RETRIEVAL_DOCUMENT</code>, embed câu hỏi dùng <code>RETRIEVAL_QUERY</code>.</div>
+        </div>
+        <p style="font-size:14px">Khi truy hồi, câu hỏi <span class="vars"><span class="v">q</span></span> cũng được embed thành <span class="vars"><span class="v">E(q)</span></span> rồi so độ tương đồng với mọi chunk đã lưu.</p>
+
+        <h3>6.2 · Cosine similarity — truy hồi ngữ nghĩa <span class="badge dense">dense</span></h3>
+        <p>Đo góc giữa 2 vector: hướng giống nhau → tương đồng cao, không phụ thuộc độ dài vector. File <code class="inline">lib/cosine.ts</code>.</p>
+        <div class="formula">
+          <div class="eq">
+            cos(a, b) =
+            <span class="frac">
+              <span class="top">a · b</span>
+              <span class="bot">‖a‖ &nbsp;‖b‖</span>
+            </span>
+            =
+            <span class="frac">
+              <span class="top">Σ<span class="sub">i</span> a<span class="sub">i</span> b<span class="sub">i</span></span>
+              <span class="bot">√(Σ a<span class="sub">i</span><span class="sup">2</span>) · √(Σ b<span class="sub">i</span><span class="sup">2</span>)</span>
+            </span>
+          </div>
+          <div class="cap">Kết quả ∈ [−1, 1]. Trả 0 nếu một vector có độ dài 0 (tránh chia 0). Ngưỡng "grounded" trong hệ thống: cosine ≥ 0.3.</div>
+        </div>
+        <ul class="vars">
+          <li><span class="v">a · b</span> = tích vô hướng (<code>dot</code>) · <span class="v">‖a‖</span> = độ dài vector (<code>magnitude</code>)</li>
+          <li>Tính brute-force trên toàn bộ chunk (không pgvector/ANN) — phù hợp quy mô đồ án.</li>
+        </ul>
+
+        <h3>6.3 · BM25 — truy hồi từ khoá <span class="badge sparse">sparse</span></h3>
+        <p>Chấm điểm khớp <em>từ khoá</em> giữa câu hỏi và chunk, bắt được tên riêng / mã số mà embedding hay "làm mượt" đi. File <code class="inline">lib/lexical.ts</code>.</p>
+        <div class="formula">
+          <div class="eq">
+            score(q, d) = Σ<span class="sub">t∈q</span> &nbsp; IDF(t) ·
+            <span class="frac">
+              <span class="top">f(t,d) · (k<span class="sub">1</span> + 1)</span>
+              <span class="bot">f(t,d) + k<span class="sub">1</span> · (1 − b + b · |d|/avgdl)</span>
+            </span>
+          </div>
+          <div class="cap" style="margin-top:16px">
+            IDF(t) = ln( 1 +
+            <span class="frac" style="font-size:.9em">
+              <span class="top">N − n(t) + 0.5</span>
+              <span class="bot">n(t) + 0.5</span>
+            </span>
+            )
+          </div>
+        </div>
+        <ul class="vars">
+          <li><span class="v">f(t,d)</span> = tần suất term t trong chunk d &nbsp;·&nbsp; <span class="v">|d|</span> = số token của d &nbsp;·&nbsp; <span class="v">avgdl</span> = độ dài trung bình</li>
+          <li><span class="v">N</span> = tổng số chunk &nbsp;·&nbsp; <span class="v">n(t)</span> = số chunk chứa t (document frequency)</li>
+          <li><span class="v">k₁ = 1.5</span> điều tiết bão hoà tần suất &nbsp;·&nbsp; <span class="v">b = 0.75</span> điều tiết chuẩn hoá độ dài</li>
+          <li>Token hoá: hạ chữ thường, bỏ dấu câu (giữ dấu tiếng Việt), bỏ stopword + token &lt; 2 ký tự.</li>
+        </ul>
+
+        <h3>6.4 · Hybrid Search + RRF — hợp nhất 2 bảng xếp hạng <span class="badge fuse">fusion</span></h3>
+        <p>Dense (cosine ∈ [−1,1]) và sparse (BM25 ∈ [0,∞)) có <strong>thang điểm khác nhau</strong> → cộng thẳng là sai. <strong>Reciprocal Rank Fusion</strong> bỏ qua giá trị điểm, chỉ dùng <strong>thứ hạng</strong>. File <code class="inline">lib/fusion.ts</code>.</p>
+        <div class="formula">
+          <div class="eq">
+            RRF(item) = Σ<span class="sub">L</span>
+            <span class="frac">
+              <span class="top">1</span>
+              <span class="bot">k + rank<span class="sub">L</span>(item)</span>
+            </span>
+          </div>
+          <div class="cap">k = 60 (theo Cormack 2009) — làm dịu ảnh hưởng của vài hạng đầu. Item xuất hiện hạng cao trong NHIỀU danh sách → điểm hợp nhất cao nhất.</div>
+        </div>
+        <ul class="vars">
+          <li><span class="v">L</span> = mỗi danh sách xếp hạng (dense, sparse) &nbsp;·&nbsp; <span class="v">rank<sub>L</sub></span> = thứ hạng 1-based của item trong L</li>
+          <li>Item không xuất hiện trong một danh sách → không cộng phần đó.</li>
+        </ul>
+
+        <h3>6.5 · Chunking — công thức gói câu</h3>
+        <p>Phương pháp <em>sentence-aware fixed-size + overlap</em> (mục 2). Luật quyết định "chốt chunk":</p>
+        <div class="formula">
+          <div class="eq" style="font-size:16px">chốt chunk khi&nbsp; len(cur) + 1 + len(câu) &gt; maxChars</div>
+          <div class="cap">maxChars = 900 · minChars = 350 (gộp đuôi vụn) · overlapChars = 160 (gối đầu theo câu trọn). Thuần đếm ký tự — không gọi LLM.</div>
+        </div>
+
+        <div class="card tip">
+          <span class="tag">💡 Vì sao kết hợp dense + sparse?</span>
+          Dense (cosine) khớp theo <strong>ngữ nghĩa</strong> nhưng đôi khi bỏ sót từ khoá hiếm / tên riêng; sparse (BM25) khớp theo <strong>từ khoá</strong> chính xác. Hybrid + RRF lấy ưu điểm cả hai → recall tốt hơn hẳn dùng riêng một loại.
+        </div>
+      </section>
+
+      <section id="vectordb">
+        <h2><span class="num">7</span> Vector Database (pgvector) <span class="badge new">THIẾT KẾ</span></h2>
+        <p class="lead">Bản thiết kế nâng cấp vector store: từ <code class="inline">jsonb</code> + cosine brute-force → pgvector + HNSW index. Chi tiết đầy đủ ở <code class="inline">docs/THIET-KE-VECTOR-DATABASE.md</code>.</p>
+
+        <div class="card warn">
+          <span class="tag">⚠️ Trạng thái: thiết kế, chưa triển khai code</span>
+          Hệ thống đang chạy lưu vector dạng <code class="inline">jsonb</code> (mục 3) và cosine brute-force trong Node. Phần dưới là blueprint để nâng cấp khi corpus lớn dần / để đo so sánh trong báo cáo.
+        </div>
+
+        <h3>7.1 · Vì sao nâng cấp?</h3>
+        <p>Hiện cả 2 đường truy hồi đều <code class="inline">this.chunks.find()</code> — load <strong>toàn bộ</strong> chunk (kèm vector) vào Node rồi mới cosine. Đúng nhưng là <strong>O(N)</strong> và tốn băng thông DB↔Node.</p>
+        <div class="grid2">
+          <div class="mini"><h4>pgvector — tại sao?</h4><p>Extension trên chính Postgres sẵn có. Không phải dựng service riêng (Qdrant/Pinecone), ít hạ tầng nhất, hợp quy mô đồ án, nâng cấp tự nhiên từ code hiện tại.</p></div>
+          <div class="mini"><h4>HNSW index</h4><p>Đồ thị "small-world" nhiều tầng → tìm láng giềng gần đúng ~<code>O(log N)</code> thay vì quét toàn bộ. Cosine qua toán tử <code>&lt;=&gt;</code>.</p></div>
+        </div>
+
+        <h3>7.2 · Quyết định mấu chốt — số chiều embedding</h3>
+        <div class="card">
+          <p style="margin:0 0 10px"><strong>Ràng buộc:</strong> <code class="inline">gemini-embedding-001</code> trả <strong>3072 chiều</strong>, nhưng HNSW của pgvector (kiểu <code class="inline">vector</code>) chỉ index tối đa <strong>2000 chiều</strong>.</p>
+          <div class="grid2" style="margin-top:6px">
+            <div class="mini" style="border-color:#bfe3c8;background:#f6fdf8"><h4 style="color:#166534">✓ Phương án A (đề xuất)</h4><p>Giảm output về <strong>1536 chiều</strong>: Gemini <code>outputDimensionality=1536</code> (Matryoshka) + L2-normalize; OpenAI vốn đã 1536. → một schema <code>vector(1536)</code> chung cho 2 provider.</p></div>
+            <div class="mini"><h4>Phương án B</h4><p>Giữ 3072 chiều, dùng kiểu <code>halfvec(3072)</code> (HNSW hỗ trợ tới 4000). Giữ trọn độ chính xác nhưng storage gấp đôi, lệch chiều với OpenAI.</p></div>
+          </div>
+        </div>
+
+        <h3>7.3 · Schema thiết kế</h3>
+        <div class="sql"><span class="co">-- (1) bật extension (Render PostgreSQL có sẵn pgvector)</span>
+<span class="kw">CREATE EXTENSION IF NOT EXISTS</span> vector;
+
+<span class="co">-- (2) cột vector — giữ song song cột jsonb cũ để rollback / so sánh</span>
+<span class="kw">ALTER TABLE</span> rag_knowledge_chunks
+  <span class="kw">ADD COLUMN IF NOT EXISTS</span> embedding_vec <span class="kw">vector</span>(<span class="st">1536</span>);
+
+<span class="co">-- (3) ANN index: HNSW + cosine</span>
+<span class="kw">CREATE INDEX IF NOT EXISTS</span> idx_rag_chunks_hnsw
+  <span class="kw">ON</span> rag_knowledge_chunks
+  <span class="kw">USING</span> hnsw (embedding_vec vector_cosine_ops)
+  <span class="kw">WITH</span> (m = <span class="st">16</span>, ef_construction = <span class="st">64</span>);</div>
+        <p style="font-size:13.5px;color:var(--muted)">Cột vector + index quản lý bằng <strong>raw SQL trong <code class="inline">ensureSchema()</code></strong> (TypeORM 0.3 không hiểu kiểu <code>vector</code>). Entity <code class="inline">KnowledgeChunk</code> giữ nguyên, không thêm <code>@Column</code> cho cột vector.</p>
+
+        <h3>7.4 · Luồng truy hồi dense: trước → sau</h3>
+        <div class="vs">
+          <div class="track old">
+            <h4><span class="tg">HIỆN TẠI</span> jsonb + brute-force</h4>
+            <div class="flowbox">embed(câu hỏi) → vector</div>
+            <div class="flowbox hot">chunks.find() <span class="ar">→</span> load TOÀN BỘ vector vào Node</div>
+            <div class="flowbox">cosineSimilarity() từng chunk (JS)</div>
+            <div class="flowbox">sort → top-K · <strong>O(N)</strong></div>
+          </div>
+          <div class="mid">→</div>
+          <div class="track new">
+            <h4><span class="tg">THIẾT KẾ</span> pgvector + HNSW</h4>
+            <div class="flowbox">embed(câu hỏi) → vector</div>
+            <div class="flowbox hot">ORDER BY embedding_vec <strong>&lt;=&gt;</strong> $1 LIMIT k</div>
+            <div class="flowbox">Postgres tính cosine, dùng HNSW index</div>
+            <div class="flowbox">trả thẳng top-K · <strong>~O(log N)</strong></div>
+          </div>
+        </div>
+        <div class="sql"><span class="co">-- dense search có index (thay khối brute-force ở service)</span>
+<span class="kw">SELECT</span> id, content, <span class="st">1</span> - (embedding_vec <span class="op">&lt;=&gt;</span> $1::vector) <span class="kw">AS</span> dense_score
+<span class="kw">FROM</span>   rag_knowledge_chunks
+<span class="kw">ORDER BY</span> embedding_vec <span class="op">&lt;=&gt;</span> $1::vector   <span class="co">-- &lt;=&gt; = cosine distance</span>
+<span class="kw">LIMIT</span>  $2;                                <span class="co">-- denseK</span></div>
+        <p style="font-size:13.5px;color:var(--muted)"><strong>Sparse (BM25)</strong> giữ ở Node nhưng chỉ <code class="inline">SELECT id, content</code> (không kéo cột vector) — khoản tiết kiệm băng thông lớn nhất. <strong>RRF</strong> (<code class="inline">fusion.ts</code>) giữ nguyên. Chỉ sửa 2 điểm brute-force: <code class="inline">ragv2.service.ts:457</code> &amp; <code class="inline">:832</code>.</p>
+
+        <h3>7.5 · So sánh</h3>
+        <table>
+          <tr><th></th><th>jsonb + brute-force (hiện tại)</th><th>pgvector + HNSW (thiết kế)</th></tr>
+          <tr><td>Nơi tính cosine</td><td>Node (JS)</td><td>Postgres (C, có index)</td></tr>
+          <tr><td>Tìm top-K</td><td><code>O(N)</code></td><td>~<code>O(log N)</code></td></tr>
+          <tr><td>Kéo về Node / câu hỏi</td><td>Toàn bộ vector</td><td>id + content + top-K</td></tr>
+          <tr><td>Lập chỉ mục</td><td>Không</td><td>HNSW</td></tr>
+          <tr><td>Độ chính xác</td><td>Exact (100%)</td><td>Xấp xỉ (chỉnh bằng <code>ef_search</code>)</td></tr>
+          <tr><td>Phụ thuộc</td><td>Thuần Node</td><td>Cần extension pgvector</td></tr>
+        </table>
+        <div class="card tip">
+          <span class="tag">💡 Giữ song song 2 backend</span>
+          Cờ <code class="inline">RAGV2_VECTOR_BACKEND</code> (jsonb ↔ pgvector) cho phép báo cáo <strong>đo định lượng</strong> độ trễ &amp; recall của hai cách — đúng pattern dự án đã dùng (giữ pipeline 7 bước cũ song song với agent).
+        </div>
+      </section>
+
+      <section id="env">
+        <h2><span class="num">8</span> Tham số &amp; biến môi trường</h2>
+        <p class="lead">Các env ảnh hưởng trực tiếp tới khâu tiền xử lý.</p>
+        <table>
+          <tr><th>Env</th><th>Mặc định</th><th>Tác dụng</th></tr>
+          <tr><td><code>RAGV2_DOCS_DIR</code></td><td><code>../documemtRAG</code></td><td>Thư mục tài liệu nguồn</td></tr>
+          <tr><td><code>RAGV2_LLM_PROVIDER</code></td><td><code>gemini</code></td><td>Chọn provider embedding/chat (gemini | openai)</td></tr>
+          <tr><td><code>RAGV2_EMBEDDING_MODEL</code></td><td><code>gemini-embedding-001</code></td><td>Model embedding</td></tr>
+          <tr><td><code>RAGV2_EMBED_GAP_MS</code></td><td><code>1200</code></td><td>Giãn cách giữa 2 lần gọi embed (chống rate limit)</td></tr>
+          <tr><td><code>RAGV2_EMBED_RETRIES</code></td><td><code>5</code></td><td>Số lần retry khi 429/5xx</td></tr>
+          <tr><td><code>GEMINI_API_KEY</code> / <code>OPENAI_API_KEY</code></td><td>—</td><td>Khoá API tương ứng provider</td></tr>
+          <tr><td><code>GEMINI_BASE_URL</code></td><td>endpoint Google</td><td>Đổi sang proxy bên thứ 3 (phải gồm <code>/v1beta</code>)</td></tr>
+        </table>
+        <h3>Env dự kiến cho pgvector <span class="badge new">THIẾT KẾ</span></h3>
+        <table>
+          <tr><th>Env</th><th>Mặc định</th><th>Tác dụng</th></tr>
+          <tr><td><code>RAGV2_VECTOR_BACKEND</code></td><td><code>jsonb</code></td><td>Chọn đường truy hồi dense (jsonb ↔ pgvector), giữ cả 2 để so sánh</td></tr>
+          <tr><td><code>RAGV2_EMBEDDING_DIM</code></td><td><code>1536</code></td><td>Số chiều embedding (Gemini <code>outputDimensionality</code>)</td></tr>
+          <tr><td><code>RAGV2_HNSW_EF_SEARCH</code></td><td><code>40</code></td><td>Độ rộng tìm kiếm lúc truy vấn (recall ↔ tốc độ)</td></tr>
+          <tr><td><code>RAGV2_HNSW_M</code> / <code>RAGV2_HNSW_EF_CONSTRUCTION</code></td><td><code>16</code> / <code>64</code></td><td>Tham số dựng HNSW index</td></tr>
+        </table>
+        <div class="card warn">
+          <span class="tag">⚠️ Tham số chunk hiện hardcode</span>
+          <code class="inline">maxChars 900 / minChars 350 / overlapChars 160</code> nằm trong <code class="inline">DEFAULTS</code> ở <code class="inline">chunker.ts</code>, chưa expose qua env. Muốn chỉnh thì sửa <code class="inline">DEFAULTS</code> hoặc truyền <code class="inline">ChunkOptions</code> khi gọi <code class="inline">chunkText</code>.
+        </div>
+      </section>
+
+      <section id="map">
+        <h2><span class="num">9</span> Bản đồ lý thuyết → code</h2>
+        <p class="lead">Tra nhanh vị trí từng khâu tiền xử lý trong source.</p>
+        <table>
+          <tr><th>Khái niệm</th><th>Vị trí code</th></tr>
+          <tr><td>Đọc &amp; lọc file nguồn</td><td><code>ragv2.service.ts:286</code> (ingest)</td></tr>
+          <tr><td>Chuẩn hoá văn bản</td><td><code>chunker.ts:74</code> (chunkText)</td></tr>
+          <tr><td>Tách câu (sentence split)</td><td><code>chunker.ts:41</code> SENTENCE_SPLIT · <code>:44</code> splitToSentences</td></tr>
+          <tr><td>Chunking + overlap theo câu</td><td><code>chunker.ts:72</code> chunkText · <code>:56</code> sentenceOverlap</td></tr>
+          <tr><td>Embedding tài liệu</td><td><code>gemini-embeddings.ts:42</code> embed · <code>:98</code> embedBatch</td></tr>
+          <tr><td>Re-index idempotent</td><td><code>ragv2.service.ts:310-322</code></td></tr>
+          <tr><td>Lược đồ vector store</td><td><code>knowledge-chunk.entity.ts</code></td></tr>
+          <tr><td>Tokenize + stopword (query-time)</td><td><code>lexical.ts:29</code> tokenize · <code>:14</code> STOPWORDS</td></tr>
+          <tr><td>Cosine similarity (6.2)</td><td><code>cosine.ts:26</code> cosineSimilarity · <code>:8</code> dot · <code>:16</code> magnitude</td></tr>
+          <tr><td>BM25 (6.3)</td><td><code>lexical.ts:56</code> bm25Scores</td></tr>
+          <tr><td>RRF / hybrid fusion (6.4)</td><td><code>fusion.ts:28</code> reciprocalRankFusion</td></tr>
+          <tr><td>Tiền xử lý DB (token search)</td><td><code>retrievers/*.retriever.ts</code> · searchTokens</td></tr>
+        </table>
+      </section>
+
+      <footer>
+        Nguồn sự thật: <code>backend/src/modules/ragv2/*</code> · <code>backend/src/rag-ingest.script.ts</code><br/>
+        Tài liệu liên quan: <code>docs/TIEN-XU-LY-DU-LIEU-RAG.md</code> · <code>docs/CO-SO-LY-THUYET-CHATBOT.md</code> · <code>docs/CHATBOT.md</code> · Cập nhật 2026-06-28
+      </footer>
+
+    </div><!-- /wrap -->
+  </main>
+</div>
+
+<script>
+  // Highlight mục đang xem trên sidebar
+  const links = [...document.querySelectorAll('#nav a')];
+  const map = {};
+  links.forEach(a => { const id = a.getAttribute('href').slice(1); const el = document.getElementById(id); if (el) map[id] = a; });
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map[e.target.id];
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  Object.keys(map).forEach(id => obs.observe(document.getElementById(id)));
+</script>
+</body>
+</html>
+

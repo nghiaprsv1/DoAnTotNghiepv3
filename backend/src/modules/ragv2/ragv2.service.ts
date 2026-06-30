@@ -23,7 +23,7 @@ import { PlaceRetriever } from './lib/retrievers/place.retriever';
 import { GuideRetriever } from './lib/retrievers/guide.retriever';
 import { PostRetriever } from './lib/retrievers/post.retriever';
 import { runRagAgent } from './ragv2.agent';
-import { type DocHit, type ToolDeps } from './lib/rag-tools';
+import { type DocHit, type DocSearchDetail, type ToolDeps } from './lib/rag-tools';
 
 /** Kết quả Router: nguồn cần truy + bộ lọc bóc từ câu hỏi. */
 interface RouteResult {
@@ -751,11 +751,38 @@ QUY TẮC:
     history?: { role: 'user' | 'assistant'; content: string }[],
   ): Promise<RagAskResult> {
     const t0 = Date.now();
+
+    // ── REWRITE Ở ĐẦU VÀO (1 lần): câu hỏi vừa vào → viết lại + tách keywords +
+    // định tuyến. Kết quả dùng cho MỌI lần search_documents trong vòng agent, nên
+    // KHÔNG rewrite lại bên trong tool nữa (tránh làm 2 lần). Agent vẫn nhận câu
+    // GỐC q để hiểu ngữ cảnh/đổi chủ đề.
+    const rw0 = Date.now();
+    const route = await this.routeAndRewrite(q).catch(() => null);
+    const searchText = route?.search || q;
+    const lexicalText = route ? `${route.search} ${route.keywords.join(' ')}`.trim() : q;
+    const rewriteStep: RagStep = {
+      key: 'query_rewrite',
+      title: 'Viết lại câu hỏi & định tuyến (đầu vào)',
+      ms: Date.now() - rw0,
+      detail: {
+        enabled: this.rewriteEnabled(),
+        via: route?.via ?? 'fallback',
+        original: q,
+        rewritten: searchText,
+        keywords: route?.keywords ?? [],
+        sources: route?.sources ?? [],
+      },
+    };
+
     const deps: ToolDeps = {
       retrievers: this.dbRetrievers(),
-      searchDocuments: (query, topK) => this.searchDocuments(query, topK),
+      // search_documents dùng câu ĐÃ rewrite ở đầu vào (bỏ qua query agent tự soạn)
+      // → chỉ còn embed + hybrid + rerank bên trong tool.
+      searchDocuments: (_query, topK) => this.searchDocuments(searchText, lexicalText, topK),
       createItinerary: (request, context) =>
         this.generateItinerary(request, context) as Promise<unknown | null>,
+      // User đã nêu số ngày chưa → chặn create_itinerary nếu chưa (không tự chọn ngày).
+      daysSpecified: this.detectDaysSpecified(q, route),
       // Chỉ gắn khi có draft → agent mới thấy tool revise_itinerary.
       reviseItinerary:
         draft && draft.title
@@ -772,6 +799,12 @@ QUY TẮC:
       maxSteps: this.agentMaxSteps(),
       draft,
       history,
+      // Router phát hiện ý định TẠO lộ trình → báo agent ưu tiên create_itinerary
+      // (thay vì chỉ search_trips chuyến có sẵn). Vẫn để agent tự gom dữ liệu thật.
+      // Fallback detectItineraryIntent(q) phòng khi router LLM lỗi (route null).
+      wantsItinerary: route?.wantsItinerary ?? this.detectItineraryIntent(q),
+      // Có số ngày → agent được dựng; chưa có → agent phải HỎI user số ngày.
+      daysSpecified: this.detectDaysSpecified(q, route),
       logger: this.logger,
     });
 
@@ -786,20 +819,37 @@ QUY TẮC:
         detailPath: c.detailPath,
       })),
       suggestion: result.suggestion,
-      trace: { steps: result.steps, sources: [], totalMs: Date.now() - t0 },
+      // Trace: step rewrite đầu vào đặt TRƯỚC các step của agent.
+      trace: { steps: [rewriteStep, ...result.steps], sources: [], totalMs: Date.now() - t0 },
     };
   }
 
   /**
-   * Tra tài liệu vector cho tool search_documents: embed câu hỏi → DENSE cosine
-   * + SPARSE BM25 → RRF → trả top đoạn. Dùng lại các lib thuần của pipeline cũ,
-   * không rerank (agent tự đánh giá observation thay rerank).
+   * Tra tài liệu vector cho tool search_documents — nhận sẵn câu ĐÃ rewrite ở đầu
+   * vào (searchText + lexicalText), KHÔNG tự rewrite nữa. Pipeline còn lại:
+   *   ① embed (searchText)  → ② hybrid: DENSE cosine + SPARSE BM25 → RRF
+   *   → ③ rerank LLM (chấm 0–10, lọc top-K).
+   * Trả KÈM `detail` để /chatbot-v2 hiển thị rõ embedding + ranking (không hộp đen).
    */
-  private async searchDocuments(query: string, topK: number): Promise<DocHit[]> {
-    const queryVec = await this.embeddings.embed(query, 'RETRIEVAL_QUERY');
+  private async searchDocuments(
+    searchText: string,
+    lexicalText: string,
+    topK: number,
+  ): Promise<{ hits: DocHit[]; detail: DocSearchDetail }> {
+    // ① Embed câu đã rewrite.
+    const queryVec = await this.embeddings.embed(searchText, 'RETRIEVAL_QUERY');
     const all = await this.chunks.find();
-    if (all.length === 0) return [];
+    const emptyDetail: DocSearchDetail = {
+      embedModel: this.embeddings.model,
+      dimensions: queryVec.length,
+      totalChunks: all.length,
+      candidateK: this.candidateK(),
+      rerankVia: 'disabled',
+      candidates: [],
+    };
+    if (all.length === 0) return { hits: [], detail: emptyDetail };
 
+    // ② Hybrid: DENSE cosine + SPARSE BM25 → RRF.
     const denseScored = all.map((c) => ({
       chunk: c,
       score: cosineSimilarity(queryVec, c.embedding ?? []),
@@ -810,7 +860,7 @@ QUY TẮC:
       const tokens = tokenize(c.content);
       return { id: c.id, tokens, length: tokens.length };
     });
-    const bm25 = bm25Scores(query, lexDocs);
+    const bm25 = bm25Scores(lexicalText, lexDocs);
     const sparseRanking = [...all]
       .map((c) => ({ id: c.id, score: bm25.get(c.id) ?? 0 }))
       .sort((a, b) => b.score - a.score)
@@ -821,15 +871,50 @@ QUY TẮC:
     const byId = new Map(all.map((c) => [c.id, c]));
     const denseScoreById = new Map(denseScored.map((d) => [d.chunk.id, d.score]));
 
-    return fused.slice(0, topK).map((f) => {
-      const c = byId.get(f.id)!;
-      return {
-        docName: c.docName,
-        chunkIndex: c.chunkIndex,
-        content: c.content,
-        score: denseScoreById.get(f.id) ?? 0,
-      };
-    });
+    // candidateK ứng viên (rộng hơn topK) đưa vào rerank.
+    const candidates: RerankInput[] = fused.slice(0, this.candidateK()).map((f) => ({
+      chunk: byId.get(f.id)!,
+      rrf: f.rrf,
+      denseScore: denseScoreById.get(f.id) ?? 0,
+      sparseScore: bm25.get(f.id) ?? 0,
+      denseRank: f.ranks.dense,
+      sparseRank: f.ranks.sparse,
+    }));
+
+    // ③ Rerank bằng LLM (chấm 0–10, lọc top-K). Fallback: giữ thứ tự RRF.
+    const reranked = await this.rerankCandidates(searchText, candidates, topK);
+    const keptIds = new Set(reranked.top.map((r) => r.chunk.id));
+    const relById = new Map(reranked.top.map((r) => [r.chunk.id, r.relevance]));
+
+    const hits: DocHit[] = reranked.top.map((r) => ({
+      docName: r.chunk.docName,
+      chunkIndex: r.chunk.chunkIndex,
+      content: r.chunk.content,
+      score: r.denseScore,
+    }));
+
+    // Chi tiết pipeline để FE hiển thị: mọi ứng viên + điểm thành phần + kết quả lọc.
+    const detail: DocSearchDetail = {
+      embedModel: this.embeddings.model,
+      dimensions: queryVec.length,
+      totalChunks: all.length,
+      candidateK: this.candidateK(),
+      rerankVia: reranked.via,
+      candidates: candidates.map((c) => ({
+        docName: c.chunk.docName,
+        chunkIndex: c.chunk.chunkIndex,
+        preview: c.chunk.content.slice(0, 100),
+        dense: c.denseScore,
+        sparse: c.sparseScore,
+        rrf: c.rrf,
+        denseRank: c.denseRank ?? null,
+        sparseRank: c.sparseRank ?? null,
+        relevance: relById.get(c.chunk.id),
+        kept: keptIds.has(c.chunk.id),
+      })),
+    };
+
+    return { hits, detail };
   }
 
   /**
@@ -959,9 +1044,24 @@ Chọn nhiều nguồn nếu câu đa ý. Không chắc thì thêm "doc". Giữ 
    */
   private detectItineraryIntent(q: string): boolean {
     const s = q.toLowerCase();
-    return /(tạo|lập|lên|dựng|xây|thiết kế|gợi ý|đề xuất|giúp.*lên|làm cho.*một)\s+.{0,12}(lộ trình|lịch trình|kế hoạch|hành trình|itinerary|chuyến đi)/.test(
+    return /(tạo|lập|lên|dựng|xây|thiết kế|gợi ý|đề xuất|giúp.*lên|lên.*giúp|làm.*cho)\s*.{0,16}(lộ trình|lịch trình|kế hoạch|hành trình|itinerary|chuyến\s*(đi|du lịch)|tour)/.test(
       s,
     );
+  }
+
+  /**
+   * User đã nêu rõ SỐ NGÀY (hoặc ngày khởi hành) cho lộ trình chưa? Dùng để quyết
+   * định agent được dựng lộ trình ngay hay phải HỎI user số ngày trước. Nhận diện:
+   *   - "N ngày" / "N đêm" / "N ngày M đêm"
+   *   - khoảng/mốc ngày: extractDates(q) bóc được ≥1 ngày (dd/mm, "ngày D tháng M")
+   *   - Router LLM bóc được filters.days > 0
+   */
+  private detectDaysSpecified(q: string, route: RouteResult | null): boolean {
+    if (route?.filters?.days && route.filters.days > 0) return true;
+    const s = q.toLowerCase();
+    if (/\b\d{1,2}\s*(ngày|đêm|day)/.test(s)) return true;
+    if (extractDates(q).length > 0) return true;
+    return false;
   }
 
   /**

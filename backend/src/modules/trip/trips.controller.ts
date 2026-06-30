@@ -18,6 +18,7 @@ import { OptionalJwtAuthGuard } from '@/modules/auth/guards/optional-jwt-auth.gu
 import { JwtUserPayload } from '@/common/types/jwt-payload.type';
 import { TripsService } from './trips.service';
 import {
+  CancelTripDto,
   CreateTripDto,
   HireGuideDto,
   ItineraryDayDto,
@@ -134,8 +135,10 @@ export class TripsController {
   cancel(
     @CurrentUser() user: JwtUserPayload,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: CancelTripDto,
   ) {
-    return this.trips.cancelTrip(id, user.sub);
+    // Truyền role để service cho phép admin huỷ (ngoài chủ chuyến).
+    return this.trips.cancelTrip(id, user.sub, dto.reason, user.role);
   }
 
   @UseGuards(JwtAuthGuard)

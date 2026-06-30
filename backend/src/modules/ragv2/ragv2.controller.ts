@@ -3,12 +3,13 @@ import { ApiTags } from '@nestjs/swagger';
 import {
   IsArray,
   IsIn,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { Public } from '@/common/decorators/public.decorator';
 import { RagV2Service } from './ragv2.service';
 
@@ -22,7 +23,10 @@ class HistoryTurnDto {
 }
 
 class RagAskDto {
+  // Trim trước khi validate để câu chỉ gồm khoảng trắng cũng bị chặn (400, không 500).
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
+  @IsNotEmpty({ message: 'Câu hỏi không được để trống.' })
   @MaxLength(2000)
   question!: string;
 

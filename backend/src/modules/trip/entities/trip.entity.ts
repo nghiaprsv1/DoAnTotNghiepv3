@@ -139,6 +139,21 @@ export class Trip {
   @Column({ type: 'enum', enum: TripStatus, default: TripStatus.PUBLISHED })
   status!: TripStatus;
 
+  /**
+   * Lý do huỷ chuyến (lưu để tra cứu) — chỉ có khi status = CANCELLED.
+   * KHÔNG tạo bảng mới: lưu thẳng cột trên `trips`.
+   */
+  @Column({ name: 'cancel_reason', type: 'text', nullable: true })
+  cancelReason?: string | null;
+
+  /** Thời điểm huỷ. */
+  @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true })
+  cancelledAt?: Date | null;
+
+  /** Ai huỷ (chủ chuyến hoặc admin) — phục vụ tra cứu/đối soát. */
+  @Column({ name: 'cancelled_by_id', type: 'uuid', nullable: true })
+  cancelledById?: string | null;
+
   @OneToMany(() => TripMember, (m) => m.trip)
   members!: TripMember[];
 

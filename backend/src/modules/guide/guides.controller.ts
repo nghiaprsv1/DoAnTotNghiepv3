@@ -75,6 +75,13 @@ export class GuidesController {
     return this.svc.busyDates(id);
   }
 
+  /** Public — lịch sử tour đã hoàn thành của HDV (tab "Lịch sử tour"). */
+  @Public()
+  @Get(':id/tour-history')
+  tourHistory(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.svc.tourHistory(id);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('apply')
   apply(

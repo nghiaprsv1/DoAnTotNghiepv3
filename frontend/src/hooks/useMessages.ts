@@ -23,6 +23,22 @@ export function useMessageHistory(conversationId: string | undefined) {
   })
 }
 
+/**
+ * Open the group conversation tied to a trip (for the embedded chat on the
+ * trip detail page). Disabled unless `enabled` is true — callers gate it on
+ * (joined || isOwner) so non-members never hit the endpoint. Does not retry:
+ * a 403 (not a member) / 404 (no group yet) is a terminal, expected state.
+ */
+export function useTripConversation(tripId: string | undefined, enabled: boolean) {
+  const currentUserId = useCurrentUserStore((s) => s.id) ?? undefined
+  return useQuery({
+    queryKey: ['trip-conversation', tripId],
+    queryFn: () => messageService.tripConversation(tripId as string, currentUserId),
+    enabled: Boolean(tripId) && enabled,
+    retry: false,
+  })
+}
+
 export function useSendMessage(conversationId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({

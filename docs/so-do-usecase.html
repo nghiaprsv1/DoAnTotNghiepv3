@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sơ đồ Use Case — TripMate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--primary:#ab2d00;--ink:#1c1410;--muted:#6b5d54;--line:#ece4dd;--bg:#fbf7f3;--grad:linear-gradient(135deg,#ab2d00 0%,#d8541f 55%,#f0921f 100%);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink);background:var(--bg);line-height:1.7;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{font-family:'Plus Jakarta Sans',system-ui,sans-serif;line-height:1.25;}
+  code{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;}
+  .shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh;}
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;background:#fff;border-right:1px solid var(--line);padding:26px 18px;}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .brand .dot{width:30px;height:30px;border-radius:9px;background:var(--grad);box-shadow:0 4px 14px rgba(171,45,0,.35);}
+  .brand b{font-size:17px;font-weight:800;}
+  .brand-sub{font-size:12px;color:var(--muted);margin-bottom:18px;padding-left:2px;}
+  nav a{display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:9px;color:var(--muted);font-size:13px;font-weight:500;transition:.15s;}
+  nav a:hover{background:#faf2ec;color:var(--primary);}
+  nav a.active{background:#fdeee6;color:var(--primary);font-weight:700;}
+  nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#b6a99f;margin:16px 0 6px 11px;font-weight:700;}
+  .ndot{width:9px;height:9px;border-radius:3px;flex:none;}
+  main{max-width:1320px;padding-bottom:80px;}
+  .hero{background:var(--grad);color:#fff;padding:52px 56px 44px;position:relative;overflow:hidden;}
+  .hero::after{content:"";position:absolute;right:-80px;top:-80px;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.10);}
+  .hero .kicker{font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9;}
+  .hero h1{font-size:36px;font-weight:800;margin:12px 0 12px;max-width:680px;}
+  .hero p{font-size:15.5px;max-width:660px;opacity:.95;}
+  .hero .meta{margin-top:20px;display:flex;gap:9px;flex-wrap:wrap;position:relative;z-index:1;}
+  .hero .meta span{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:500;backdrop-filter:blur(4px);}
+  .wrap{padding:40px 56px 0;}
+  section.block{margin-bottom:46px;scroll-margin-top:20px;}
+  h2.sec{font-size:23px;font-weight:800;display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+  h2.sec .num{flex:none;width:32px;height:32px;border-radius:9px;background:#fdeee6;color:var(--primary);font-size:14px;display:grid;place-items:center;font-weight:800;}
+  .lead{color:var(--muted);margin:0 0 20px 44px;font-size:14.5px;max-width:820px;}
+  .diagram{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 18px;box-shadow:0 1px 3px rgba(28,20,16,.04);overflow:auto;}
+  .ucsvg{width:100%;height:auto;min-width:1080px;display:block;}
+  .legend{display:flex;gap:20px;flex-wrap:wrap;margin:16px 0 0 2px;font-size:13px;color:var(--muted);align-items:center;}
+  .legend .it{display:flex;align-items:center;gap:7px;}
+  .lg-line{width:26px;height:0;border-top:1.6px solid #C0612F;}
+  .lg-tri{width:0;height:0;border-left:12px solid #1A1A1A;border-top:6px solid transparent;border-bottom:6px solid transparent;}
+  .swatch{width:13px;height:13px;border-radius:3px;display:inline-block;}
+  .grp-sec{margin-bottom:28px;scroll-margin-top:18px;}
+  .grp-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px;margin:0 0 14px;}
+  .grp-dot{width:13px;height:13px;border-radius:4px;}
+  .grp-title .cnt{font-size:12px;font-weight:700;color:#fff;background:#c9a;border-radius:999px;padding:1px 9px;background:var(--muted);}
+  .uc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:13px;}
+  .uc-card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--pk);border-radius:13px;padding:14px 16px;box-shadow:0 1px 2px rgba(28,20,16,.03);}
+  .uc-head h4{font-size:14.5px;font-weight:700;margin-bottom:8px;}
+  .uc-roles{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .role{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;}
+  .role-all{background:#ffedd5;color:#b2480c;}
+  .role-trav{background:#fbe9dd;color:#9a4a22;}
+  .role-owner{background:#fff1cf;color:#946a00;}
+  .role-member{background:#e6f6ec;color:#2f7d4e;}
+  .role-guide{background:#e3f4f6;color:#2d7882;}
+  .role-admin{background:#fbe6f1;color:#9a366f;}
+  .uc-eps{display:flex;flex-direction:column;gap:5px;}
+  .uc-eps code{font-size:11.5px;background:#faf4ef;color:#8a3310;padding:3px 9px;border-radius:6px;border:1px solid #f0e6dd;width:fit-content;max-width:100%;word-break:break-word;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+  .stat .big{font-size:30px;font-weight:800;color:var(--primary);}
+  .stat .lbl{font-size:13px;color:var(--muted);margin-top:2px;}
+  footer{margin:24px 56px 0;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;}
+  @media(max-width:900px){.shell{grid-template-columns:1fr;}aside{display:none;}.wrap,.hero{padding-left:22px;padding-right:22px;}footer{margin-left:22px;margin-right:22px;}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><span class="dot"></span><b>TripMate</b></div>
+    <div class="brand-sub">Sơ đồ Use Case · UML</div>
+    <nav>
+      <a href="#sodo">Sơ đồ tổng thể</a>
+      <a href="#tacnhan">Tác nhân</a>
+      <div class="grp">Chi tiết &amp; API</div>
+      <a href="#g-all"><span class="ndot" style="background:#C2410C"></span>Dùng chung (All)</a>
+      <a href="#g-trav"><span class="ndot" style="background:#C0612F"></span>Traveler</a>
+      <a href="#g-guide"><span class="ndot" style="background:#3A8A93"></span>Guide</a>
+      <a href="#g-admin"><span class="ndot" style="background:#A23E78"></span>Admin</a>
+    </nav>
+  </aside>
+  <main>
+    <header class="hero">
+      <div class="kicker">TripMate / TravelSocial · Phân tích hệ thống</div>
+      <h1>Sơ đồ Use Case</h1>
+      <p>Mô hình hoá 24 use case với 3 tác nhân (Traveler · Guide · Admin). Guide kế thừa toàn bộ chức năng của Traveler. Mỗi use case được ánh xạ tới endpoint REST thật trong backend NestJS.</p>
+      <div class="meta"><span>24 use case</span><span>3 tác nhân</span><span>Generalization</span><span>UML chuẩn</span></div>
+    </header>
+    <div class="wrap">
+      <section id="sodo" class="block">
+        <h2 class="sec"><span class="num">①</span>Sơ đồ Use Case tổng thể</h2>
+        <p class="lead">Bố cục 2 cột: <strong>Traveler</strong> (trái) liên kết với 15 use case người dùng; <strong>Guide</strong> và <strong>Admin</strong> (phải) mỗi tác nhân một nhóm use case riêng. Mỗi đường nối là một quạt xuất phát từ một tác nhân nên không chồng chéo. Hai use case dùng chung (Đăng ký / Đăng nhập) của Admin được định tuyến vuông góc qua hành lang trống; Guide thừa kế Traveler bằng quan hệ generalization (mũi tên rỗng phía trên).</p>
+        <div class="diagram"><svg viewBox="0 0 1270 1232" xmlns="http://www.w3.org/2000/svg" class="ucsvg" role="img" aria-label="Sơ đồ Use Case TripMate"><path d="M 175 623 L 293 119" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 191" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 263" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 335" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 407" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 479" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 551" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 623" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 695" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 767" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 839" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 911" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 983" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 1055" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 175 623 L 293 1127" fill="none" stroke="#C0612F" stroke-width="1.15" opacity="0.6"/><path d="M 967 119 L 1082 227" fill="none" stroke="#3A8A93" stroke-width="1.15" opacity="0.6"/><path d="M 967 191 L 1082 227" fill="none" stroke="#3A8A93" stroke-width="1.15" opacity="0.6"/><path d="M 967 263 L 1082 227" fill="none" stroke="#3A8A93" stroke-width="1.15" opacity="0.6"/><path d="M 967 335 L 1082 227" fill="none" stroke="#3A8A93" stroke-width="1.15" opacity="0.6"/><path d="M 967 479 L 1152 623" fill="none" stroke="#A23E78" stroke-width="1.15" opacity="0.6"/><path d="M 967 551 L 1152 623" fill="none" stroke="#A23E78" stroke-width="1.15" opacity="0.6"/><path d="M 967 623 L 1152 623" fill="none" stroke="#A23E78" stroke-width="1.15" opacity="0.6"/><path d="M 967 695 L 1152 623" fill="none" stroke="#A23E78" stroke-width="1.15" opacity="0.6"/><path d="M 967 767 L 1152 623" fill="none" stroke="#A23E78" stroke-width="1.15" opacity="0.6"/><path d="M 1107 179 L 1107 24 L 150 24 L 150 575" fill="none" stroke="#1A1A1A" stroke-width="1.6" marker-end="url(#tri)"/><text x="628.5" y="17" text-anchor="middle" font-size="11.5" fill="#333" font-family="Inter" font-weight="700">«kế thừa» — Guide là một Traveler (dùng được mọi chức năng của Traveler)</text><path d="M 1177 671 L 1177 1176 L 612 1176 L 612 119 L 467 119" fill="none" stroke="#A23E78" stroke-width="1.15" opacity="0.6"/><path d="M 1177 671 L 1177 1176 L 648 1176 L 648 191 L 467 191" fill="none" stroke="#A23E78" stroke-width="1.15" opacity="0.6"/><text x="630" y="1192" text-anchor="middle" font-size="10.5" fill="#A23E78" font-family="Inter" font-weight="600">Admin cũng Đăng ký / Đăng nhập («All»)</text><ellipse cx="380" cy="119" rx="87" ry="27" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.3"/><text x="380" y="112.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Đăng ký</text><text x="380" y="125.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">tài khoản</text><ellipse cx="380" cy="191" rx="87" ry="27" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.3"/><text x="380" y="191.0" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Đăng nhập</text><ellipse cx="380" cy="263" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="256.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Quản lý hồ sơ</text><text x="380" y="269.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">cá nhân</text><ellipse cx="380" cy="335" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="328.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Quản lý</text><text x="380" y="341.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">bài viết</text><ellipse cx="380" cy="407" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="400.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Quản lý</text><text x="380" y="413.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">chuyến đi</text><ellipse cx="380" cy="479" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="472.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Gửi yêu cầu</text><text x="380" y="485.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">tham gia</text><ellipse cx="380" cy="551" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="544.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Duyệt / từ chối</text><text x="380" y="557.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">yêu cầu tham gia</text><ellipse cx="380" cy="623" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="623.0" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Chat room</text><ellipse cx="380" cy="695" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="688.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Tìm kiếm</text><text x="380" y="701.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">hướng dẫn viên</text><ellipse cx="380" cy="767" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="760.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Book HDV</text><text x="380" y="773.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">cho Tour</text><ellipse cx="380" cy="839" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="832.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Đăng ký làm</text><text x="380" y="845.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">hướng dẫn viên</text><ellipse cx="380" cy="911" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="904.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Kiểm tra lịch sử</text><text x="380" y="917.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">giao dịch</text><ellipse cx="380" cy="983" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="983.0" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Nạp tiền</text><ellipse cx="380" cy="1055" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="1055.0" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Đánh giá</text><ellipse cx="380" cy="1127" rx="87" ry="27" fill="#FFFFFF" stroke="#5A6B7B" stroke-width="1.3"/><text x="380" y="1127.0" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Chat AI</text><ellipse cx="880" cy="119" rx="87" ry="27" fill="#E8F6F8" stroke="#3A8A93" stroke-width="1.3"/><text x="880" y="112.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Quản lý</text><text x="880" y="125.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">booking</text><ellipse cx="880" cy="191" rx="87" ry="27" fill="#E8F6F8" stroke="#3A8A93" stroke-width="1.3"/><text x="880" y="184.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Quản lý doanh</text><text x="880" y="197.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">thu cá nhân</text><ellipse cx="880" cy="263" rx="87" ry="27" fill="#E8F6F8" stroke="#3A8A93" stroke-width="1.3"/><text x="880" y="256.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Quản lý</text><text x="880" y="269.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">lịch bận</text><ellipse cx="880" cy="335" rx="87" ry="27" fill="#E8F6F8" stroke="#3A8A93" stroke-width="1.3"/><text x="880" y="335.0" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Rút tiền</text><ellipse cx="880" cy="479" rx="87" ry="27" fill="#FBE9F3" stroke="#A23E78" stroke-width="1.3"/><text x="880" y="472.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Thống kê</text><text x="880" y="485.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">tổng quan</text><ellipse cx="880" cy="551" rx="87" ry="27" fill="#FBE9F3" stroke="#A23E78" stroke-width="1.3"/><text x="880" y="544.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Duyệt hướng</text><text x="880" y="557.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">dẫn viên</text><ellipse cx="880" cy="623" rx="87" ry="27" fill="#FBE9F3" stroke="#A23E78" stroke-width="1.3"/><text x="880" y="623.0" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Duyệt rút tiền</text><ellipse cx="880" cy="695" rx="87" ry="27" fill="#FBE9F3" stroke="#A23E78" stroke-width="1.3"/><text x="880" y="688.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Khoá / mở</text><text x="880" y="701.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">khoá user</text><ellipse cx="880" cy="767" rx="87" ry="27" fill="#FBE9F3" stroke="#A23E78" stroke-width="1.3"/><text x="880" y="760.2" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">Quản lý</text><text x="880" y="773.8" text-anchor="middle" dominant-baseline="central" font-size="11.5" fill="#1A1A1A" font-weight="600" font-family="Inter, sans-serif">doanh thu</text><defs><marker id="tri" markerWidth="16" markerHeight="16" refX="13" refY="6" orient="auto">
+  <path d="M1,1 L13,6 L1,11 Z" fill="#fff" stroke="#1A1A1A" stroke-width="1.4"/></marker></defs><g>
+    <circle cx="150" cy="587" r="12" fill="#fff" stroke="#C0612F" stroke-width="2.2"/>
+    <line x1="150" y1="599" x2="150" y2="629" stroke="#C0612F" stroke-width="2.2"/>
+    <line x1="132" y1="608" x2="168" y2="608" stroke="#C0612F" stroke-width="2.2"/>
+    <line x1="150" y1="629" x2="135" y2="655" stroke="#C0612F" stroke-width="2.2"/>
+    <line x1="150" y1="629" x2="165" y2="655" stroke="#C0612F" stroke-width="2.2"/>
+    <text x="150" y="667.6" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#1A1A1A" font-weight="700" font-family="Inter, sans-serif">Traveler</text><text x="150" y="682.4" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#1A1A1A" font-weight="700" font-family="Inter, sans-serif">(Du khách)</text>
+  </g><g>
+    <circle cx="1107" cy="191" r="12" fill="#fff" stroke="#3A8A93" stroke-width="2.2"/>
+    <line x1="1107" y1="203" x2="1107" y2="233" stroke="#3A8A93" stroke-width="2.2"/>
+    <line x1="1089" y1="212" x2="1125" y2="212" stroke="#3A8A93" stroke-width="2.2"/>
+    <line x1="1107" y1="233" x2="1092" y2="259" stroke="#3A8A93" stroke-width="2.2"/>
+    <line x1="1107" y1="233" x2="1122" y2="259" stroke="#3A8A93" stroke-width="2.2"/>
+    <text x="1107" y="271.6" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#1A1A1A" font-weight="700" font-family="Inter, sans-serif">Guide</text><text x="1107" y="286.4" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#1A1A1A" font-weight="700" font-family="Inter, sans-serif">(Hướng dẫn viên)</text>
+  </g><g>
+    <circle cx="1177" cy="587" r="12" fill="#fff" stroke="#A23E78" stroke-width="2.2"/>
+    <line x1="1177" y1="599" x2="1177" y2="629" stroke="#A23E78" stroke-width="2.2"/>
+    <line x1="1159" y1="608" x2="1195" y2="608" stroke="#A23E78" stroke-width="2.2"/>
+    <line x1="1177" y1="629" x2="1162" y2="655" stroke="#A23E78" stroke-width="2.2"/>
+    <line x1="1177" y1="629" x2="1192" y2="655" stroke="#A23E78" stroke-width="2.2"/>
+    <text x="1177" y="667.6" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#1A1A1A" font-weight="700" font-family="Inter, sans-serif">Admin</text><text x="1177" y="682.4" text-anchor="middle" dominant-baseline="central" font-size="12.5" fill="#1A1A1A" font-weight="700" font-family="Inter, sans-serif">(Quản trị viên)</text>
+  </g></svg></div>
+        <div class="legend">
+          <span class="it"><span class="lg-line"></span>Liên kết (association)</span>
+          <span class="it"><span class="lg-tri"></span>Kế thừa (generalization)</span>
+          <span class="it"><span class="swatch" style="background:#FFF7ED;border:1px solid #C2410C"></span>Dùng chung</span>
+          <span class="it"><span class="swatch" style="background:#E8F6F8;border:1px solid #3A8A93"></span>Guide</span>
+          <span class="it"><span class="swatch" style="background:#FBE9F3;border:1px solid #A23E78"></span>Admin</span>
+        </div>
+      </section>
+
+      <section id="tacnhan" class="block">
+        <h2 class="sec"><span class="num">②</span>Tác nhân</h2>
+        <div class="uc-grid">
+          <div class="uc-card" style="--pk:#C0612F"><div class="uc-head"><h4>Traveler (Du khách)</h4></div><div class="uc-roles"><span class="role role-trav">Người dùng</span></div><div style="font-size:13.5px;color:var(--muted)">Tác nhân chính. Quản lý hồ sơ, bài viết, chuyến đi; tham gia chuyến; tìm &amp; đặt HDV; nạp tiền; đánh giá; chat AI.</div></div>
+          <div class="uc-card" style="--pk:#3A8A93"><div class="uc-head"><h4>Guide (Hướng dẫn viên)</h4></div><div class="uc-roles"><span class="role role-guide">Kế thừa Traveler</span></div><div style="font-size:13.5px;color:var(--muted)">Có mọi quyền của Traveler, bổ sung: quản lý booking, doanh thu cá nhân, lịch bận và rút tiền.</div></div>
+          <div class="uc-card" style="--pk:#A23E78"><div class="uc-head"><h4>Admin (Quản trị viên)</h4></div><div class="uc-roles"><span class="role role-admin">Vận hành</span></div><div style="font-size:13.5px;color:var(--muted)">Thống kê tổng quan, duyệt HDV, duyệt rút tiền, khoá/mở user, quản lý doanh thu toàn hệ thống.</div></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2 class="sec"><span class="num">③</span>Chi tiết use case &amp; ánh xạ API</h2>
+        <p class="lead">Mỗi thẻ là một use case kèm tác nhân và các endpoint REST thật (đọc từ controller NestJS). Một số use case gộp các thao tác CRUD liên quan.</p>
+        <section id="g-all" class="grp-sec">
+    <h3 class="grp-title"><span class="grp-dot" style="background:#C2410C"></span>Dùng chung (All) <span class="cnt">2</span></h3>
+    <div class="uc-grid"><div class="uc-card" style="--pk:#C2410C">
+    <div class="uc-head"><h4>Đăng ký tài khoản</h4></div>
+    <div class="uc-roles"><span class="role role-all">All</span></div>
+    <div class="uc-eps"><code>POST /auth/register</code><code>POST /auth/verify-email</code><code>POST /auth/resend-verification</code></div>
+  </div><div class="uc-card" style="--pk:#C2410C">
+    <div class="uc-head"><h4>Đăng nhập</h4></div>
+    <div class="uc-roles"><span class="role role-all">All</span></div>
+    <div class="uc-eps"><code>POST /auth/login</code><code>POST /auth/refresh</code><code>POST /auth/logout</code></div>
+  </div></div>
+  </section>
+<section id="g-trav" class="grp-sec">
+    <h3 class="grp-title"><span class="grp-dot" style="background:#C0612F"></span>Traveler (Du khách) <span class="cnt">13</span></h3>
+    <div class="uc-grid"><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Quản lý hồ sơ cá nhân</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span></div>
+    <div class="uc-eps"><code>GET /auth/profile</code><code>PUT /users/me</code><code>PUT /auth/password</code><code>GET·PUT /users/me/preferences</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Quản lý bài viết</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span></div>
+    <div class="uc-eps"><code>POST·PUT·DELETE /posts/:id</code><code>POST /posts/:id/like</code><code>POST /posts/:id/comments</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Quản lý chuyến đi</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span><span class="role role-owner">Owner</span></div>
+    <div class="uc-eps"><code>POST·PUT·DELETE /trips/:id</code><code>POST /trips/:id/cancel</code><code>PUT /trips/:id/itinerary</code><code>GET /trips/mine/created|joined</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Gửi yêu cầu tham gia</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span></div>
+    <div class="uc-eps"><code>POST /trips/:id/join</code><code>POST /trips/:id/leave</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Duyệt / từ chối yêu cầu tham gia</h4></div>
+    <div class="uc-roles"><span class="role role-owner">Owner Trip</span></div>
+    <div class="uc-eps"><code>POST /trips/:id/requests/:reqId/accept</code><code>POST /trips/:id/requests/:reqId/reject</code><code>DELETE /trips/:id/members/:userId</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Chat room</h4></div>
+    <div class="uc-roles"><span class="role role-member">Member Trip</span></div>
+    <div class="uc-eps"><code>GET /messages/trip/:tripId</code><code>POST /messages/:id/messages</code><code>GET /messages/:id/messages</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Tìm kiếm hướng dẫn viên</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span></div>
+    <div class="uc-eps"><code>GET /guides</code><code>GET /guides/:id</code><code>GET /guides/:id/busy-dates</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Book HDV cho Tour</h4></div>
+    <div class="uc-roles"><span class="role role-owner">Owner Trip</span></div>
+    <div class="uc-eps"><code>POST /guides/bookings</code><code>POST /trips/:id/hire-guide</code><code>GET /guides/bookings/me/traveler</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Đăng ký làm hướng dẫn viên</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span></div>
+    <div class="uc-eps"><code>POST /guides/apply</code><code>GET·PUT /guides/me/profile</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Kiểm tra lịch sử giao dịch</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span></div>
+    <div class="uc-eps"><code>GET /guides/wallet/me</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Nạp tiền</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span></div>
+    <div class="uc-eps"><code>POST /payments/sepay/intent</code><code>POST /payments/sepay/webhook</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Đánh giá</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span></div>
+    <div class="uc-eps"><code>POST /reviews</code><code>GET /reviews</code><code>POST /reviews/:id/like</code><code>DELETE /reviews/:id</code></div>
+  </div><div class="uc-card" style="--pk:#C0612F">
+    <div class="uc-head"><h4>Chat AI</h4></div>
+    <div class="uc-roles"><span class="role role-trav">Traveler</span><span class="role role-guide">Guide</span></div>
+    <div class="uc-eps"><code>POST /rag-v2/ask</code><code>POST /ai/ask</code><code>POST /ai/create-trip</code></div>
+  </div></div>
+  </section>
+<section id="g-guide" class="grp-sec">
+    <h3 class="grp-title"><span class="grp-dot" style="background:#3A8A93"></span>Guide (Hướng dẫn viên) <span class="cnt">4</span></h3>
+    <div class="uc-grid"><div class="uc-card" style="--pk:#3A8A93">
+    <div class="uc-head"><h4>Quản lý booking</h4></div>
+    <div class="uc-roles"><span class="role role-guide">Guide</span></div>
+    <div class="uc-eps"><code>PUT /guides/bookings/:id</code><code>GET /guides/bookings/me/guide</code><code>GET /guides/bookings/:id</code></div>
+  </div><div class="uc-card" style="--pk:#3A8A93">
+    <div class="uc-head"><h4>Quản lý doanh thu cá nhân</h4></div>
+    <div class="uc-roles"><span class="role role-guide">Guide</span></div>
+    <div class="uc-eps"><code>GET /guides/wallet/me</code></div>
+  </div><div class="uc-card" style="--pk:#3A8A93">
+    <div class="uc-head"><h4>Quản lý lịch bận</h4></div>
+    <div class="uc-roles"><span class="role role-guide">Guide</span></div>
+    <div class="uc-eps"><code>GET /guides/:id/busy-dates</code><code>PUT /guides/bookings/:id</code></div>
+  </div><div class="uc-card" style="--pk:#3A8A93">
+    <div class="uc-head"><h4>Rút tiền</h4></div>
+    <div class="uc-roles"><span class="role role-guide">Guide</span></div>
+    <div class="uc-eps"><code>POST /guides/wallet/withdrawals</code></div>
+  </div></div>
+  </section>
+<section id="g-admin" class="grp-sec">
+    <h3 class="grp-title"><span class="grp-dot" style="background:#A23E78"></span>Admin (Quản trị viên) <span class="cnt">5</span></h3>
+    <div class="uc-grid"><div class="uc-card" style="--pk:#A23E78">
+    <div class="uc-head"><h4>Thống kê tổng quan</h4></div>
+    <div class="uc-roles"><span class="role role-admin">Admin</span></div>
+    <div class="uc-eps"><code>GET /admin/dashboard</code><code>GET /admin/stats/registrations</code></div>
+  </div><div class="uc-card" style="--pk:#A23E78">
+    <div class="uc-head"><h4>Duyệt hướng dẫn viên</h4></div>
+    <div class="uc-roles"><span class="role role-admin">Admin</span></div>
+    <div class="uc-eps"><code>GET /admin/guides/pending</code><code>POST /guides/:id/approve</code><code>POST /guides/:id/reject</code></div>
+  </div><div class="uc-card" style="--pk:#A23E78">
+    <div class="uc-head"><h4>Duyệt rút tiền</h4></div>
+    <div class="uc-roles"><span class="role role-admin">Admin</span></div>
+    <div class="uc-eps"><code>GET /guides/wallet/withdrawals/pending</code><code>PUT /guides/wallet/withdrawals/:id</code></div>
+  </div><div class="uc-card" style="--pk:#A23E78">
+    <div class="uc-head"><h4>Khoá / mở khoá user</h4></div>
+    <div class="uc-roles"><span class="role role-admin">Admin</span></div>
+    <div class="uc-eps"><code>GET /admin/users</code><code>POST /admin/users/:id/lock</code><code>POST /admin/users/:id/unlock</code></div>
+  </div><div class="uc-card" style="--pk:#A23E78">
+    <div class="uc-head"><h4>Quản lý doanh thu</h4></div>
+    <div class="uc-roles"><span class="role role-admin">Admin</span></div>
+    <div class="uc-eps"><code>GET /admin/revenue</code><code>GET /admin/guides/:id/revenue</code><code>GET /admin/wallets</code><code>POST /admin/wallets/topup</code></div>
+  </div></div>
+  </section>
+      </section>
+
+      <footer>Sinh tự động từ <code>docs/diagrams/tripmate-usecase-web.build.mjs</code> · TripMate / TravelSocial.</footer>
+    </div>
+  </main>
+</div>
+<script>
+  const links=[...document.querySelectorAll('nav a')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){const a=map.get(e.target.id);if(a){links.forEach(l=>l.classList.remove('active'));a.classList.add('active');}}});},{rootMargin:'-15% 0px -75% 0px'});
+  document.querySelectorAll('section[id]').forEach(s=>io.observe(s));
+</script>
+</body>
+</html>
