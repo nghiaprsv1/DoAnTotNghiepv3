@@ -34,7 +34,19 @@ type Block =
 
 /** Gom các dòng thành block (đoạn / danh sách / tiêu đề). */
 function parseBlocks(src: string): Block[] {
-  const lines = src.replace(/\r\n/g, '\n').split('\n')
+  // Tiền xử lý: nhiều câu trả lời LLM dùng " - " và " 2. " làm dấu phân tách
+  // NGAY TRÊN MỘT DÒNG (không xuống dòng thật) → dính chùm. Chèn newline trước
+  // mỗi mục để mỗi nội dung tách dòng riêng.
+  const normalized = src
+    .replace(/\r\n/g, '\n')
+    // " - **Label" hoặc " - text" giữa dòng → xuống dòng thành gạch đầu dòng
+    .replace(/\s+-\s+(?=\*\*|[A-ZÀ-Ỹ])/g, '\n- ')
+    // " 2. **Mục" giữa dòng (số thứ tự không ở đầu) → xuống dòng
+    .replace(/(\S)\s+(\d+[.)]\s+\*\*)/g, '$1\n$2')
+    // ": **Label:**" — tách các cặp nhãn bị nối nhau (phòng hờ)
+    .replace(/\s+(#{1,3}\s+)/g, '\n$1')
+
+  const lines = normalized.split('\n')
   const blocks: Block[] = []
   let para: string[] = []
   const flushPara = () => {
