@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
+import { RichText } from '@components/common/RichText'
 import { ROUTES, tripDetailPath } from '@constants/routes'
 import { useAIAssistantStore, type AIMessage } from '@store/aiAssistantStore'
 import { useAuthStore } from '@store/authStore'
@@ -363,13 +364,19 @@ function MessageRow({
         )}
         <div
           className={cn(
-            'px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-editorial',
+            'px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-editorial',
             fromUser
-              ? 'editorial-gradient text-on-primary rounded-br-md'
+              ? 'editorial-gradient text-on-primary rounded-br-md whitespace-pre-wrap'
               : 'bg-surface-container-lowest text-on-surface ring-1 ring-outline-variant/15 rounded-bl-md'
           )}
         >
-          {message.pending ? <TypingDots /> : message.content}
+          {message.pending ? (
+            <TypingDots />
+          ) : fromUser ? (
+            message.content
+          ) : (
+            <RichText text={message.content} />
+          )}
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '@components/ui/Icon'
+import { RichText } from '@components/common/RichText'
 import { ROUTES } from '@constants/routes'
 import { cn } from '@utils/cn'
 import { useAuthStore } from '@store/authStore'
@@ -432,15 +433,21 @@ function MessageRow({ item }: { item: ChatItem }) {
     <div className={cn('flex flex-col gap-2', fromUser ? 'items-end' : 'items-start')}>
       <div
         className={cn(
-          'max-w-[88%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap',
+          'max-w-[88%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed',
           fromUser
-            ? 'bg-primary text-on-primary rounded-br-sm'
+            ? 'bg-primary text-on-primary rounded-br-sm whitespace-pre-wrap'
             : item.error
-              ? 'bg-error/10 text-error rounded-bl-sm'
+              ? 'bg-error/10 text-error rounded-bl-sm whitespace-pre-wrap'
               : 'bg-surface-container text-on-surface rounded-bl-sm',
         )}
       >
-        {item.pending ? <TypingDots /> : item.content}
+        {item.pending ? (
+          <TypingDots />
+        ) : fromUser || item.error ? (
+          item.content
+        ) : (
+          <RichText text={item.content} />
+        )}
       </div>
       {item.suggestion && <ItineraryCard suggestion={item.suggestion} />}
       {item.cards && item.cards.length > 0 && <ResultCards cards={item.cards} />}

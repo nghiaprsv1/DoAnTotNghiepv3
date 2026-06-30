@@ -1,0 +1,118 @@
+import { Fragment } from 'react'
+
+/**
+ * RichText — render câu trả lời chatbot dạng Markdown NHẸ, không cần thư viện ngoài.
+ * Hỗ trợ:
+ *   - **đậm** (inline, nhiều cụm trên một dòng)
+ *   - danh sách có số "1. ..." và gạch đầu dòng "- ..." / "* ..."
+ *   - tiêu đề "# ", "## ", "### "
+ *   - đoạn văn + xuống dòng
+ * Mục tiêu: câu trả lời dễ đọc, KHÔNG còn dính chùm hay hiện ký tự ** thô.
+ */
+
+/** Tách **đậm** trong một dòng thành các đoạn <strong>. */
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g).filter((s) => s !== '')
+  return parts.map((p, i) => {
+    const m = /^\*\*([^*]+)\*\*$/.exec(p)
+    if (m) {
+      return (
+        <strong key={i} className="font-bold text-on-surface">
+          {m[1]}
+        </strong>
+      )
+    }
+    return <Fragment key={i}>{p}</Fragment>
+  })
+}
+
+type Block =
+  | { type: 'h'; level: number; text: string }
+  | { type: 'ul'; items: string[] }
+  | { type: 'ol'; items: string[] }
+  | { type: 'p'; text: string }
+
+/** Gom các dòng thành block (đoạn / danh sách / tiêu đề). */
+function parseBlocks(src: string): Block[] {
+  const lines = src.replace(/\r\n/g, '\n').split('\n')
+  const blocks: Block[] = []
+  let para: string[] = []
+  const flushPara = () => {
+    if (para.length) {
+      blocks.push({ type: 'p', text: para.join(' ') })
+      para = []
+    }
+  }
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (!line) {
+      flushPara()
+      continue
+    }
+    const h = /^(#{1,3})\s+(.*)$/.exec(line)
+    if (h) {
+      flushPara()
+      blocks.push({ type: 'h', level: h[1].length, text: h[2] })
+      continue
+    }
+    const ol = /^\d+[.)]\s+(.*)$/.exec(line)
+    if (ol) {
+      flushPara()
+      const last = blocks[blocks.length - 1]
+      if (last && last.type === 'ol') last.items.push(ol[1])
+      else blocks.push({ type: 'ol', items: [ol[1]] })
+      continue
+    }
+    const ul = /^[-*•]\s+(.*)$/.exec(line)
+    if (ul) {
+      flushPara()
+      const last = blocks[blocks.length - 1]
+      if (last && last.type === 'ul') last.items.push(ul[1])
+      else blocks.push({ type: 'ul', items: [ul[1]] })
+      continue
+    }
+    para.push(line)
+  }
+  flushPara()
+  return blocks
+}
+
+export function RichText({ text }: { text: string }) {
+  const blocks = parseBlocks(text)
+  return (
+    <div className="space-y-2 text-sm leading-relaxed">
+      {blocks.map((b, i) => {
+        if (b.type === 'h') {
+          const cls =
+            b.level === 1
+              ? 'font-headline font-extrabold text-base'
+              : 'font-headline font-bold text-sm'
+          return (
+            <p key={i} className={cls}>
+              {renderInline(b.text)}
+            </p>
+          )
+        }
+        if (b.type === 'ol') {
+          return (
+            <ol key={i} className="list-decimal pl-5 space-y-1">
+              {b.items.map((it, j) => (
+                <li key={j}>{renderInline(it)}</li>
+              ))}
+            </ol>
+          )
+        }
+        if (b.type === 'ul') {
+          return (
+            <ul key={i} className="list-disc pl-5 space-y-1">
+              {b.items.map((it, j) => (
+                <li key={j}>{renderInline(it)}</li>
+              ))}
+            </ul>
+          )
+        }
+        return <p key={i}>{renderInline(b.text)}</p>
+      })}
+    </div>
+  )
+}
