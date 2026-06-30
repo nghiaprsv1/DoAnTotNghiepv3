@@ -137,13 +137,26 @@ export async function runRagAgent(opts: {
   // Chỉ thị TẠO lộ trình: khi Router nhận diện user muốn lập lộ trình mới, ép agent
   // đi đúng quy trình create_itinerary (gom dữ liệu thật trước, rồi dựng) thay vì
   // chỉ liệt kê chuyến có sẵn bằng search_trips.
-  const itineraryDirective =
-    wantsItinerary && !(draft && draft.title)
-      ? `\n\nLƯU Ý ĐIỀU HƯỚNG: Người dùng muốn TẠO/LÊN một lộ trình MỚI. Hãy: (1) gọi search_places` +
+  let itineraryDirective = '';
+  if (wantsItinerary && !(draft && draft.title)) {
+    if (daysSpecified === false) {
+      // Muốn tạo lộ trình NHƯNG chưa nêu số ngày → HỎI THẲNG số ngày + ngày khởi
+      // hành. TUYỆT ĐỐI không gọi search_places/search_documents/create_itinerary
+      // và KHÔNG liệt kê lại địa điểm (các địa điểm đã có ở lượt trước trong
+      // lịch sử) — tránh lặp nội dung thừa.
+      itineraryDirective =
+        `\n\nLƯU Ý ĐIỀU HƯỚNG: Người dùng muốn TẠO lộ trình nhưng CHƯA cho biết số ngày.` +
+        ` HÃY HỎI NGẮN GỌN số ngày dự định đi và ngày khởi hành. TUYỆT ĐỐI KHÔNG gọi bất kỳ` +
+        ` tool nào (không search_places, không search_documents, không create_itinerary) và` +
+        ` KHÔNG liệt kê lại các địa điểm đã nêu ở lượt trước. Chỉ hỏi đúng một câu về số ngày + ngày đi.`;
+    } else {
+      itineraryDirective =
+        `\n\nLƯU Ý ĐIỀU HƯỚNG: Người dùng muốn TẠO/LÊN một lộ trình MỚI. Hãy: (1) gọi search_places` +
         ` và/hoặc search_documents để lấy địa điểm/đặc sản THẬT của điểm đến; (2) sau đó BẮT BUỘC gọi` +
         ` create_itinerary với "request" là yêu cầu nguyên văn và "context" là tóm tắt dữ liệu thật vừa thu` +
-        ` thập. ĐỪNG chỉ dừng ở việc liệt kê chuyến có sẵn — phải dựng lộ trình chi tiết theo ngày.`
-      : '';
+        ` thập. ĐỪNG chỉ dừng ở việc liệt kê chuyến có sẵn — phải dựng lộ trình chi tiết theo ngày.`;
+    }
+  }
 
   const messages: AgentMessage[] = [
     ...priorTurns,
