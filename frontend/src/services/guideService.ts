@@ -2,7 +2,7 @@ import axiosInstance from './axiosInstance'
 import { unwrap, unwrapList } from './unwrap'
 import type { ApiResponse, PaginatedResponse } from '@types/common'
 import type { HireableGuide } from '@types/trip'
-import type { GuideTourHistory } from '@types/guideDashboard'
+import type { GuideTourHistory, GuideUnavailability } from '@types/guideDashboard'
 
 interface BackendGuide {
   id: string
@@ -88,6 +88,32 @@ export const guideService = {
       `/guides/${id}/tour-history`,
     )
     return unwrap(res)
+  },
+
+  /** Ngày nghỉ HDV tự đánh dấu — của chính mình. */
+  myUnavailability: async (): Promise<GuideUnavailability[]> => {
+    const res = await axiosInstance.get<ApiResponse<GuideUnavailability[]>>(
+      '/guides/me/unavailability',
+    )
+    return unwrap(res)
+  },
+
+  /** Thêm 1 khoảng ngày nghỉ. */
+  addUnavailability: async (body: {
+    startDate: string
+    endDate: string
+    note?: string
+  }): Promise<GuideUnavailability> => {
+    const res = await axiosInstance.post<ApiResponse<GuideUnavailability>>(
+      '/guides/me/unavailability',
+      body,
+    )
+    return unwrap(res)
+  },
+
+  /** Gỡ 1 khoảng ngày nghỉ. */
+  removeUnavailability: async (id: string): Promise<void> => {
+    await axiosInstance.delete(`/guides/me/unavailability/${id}`)
   },
 
   apply: async (body: {

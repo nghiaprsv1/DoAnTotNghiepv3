@@ -29,7 +29,7 @@ function renderInline(text: string) {
 type Block =
   | { type: 'h'; level: number; text: string }
   | { type: 'ul'; items: string[] }
-  | { type: 'ol'; items: string[] }
+  | { type: 'ol'; start: number; items: string[] }
   | { type: 'p'; text: string }
 
 /** Gom các dòng thành block (đoạn / danh sách / tiêu đề). */
@@ -67,12 +67,18 @@ function parseBlocks(src: string): Block[] {
       blocks.push({ type: 'h', level: h[1].length, text: h[2] })
       continue
     }
-    const ol = /^\d+[.)]\s+(.*)$/.exec(line)
+    const ol = /^(\d+)[.)]\s+(.*)$/.exec(line)
     if (ol) {
       flushPara()
+      const num = Number(ol[1])
       const last = blocks[blocks.length - 1]
-      if (last && last.type === 'ol') last.items.push(ol[1])
-      else blocks.push({ type: 'ol', items: [ol[1]] })
+      // Gộp vào ol trước NẾU số tiếp nối liền mạch; ngược lại mở ol mới giữ
+      // đúng số gốc (start) — tránh mọi mục bị reset về "1.".
+      if (last && last.type === 'ol' && num === last.start + last.items.length) {
+        last.items.push(ol[2])
+      } else {
+        blocks.push({ type: 'ol', start: num, items: [ol[2]] })
+      }
       continue
     }
     const ul = /^[-*•]\s+(.*)$/.exec(line)
@@ -107,7 +113,7 @@ export function RichText({ text }: { text: string }) {
         }
         if (b.type === 'ol') {
           return (
-            <ol key={i} className="list-decimal pl-5 space-y-1">
+            <ol key={i} start={b.start} className="list-decimal pl-5 space-y-1">
               {b.items.map((it, j) => (
                 <li key={j}>{renderInline(it)}</li>
               ))}

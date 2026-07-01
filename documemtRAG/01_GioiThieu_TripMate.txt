@@ -1,0 +1,19 @@
+GIỚI THIỆU VỀ TRIPMATE
+
+PHẦN A — TRIPMATE LÀ GÌ
+TripMate (còn gọi là TravelSocial) là nền tảng mạng xã hội du lịch của Việt Nam, kết hợp giữa việc đặt và khám phá chuyến đi, thuê hướng dẫn viên địa phương và tìm hiểu địa điểm du lịch theo 63 tỉnh thành. Khác với một website đặt tour thông thường, TripMate đặt cộng đồng người đi du lịch làm trung tâm: mỗi người dùng vừa có thể là người tổ chức chuyến đi, vừa là người tham gia, vừa là người chia sẻ trải nghiệm cho người khác. Mục tiêu của TripMate là giúp mọi chuyến đi được lên kế hoạch dễ dàng, an toàn, tiết kiệm và có thể chia sẻ cùng cộng đồng.
+
+PHẦN B — TRIPMATE GIẢI QUYẾT VẤN ĐỀ GÌ
+Lập kế hoạch cho một chuyến đi thường gặp nhiều khó khăn: khó tìm bạn đồng hành hợp gu, khó biết địa điểm nào đáng đi và đi vào mùa nào, khó tìm hướng dẫn viên đáng tin cậy, và khó quản lý chi phí. TripMate gom tất cả các bước này về một nơi. Bạn có thể tìm chuyến đi do người khác tổ chức để tham gia thay vì đi một mình, xem địa điểm kèm đánh giá thật từ cộng đồng, thuê hướng dẫn viên đã được kiểm duyệt hồ sơ, và thanh toán an toàn qua ví điện tử tích hợp. Trợ lý AI của TripMate còn giúp bạn dựng sẵn lộ trình theo điểm đến, số ngày và ngân sách.
+
+PHẦN C — DÀNH CHO AI
+TripMate phục vụ ba nhóm người dùng chính. Thứ nhất là khách du lịch (traveler): những người muốn tìm chuyến đi, khám phá địa điểm, thuê hướng dẫn viên và chia sẻ trải nghiệm. Thứ hai là hướng dẫn viên (HDV): những người địa phương am hiểu vùng đất của mình, muốn nhận khách và kiếm thu nhập từ việc dẫn tour. Thứ ba là quản trị viên (admin): người vận hành nền tảng, duyệt hồ sơ HDV, kiểm duyệt nội dung và xử lý các yêu cầu rút tiền. Mỗi nhóm có những tính năng và quyền hạn riêng phù hợp với vai trò của mình.
+
+PHẦN D — CÁC NHÓM TÍNH NĂNG CHÍNH
+TripMate có sáu nhóm tính năng lớn. Một là Chuyến đi: tìm, lọc, tham gia và tự tạo chuyến đi nhóm kèm lịch trình chi tiết từng ngày. Hai là Địa điểm: kho dữ liệu điểm du lịch theo 63 tỉnh thành, phân loại theo biển, núi, văn hoá, ẩm thực, thành phố, đảo, thiên nhiên, di tích lịch sử và phiêu lưu. Ba là Hướng dẫn viên: tìm và thuê HDV địa phương theo khu vực, chuyên môn, ngôn ngữ và lịch rảnh. Bốn là Mạng xã hội: bảng tin chia sẻ bài viết, ảnh, theo dõi người dùng và trò chuyện thời gian thực. Năm là Ví điện tử: nạp tiền qua SePay, thanh toán dịch vụ và rút tiền cho HDV. Sáu là Trợ lý AI: gợi ý chuyến đi cá nhân hoá và dựng lộ trình tự động.
+
+PHẦN E — ĐIỂM KHÁC BIỆT
+Điểm khác biệt lớn nhất của TripMate là tính cộng đồng và dữ liệu thật. Đánh giá và số sao của địa điểm, chuyến đi và hướng dẫn viên đều được tính từ review thật của người dùng chứ không phải con số quảng cáo. Hệ thống gợi ý chuyến đi dựa trên ba yếu tố kết hợp: mức độ phù hợp với sở thích cá nhân, lịch sử tương tác của bạn, và độ phổ biến của chuyến đi trong cộng đồng. Trợ lý AI chỉ giới thiệu địa danh và đặc sản có trong dữ liệu thật của hệ thống, không bịa thông tin. Nhờ vậy, mọi thông tin bạn nhận được trên TripMate đều đáng tin cậy và phản ánh đúng trải nghiệm thực tế.
+
+PHẦN F — NỀN TẢNG VÀ TRUY CẬP
+TripMate là một ứng dụng web chạy trên trình duyệt, có giao diện thân thiện trên cả máy tính và điện thoại. Sản phẩm hướng tới thị trường Việt Nam với toàn bộ nội dung bằng tiếng Việt. Bạn chỉ cần một tài khoản đã xác thực email là có thể bắt đầu sử dụng đầy đủ các tính năng. Một số tính năng như xem chuyến đi, địa điểm, hồ sơ hướng dẫn viên và bảng tin mở cho cả khách chưa đăng nhập, nhưng để tham gia chuyến, tạo chuyến, nhắn tin, thuê HDV hay sử dụng ví thì bạn cần đăng nhập.

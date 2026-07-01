@@ -85,7 +85,27 @@ export function BookingPanel({ guide, guideUserId }: Props) {
   )
   const dateMin = selectedTrip?.startDate ?? new Date().toISOString().slice(0, 10)
   const dateMax = selectedTrip?.endDate
-  const tripDurationDays = selectedTrip?.durationDays ?? 14
+
+  // Số ngày TỐI ĐA có thể thuê = số ngày CÒN LẠI của chuyến tính TỪ ngày bắt
+  // đầu thuê (inclusive) đến ngày kết thúc chuyến. Khi user chọn ngày thuê
+  // khác ngày khởi hành, biên này co lại theo (vd chuyến 5 ngày, thuê từ giữa
+  // chuyến → chỉ còn vài ngày). Không gắn chuyến → cho tối đa 14 ngày như cũ.
+  const maxDurationDays = useMemo(() => {
+    if (!selectedTrip?.endDate) return 14
+    const from = startDate || selectedTrip.startDate
+    const start = new Date(from)
+    const end = new Date(selectedTrip.endDate)
+    const diff = Math.floor((end.getTime() - start.getTime()) / 86_400_000) + 1
+    return Math.max(1, diff)
+  }, [selectedTrip, startDate])
+
+  // Danh sách lựa chọn số ngày: các mốc đẹp ≤ max, đảm bảo luôn có đúng giá
+  // trị max (vd max=6 không nằm trong preset thì vẫn cho chọn 6).
+  const dayOptions = useMemo(() => {
+    const presets = [1, 2, 3, 4, 5, 7, 10, 14].filter((n) => n <= maxDurationDays)
+    if (!presets.includes(maxDurationDays)) presets.push(maxDurationDays)
+    return presets.sort((a, b) => a - b)
+  }, [maxDurationDays])
 
   // Reset / clamp date when the chosen trip changes so the picker is never
   // outside the trip range.
@@ -99,6 +119,16 @@ export function BookingPanel({ guide, guideUserId }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId])
+
+  // Khi đổi ngày bắt đầu thuê (hoặc đổi chuyến), nếu số ngày đang chọn vượt
+  // số ngày còn lại của chuyến thì kéo về đúng biên — tránh chọn lố rồi mới
+  // báo lỗi lúc submit.
+  useEffect(() => {
+    if (durationDays > maxDurationDays) {
+      setDurationDays(maxDurationDays)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maxDurationDays])
 
   const totalAmount = useMemo(
     () => Math.max(0, durationDays) * Math.max(0, guide.pricePerDay),
@@ -300,17 +330,21 @@ export function BookingPanel({ guide, guideUserId }: Props) {
                 onChange={(e) => setDurationDays(Number(e.target.value))}
                 className="w-full bg-surface-container-low rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
               >
-                {[1, 2, 3, 4, 5, 7, 10, 14]
-                  .filter((n) => n <= tripDurationDays)
-                  .map((n) => (
-                    <option key={n} value={n}>
-                      {n} ngày
-                    </option>
-                  ))}
+                {dayOptions.map((n) => (
+                  <option key={n} value={n}>
+                    {n} ngày
+                  </option>
+                ))}
               </select>
             }
           />
         </div>
+        {selectedTrip && (
+          <p className="text-[11px] text-on-surface-variant -mt-2 mb-3 flex items-center gap-1">
+            <Icon name="info" size={12} />
+            Tối đa {maxDurationDays} ngày còn lại của chuyến tính từ ngày bạn chọn.
+          </p>
+        )}
         {overlapsBusy && (
           <p className="text-[11px] text-error -mt-2 mb-3 flex items-center gap-1">
             <Icon name="event_busy" size={12} />

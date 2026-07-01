@@ -214,6 +214,9 @@ export class TripsService {
   }
 
   async create(creatorId: string, dto: CreateTripDto): Promise<Trip> {
+    // Buộc dữ liệu ngày hợp lệ: bắt buộc có start/end cụ thể, end >= start,
+    // và đồng bộ durationDays theo khoảng ngày thực (số ngày bao gồm 2 đầu).
+    this.normalizeDates(dto);
     // Business rule: a user can't be on two trips at once. Reject creation when
     // the new trip's [startDate, endDate] overlaps any trip the user already
     // created or joined (excluding cancelled ones).
@@ -258,6 +261,37 @@ export class TripsService {
       .catch(() => undefined);
 
     return fresh;
+  }
+
+  /**
+   * Buộc dữ liệu ngày của chuyến đi hợp lệ trước khi lưu (create/update).
+   * - start_date & end_date phải là ngày cụ thể hợp lệ.
+   * - end_date không được trước start_date.
+   * - durationDays luôn = số ngày thực (bao gồm cả 2 đầu), bỏ qua giá trị FE
+   *   gửi lên nếu lệch để DB không bao giờ có duration âm/sai.
+   * Mutate trực tiếp object truyền vào.
+   */
+  private normalizeDates(dto: {
+    startDate: string;
+    endDate: string;
+    durationDays?: number;
+  }): void {
+    const start = new Date(dto.startDate);
+    const end = new Date(dto.endDate);
+    if (!dto.startDate || isNaN(start.getTime())) {
+      throw new BadRequestException('Ngày bắt đầu không hợp lệ.');
+    }
+    if (!dto.endDate || isNaN(end.getTime())) {
+      throw new BadRequestException('Ngày kết thúc không hợp lệ.');
+    }
+    // So sánh theo ngày (bỏ giờ) cho ổn định múi giờ.
+    const startDay = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+    const endDay = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+    if (endDay < startDay) {
+      throw new BadRequestException('Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.');
+    }
+    const realDays = Math.round((endDay - startDay) / 86_400_000) + 1;
+    dto.durationDays = realDays;
   }
 
   /**
@@ -306,6 +340,18 @@ export class TripsService {
   async update(id: string, userId: string, dto: UpdateTripDto): Promise<Trip> {
     const trip = await this.findById(id);
     if (trip.creatorId !== userId) throw new ForbiddenException('Only creator can update');
+    // Khi sửa ngày: gộp giá trị cũ + mới rồi validate (end >= start, đồng bộ duration).
+    if (dto.startDate || dto.endDate || dto.durationDays != null) {
+      const merged = {
+        startDate: dto.startDate ?? trip.startDate,
+        endDate: dto.endDate ?? trip.endDate,
+        durationDays: dto.durationDays ?? trip.durationDays,
+      };
+      this.normalizeDates(merged);
+      dto.startDate = merged.startDate;
+      dto.endDate = merged.endDate;
+      dto.durationDays = merged.durationDays;
+    }
     Object.assign(trip, dto);
     await this.trips.save(trip);
     const fresh = await this.findById(id);
@@ -640,9 +686,12 @@ export class TripsService {
    *   final = 0.3 * match + 0.3 * interaction + 0.4 * hot
    *
    * Trong đó:
-   *  - match       : độ hợp sở thích — chuẩn hoá TUYỆT ĐỐI theo 3 tiêu chí
-   *                  (category / tag / province), mỗi tiêu chí khớp = 1/3.
-   *                  Khớp 1 ≈ 0.33, 2 ≈ 0.67, cả 3 = 1.0.
+   *  - match       : độ hợp sở thích (Content-based) — COSINE SIMILARITY giữa
+   *                  vector sở thích user và vector đặc trưng chuyến, mỗi chiều
+   *                  là một token (category / tag / tỉnh) gắn trọng số TF-IDF.
+   *                  Token hiếm (vd 1 tỉnh ít chuyến) có IDF cao → đóng góp nhiều
+   *                  hơn token phổ biến. Cosine ∈ [0,1] (vector không âm), tự
+   *                  chuẩn hoá theo độ dài nên chuyến "nhồi nhiều tag" không lợi thế.
    *  - interaction : tương tác của CHÍNH user với chuyến — views, clicks, favorite, request.
    *                  (min–max chuẩn hoá về [0,1] trên tập ứng viên).
    *  - hot         : độ hot toàn hệ thống — view_count, click_count, request_count, member.
@@ -728,33 +777,98 @@ export class TripsService {
       hotRaw: number;
       reasons: string[];
     };
-    // MATCH chuẩn hoá TUYỆT ĐỐI: 3 tiêu chí (category / tag / province), mỗi
-    // tiêu chí khớp = 1/3 điểm. Khớp 1 tiêu chí ≈ 0.33, 2 ≈ 0.67, cả 3 = 1.0.
-    // (Khác min–max: điểm không phụ thuộc các chuyến khác trong danh sách.)
-    const MATCH_CRITERIA = 3;
-    const PER_CRITERION = 1 / MATCH_CRITERIA;
-    const raws: Raw[] = candidates.map((trip) => {
-      const reasons: string[] = [];
 
-      let match = 0;
+    // ── MATCH = COSINE SIMILARITY trên vector đặc trưng có trọng số TF-IDF ──
+    // Mỗi chuyến là một "tài liệu" gồm các token đặc trưng: category key, các
+    // tag, và token tỉnh (suy từ destination khớp tỉnh user thích). Trọng số mỗi
+    // token = IDF: token càng hiếm trong tập ứng viên càng quan trọng. Cosine đo
+    // góc giữa vector sở thích user và vector chuyến → tự chuẩn hoá theo độ dài.
+
+    // Token đặc trưng của một chuyến (dùng chung cho dựng từ điển + tính vector).
+    const provinceList = [...provinceTokens];
+    const tripTerms = (trip: Trip): string[] => {
+      const terms: string[] = [];
       const catKey = trip.category?.key?.toLowerCase();
-      if (catKey && prefTokens.has(catKey)) {
-        match += PER_CRITERION;
-        reasons.push(`Hợp gu ${trip.category.label}`);
-      }
-      const tagOverlap = (trip.tags ?? []).filter((t) => prefTokens.has(t.toLowerCase()));
-      if (tagOverlap.length) {
-        match += PER_CRITERION;
-        reasons.push(`Tag khớp: ${tagOverlap.slice(0, 3).join(', ')}`);
-      }
-      if (provinceTokens.size) {
-        const dest = (trip.destination ?? '').toLowerCase();
-        if ([...provinceTokens].some((p) => p && (dest.includes(p) || p.includes(dest)))) {
-          match += PER_CRITERION;
-          reasons.push(`Đúng nơi bạn thích: ${trip.destination}`);
+      if (catKey) terms.push(`cat:${catKey}`);
+      (trip.tags ?? []).forEach((t) => t && terms.push(`tag:${t.toLowerCase()}`));
+      // Token tỉnh: chỉ thêm tỉnh user quan tâm mà destination chứa (để vector
+      // user và trip cùng không gian — tỉnh ngoài sở thích không ảnh hưởng cosine).
+      const dest = (trip.destination ?? '').toLowerCase();
+      provinceList.forEach((p) => {
+        if (p && (dest.includes(p) || p.includes(dest))) terms.push(`prov:${p}`);
+      });
+      return [...new Set(terms)];
+    };
+
+    // Document frequency: mỗi token xuất hiện ở bao nhiêu chuyến ứng viên.
+    const docFreq = new Map<string, number>();
+    const termsPerTrip = candidates.map((t) => {
+      const terms = tripTerms(t);
+      new Set(terms).forEach((tk) => docFreq.set(tk, (docFreq.get(tk) ?? 0) + 1));
+      return terms;
+    });
+    const N = candidates.length;
+    // IDF làm trơn: idf = ln((1+N)/(1+df)) + 1 → luôn dương, token hiếm điểm cao.
+    const idf = (term: string): number =>
+      Math.log((1 + N) / (1 + (docFreq.get(term) ?? 0))) + 1;
+
+    // Vector sở thích user: gồm các token mà user khai (category/tag/tỉnh), trọng
+    // số TF-IDF. TF của sở thích = 1 (mỗi token khai 1 lần). Chỉ giữ token có
+    // trong từ điển ứng viên (token lạ không khớp chuyến nào → bỏ).
+    const userTermSet = new Set<string>();
+    prefTokens.forEach((tok) => {
+      if (docFreq.has(`cat:${tok}`)) userTermSet.add(`cat:${tok}`);
+      if (docFreq.has(`tag:${tok}`)) userTermSet.add(`tag:${tok}`);
+    });
+    provinceList.forEach((p) => {
+      if (docFreq.has(`prov:${p}`)) userTermSet.add(`prov:${p}`);
+    });
+    const userVec = new Map<string, number>();
+    userTermSet.forEach((tk) => userVec.set(tk, idf(tk)));
+    let userNorm = 0;
+    userVec.forEach((w) => (userNorm += w * w));
+    userNorm = Math.sqrt(userNorm);
+
+    // Cosine(user, trip) — chỉ các token CHUNG đóng góp tử số.
+    const cosineMatch = (terms: string[]): { score: number; shared: string[] } => {
+      if (userNorm === 0 || terms.length === 0) return { score: 0, shared: [] };
+      let dot = 0;
+      let tripNorm = 0;
+      const shared: string[] = [];
+      const seen = new Set<string>();
+      for (const tk of terms) {
+        if (seen.has(tk)) continue;
+        seen.add(tk);
+        const w = idf(tk); // TF=1 cho mỗi token đặc trưng của chuyến
+        tripNorm += w * w;
+        const uw = userVec.get(tk);
+        if (uw) {
+          dot += uw * w;
+          shared.push(tk);
         }
       }
-      match = Math.min(1, match);
+      tripNorm = Math.sqrt(tripNorm);
+      if (tripNorm === 0) return { score: 0, shared: [] };
+      return { score: dot / (userNorm * tripNorm), shared };
+    };
+
+    const raws: Raw[] = candidates.map((trip, ti) => {
+      const reasons: string[] = [];
+
+      // MATCH: cosine giữa vector sở thích và vector chuyến (token TF-IDF).
+      const { score: matchScore, shared } = cosineMatch(termsPerTrip[ti]);
+      const match = +Math.min(1, matchScore).toFixed(4);
+      // Lý do gợi ý suy từ các token chung (đẹp cho UI).
+      if (shared.some((s) => s.startsWith('cat:')) && trip.category?.label) {
+        reasons.push(`Hợp gu ${trip.category.label}`);
+      }
+      const sharedTags = shared
+        .filter((s) => s.startsWith('tag:'))
+        .map((s) => s.slice(4));
+      if (sharedTags.length) reasons.push(`Tag khớp: ${sharedTags.slice(0, 3).join(', ')}`);
+      if (shared.some((s) => s.startsWith('prov:'))) {
+        reasons.push(`Đúng nơi bạn thích: ${trip.destination}`);
+      }
 
       // INTERACTION: bão hoà bằng log để lượt xem/click có lợi ích giảm dần —
       // tránh việc mở/bấm 1 chuyến nhiều lần làm điểm tăng vô hạn rồi đè các
@@ -799,7 +913,7 @@ export class TripsService {
       return {
         ...r.trip,
         recommendScore,
-        recommendReasons: r.reasons,
+        recommendReasons: [...new Set(r.reasons)],
         scoreBreakdown: { match, interaction, hot },
       };
     });

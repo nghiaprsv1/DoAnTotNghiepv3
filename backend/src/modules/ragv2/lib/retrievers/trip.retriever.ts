@@ -14,7 +14,8 @@ import {
  *
  * Truy vấn có cấu trúc trên DB (KHÔNG vector): khớp destination/title/tags theo
  * cụm + token, lọc thêm theo category/giá nếu Router bóc được. Chỉ lấy chuyến
- * đã publish (không lộ draft/cancelled). Trả thẻ link tới /trips/:id.
+ * đã publish (không lộ draft/cancelled) và CHƯA khởi hành (start_date > hôm nay)
+ * — không gợi ý chuyến đang diễn ra hoặc đã hoàn thành. Trả thẻ link tới /trips/:id.
  */
 @Injectable()
 export class TripRetriever implements RagRetriever {
@@ -30,7 +31,11 @@ export class TripRetriever implements RagRetriever {
     const qb = this.trips
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.category', 'cat')
-      .where('t.status = :st', { st: TripStatus.PUBLISHED });
+      .where('t.status = :st', { st: TripStatus.PUBLISHED })
+      // Chỉ gợi ý chuyến SẮP DIỄN RA (chưa khởi hành). Bỏ chuyến đang diễn ra
+      // (start_date <= hôm nay <= end_date) và đã hoàn thành (end_date đã qua):
+      // status DB luôn 'published' nên trạng thái thực tế phải suy ra từ ngày.
+      .andWhere('t.start_date > CURRENT_DATE');
 
     // Chế độ liệt kê: bỏ điều kiện khớp text, chỉ lọc category/giá + xếp rating.
     if (!filters.browse) {

@@ -80,6 +80,11 @@ services:
         value: tripmate-e062f.firebasestorage.app
       - key: FIREBASE_SERVICE_ACCOUNT_JSON
         sync: false
+      # ── Cloudinary (lưu ảnh — miễn phí, không cần thẻ; ưu tiên hơn Firebase) ──
+      - key: CLOUDINARY_URL
+        sync: false # cloudinary://<key>:<secret>@<cloud_name> — nhập tay trong Dashboard
+      - key: CLOUDINARY_FOLDER
+        value: tripmate
       # ── SePay (thanh toán) ──
       - key: SEPAY_BANK_ACCOUNT
         sync: false

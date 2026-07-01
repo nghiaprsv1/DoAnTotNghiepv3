@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GuideProfile } from './entities/guide-profile.entity';
 import { GuideBooking } from './entities/guide-booking.entity';
+import { GuideUnavailability } from './entities/guide-unavailability.entity';
 import { Wallet } from './entities/wallet.entity';
 import { WalletTransaction } from './entities/wallet-transaction.entity';
 import { User } from '@/modules/user/entities/user.entity';
@@ -18,6 +19,7 @@ import { SavedModule } from '@/modules/saved/saved.module';
     TypeOrmModule.forFeature([
       GuideProfile,
       GuideBooking,
+      GuideUnavailability,
       Wallet,
       WalletTransaction,
       User,

@@ -1,0 +1,66 @@
+CHÍNH SÁCH VÀ ĐIỀU KHOẢN SỬ DỤNG TRIPMATE
+
+PHẦN A — ĐIỀU KHOẢN CHUNG
+
+1. Chấp nhận điều khoản
+Khi đăng ký và sử dụng TripMate, bạn đồng ý tuân thủ các điều khoản và chính sách được nêu trong tài liệu này. TripMate là nền tảng kết nối cộng đồng du lịch, hỗ trợ tìm chuyến đi, thuê hướng dẫn viên, khám phá địa điểm và chia sẻ trải nghiệm. Bạn phải cung cấp thông tin chính xác khi đăng ký và chịu trách nhiệm cho mọi hoạt động dưới tài khoản của mình.
+
+2. Điều kiện tài khoản
+Mỗi tài khoản phải gắn với một địa chỉ email có thật và được xác thực bằng mã OTP trước khi đăng nhập. Bạn có trách nhiệm giữ bí mật mật khẩu. Tài khoản có thể bị khoá nếu vi phạm điều khoản, cung cấp thông tin sai lệch hoặc có hành vi gây hại cho cộng đồng. Quản trị viên có quyền khoá hoặc mở khoá tài khoản khi cần.
+
+PHẦN B — CHÍNH SÁCH NỘI DUNG
+
+3. Quy tắc đăng nội dung
+Khi đăng bài viết, ảnh, đánh giá hoặc bình luận, bạn cam kết nội dung là của mình hoặc bạn có quyền sử dụng, không vi phạm bản quyền, không chứa thông tin sai sự thật, lừa đảo, kích động thù ghét, bạo lực hay nội dung phản cảm. Đánh giá phải phản ánh trải nghiệm thật. Nội dung vi phạm có thể bị gỡ và tài khoản liên quan có thể bị xử lý.
+
+4. Kiểm duyệt
+Quản trị viên có quyền kiểm duyệt và gỡ bỏ bài viết, chuyến đi, địa điểm hoặc đánh giá vi phạm quy tắc nội dung. Với các chuyến đi vi phạm, quản trị viên có thể huỷ chuyến và hệ thống sẽ thông báo cho thành viên kèm lý do.
+
+PHẦN C — CHÍNH SÁCH ĐẶT VÀ THANH TOÁN HƯỚNG DẪN VIÊN
+
+5. Quy trình đặt
+Khi khách gửi yêu cầu đặt hướng dẫn viên, HDV có quyền chấp nhận hoặc từ chối. Nếu chấp nhận, booking chuyển sang trạng thái chờ thanh toán. Khách phải hoàn tất thanh toán trong vòng 24 giờ kể từ khi HDV chấp nhận; quá thời hạn này booking tự động hết hạn và bị huỷ.
+
+6. Giữ tiền và quyết toán
+Khi khách thanh toán, số tiền được trừ khỏi ví khách và giữ tạm (đóng băng) phía hướng dẫn viên, chưa được rút ngay. Tiền chỉ được quyết toán cho HDV sau khi khách xác nhận tour hoàn thành. Khi quyết toán, nền tảng thu phí hoa hồng 10% trên giá trị booking, phần còn lại được chuyển vào số dư khả dụng của HDV.
+
+7. Chính sách huỷ booking
+Cả khách và hướng dẫn viên đều có thể huỷ một booking đã xác nhận. Nếu hướng dẫn viên huỷ, khách được hoàn 100% số tiền đã thanh toán và HDV không bị phạt. Nếu khách huỷ, chính sách phụ thuộc thời điểm: huỷ sớm (trước 48 giờ tính đến ngày bắt đầu tour) được hoàn toàn bộ; huỷ trễ (trong vòng 48 giờ trước ngày bắt đầu) sẽ bị giữ lại 20% giá trị booking để bù cho hướng dẫn viên, phần còn lại được hoàn về ví khách. Khi booking bị huỷ, hệ thống tự giải phóng lịch của hướng dẫn viên để họ có thể nhận tour khác.
+
+8. Giải phóng lịch và xung đột
+Lịch bận của hướng dẫn viên được tổng hợp từ booking đang hoạt động, các chuyến đi HDV tham gia và những ngày HDV tự đăng ký nghỉ. Khách không thể đặt tour trùng với bất kỳ khoảng bận nào trong số đó. Khi một booking bị huỷ hoặc một chuyến đi bị huỷ, các ngày liên quan được giải phóng tự động và hiển thị lại là còn trống.
+
+PHẦN D — CHÍNH SÁCH VÍ VÀ RÚT TIỀN
+
+9. Nạp tiền
+Khách nạp tiền vào ví qua cổng thanh toán SePay bằng cách quét mã QR và chuyển khoản đúng nội dung gợi ý. Giao dịch chỉ được ghi nhận khi hệ thống nhận xác nhận hợp lệ từ cổng thanh toán. Số dư đã nạp chỉ dùng để thanh toán dịch vụ trong nền tảng.
+
+10. Rút tiền
+Hướng dẫn viên có thể yêu cầu rút tiền từ số dư khả dụng trong ví. Mọi yêu cầu rút tiền đều phải được quản trị viên xét duyệt trước khi tiền rời ví. Yêu cầu rút có ba trạng thái: chờ duyệt, đã duyệt và bị từ chối. Số tiền chỉ thực sự bị trừ khi yêu cầu được duyệt; nếu bị từ chối, số dư được giữ nguyên.
+
+PHẦN E — CHÍNH SÁCH CHUYẾN ĐI
+
+11. Quyền và trách nhiệm của trưởng nhóm
+Người tạo chuyến là trưởng nhóm, có quyền duyệt hoặc từ chối yêu cầu tham gia, chỉnh sửa lịch trình và huỷ chuyến. Trưởng nhóm chịu trách nhiệm về thông tin chuyến đi mình tạo. Hệ thống chặn việc tạo chuyến trùng khoảng ngày với một chuyến khác mà người dùng đang tham gia, nhằm tránh xung đột lịch cá nhân.
+
+12. Huỷ chuyến đi
+Chỉ chủ chuyến hoặc quản trị viên được huỷ chuyến, và chỉ khi chuyến chưa khởi hành; không thể huỷ chuyến đã hoàn thành hoặc đã huỷ trước đó. Khi huỷ, hệ thống lưu lý do, thông báo cho toàn bộ thành viên, giải phóng hướng dẫn viên đã thuê cho chuyến và hoàn tiền 100% cho khách của booking liên quan. Sau khi huỷ, chuyến không nhận thêm yêu cầu tham gia.
+
+PHẦN F — QUYỀN RIÊNG TƯ VÀ DỮ LIỆU
+
+13. Thông tin cá nhân
+TripMate thu thập các thông tin bạn cung cấp như họ tên, email, ảnh đại diện, sở thích du lịch và, với hướng dẫn viên, giấy tờ tuỳ thân phục vụ xét duyệt hồ sơ. Thông tin này dùng để vận hành dịch vụ, xác thực tài khoản, gợi ý chuyến đi phù hợp và đảm bảo an toàn cộng đồng.
+
+14. Bảo mật
+Mật khẩu được lưu dưới dạng mã hoá, không lưu dạng văn bản gốc. Mã OTP và token phiên đăng nhập đều được lưu dưới dạng băm (hash). Phiên đăng nhập dùng token truy cập ngắn hạn kèm token làm mới có xoay vòng để tăng an toàn. Bạn nên giữ bí mật thông tin đăng nhập và đăng xuất khi dùng thiết bị chung.
+
+15. Chia sẻ và hiển thị
+Bài viết bạn đăng có thể đặt chế độ công khai hoặc chỉ bạn bè. Một số thông tin hồ sơ và nội dung công khai có thể được người dùng khác hoặc khách xem. Đánh giá bạn để lại sẽ hiển thị công khai kèm tên và ảnh đại diện của bạn.
+
+PHẦN G — MIỄN TRỪ TRÁCH NHIỆM
+
+16. Vai trò của nền tảng
+TripMate là nền tảng trung gian kết nối người dùng với nhau và với hướng dẫn viên. Chất lượng thực tế của tour, chuyến đi và dịch vụ do người tổ chức và hướng dẫn viên cung cấp; TripMate không trực tiếp tổ chức tour. Người dùng nên trao đổi rõ ràng, kiểm tra thông tin và tuân thủ các lưu ý an toàn khi đi du lịch.
+
+17. Thay đổi điều khoản
+TripMate có thể cập nhật các điều khoản và chính sách theo thời gian để phù hợp với hoạt động của nền tảng. Việc tiếp tục sử dụng dịch vụ sau khi điều khoản thay đổi được xem là bạn chấp nhận các thay đổi đó.

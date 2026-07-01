@@ -15,16 +15,21 @@ import { randomBytes } from 'crypto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { multerOptions, UPLOAD_PATH } from './multer.config';
 import { FirebaseStorageService } from './firebase-storage.service';
+import { CloudinaryStorageService } from './cloudinary-storage.service';
 
 /**
- * Resolve a single uploaded file → public URL. Pushes to Firebase when
- * available; otherwise persists to the local `uploads/` directory and
- * returns a `/static/...` URL the FE knows how to resolve.
+ * Resolve a single uploaded file → public URL. Chooses a storage backend at
+ * runtime, in priority order: Cloudinary → Firebase → local `uploads/`
+ * (served from `/static/...`). The first enabled provider wins.
  */
 async function persistFile(
   file: Express.Multer.File,
+  cloudinary: CloudinaryStorageService,
   firebase: FirebaseStorageService,
 ): Promise<string> {
+  if (cloudinary.enabled && file.buffer) {
+    return cloudinary.uploadBuffer(file.buffer, file.originalname);
+  }
   if (firebase.enabled && file.buffer) {
     return firebase.uploadBuffer(
       file.buffer,
@@ -48,13 +53,16 @@ async function persistFile(
 @UseGuards(JwtAuthGuard)
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly firebase: FirebaseStorageService) {}
+  constructor(
+    private readonly cloudinary: CloudinaryStorageService,
+    private readonly firebase: FirebaseStorageService,
+  ) {}
 
   /** Single file → returns { url }. Storage chosen at runtime. */
   @Post('image')
   @UseInterceptors(FileInterceptor('file', multerOptions))
   async uploadOne(@UploadedFile() file: Express.Multer.File) {
-    const url = await persistFile(file, this.firebase);
+    const url = await persistFile(file, this.cloudinary, this.firebase);
     return { url };
   }
 
@@ -62,7 +70,9 @@ export class UploadController {
   @Post('images')
   @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
   async uploadMany(@UploadedFiles() files: Express.Multer.File[]) {
-    const urls = await Promise.all(files.map((f) => persistFile(f, this.firebase)));
+    const urls = await Promise.all(
+      files.map((f) => persistFile(f, this.cloudinary, this.firebase)),
+    );
     return { urls };
   }
 }

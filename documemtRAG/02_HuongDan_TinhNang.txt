@@ -1,0 +1,84 @@
+HƯỚNG DẪN SỬ DỤNG CÁC TÍNH NĂNG TRIPMATE
+
+PHẦN A — TÀI KHOẢN
+
+1. Đăng ký tài khoản
+Vào trang Đăng ký, nhập họ tên, email và mật khẩu. Sau khi gửi, hệ thống tạo tài khoản ở trạng thái chưa xác thực và gửi một mã OTP gồm 6 chữ số đến email của bạn. Tài khoản chưa thể đăng nhập cho tới khi xác thực email thành công.
+
+2. Xác thực email bằng OTP
+Mở email, lấy mã OTP 6 số và nhập vào trang Xác thực email trong vòng 15 phút kể từ khi nhận. Mỗi mã chỉ được thử tối đa 5 lần. Nếu chưa nhận được mã hoặc mã hết hạn, bấm nút Gửi lại mã; giữa hai lần gửi phải chờ 60 giây. Khi xác thực đúng, hệ thống tự đăng nhập cho bạn ngay.
+
+3. Đăng nhập và quên mật khẩu
+Sau khi đã xác thực email, dùng email và mật khẩu để đăng nhập. Nếu cố đăng nhập khi chưa xác thực, hệ thống sẽ báo lỗi và yêu cầu xác thực trước. Nếu quên mật khẩu, vào trang Quên mật khẩu để đặt lại. Phiên đăng nhập được tự động duy trì và làm mới nên bạn không phải đăng nhập lại thường xuyên.
+
+4. Hồ sơ cá nhân và sở thích
+Vào trang Chỉnh sửa hồ sơ để cập nhật ảnh đại diện, ảnh bìa, giới thiệu bản thân, địa chỉ và liên kết mạng xã hội. Tại đây bạn cũng khai báo sở thích du lịch của mình; thông tin này giúp hệ thống gợi ý chuyến đi hợp gu hơn.
+
+PHẦN B — CHUYẾN ĐI
+
+5. Tìm và lọc chuyến đi
+Vào mục Chuyến đi để xem danh sách các chuyến đang mở. Bạn có thể lọc theo điểm đến, loại hình (biển, núi, ẩm thực, văn hoá, thành phố, đảo, phiêu lưu), số ngày và mức giá. Mỗi thẻ chuyến hiển thị ảnh bìa, điểm đến, số ngày, giá từ, số sao đánh giá và trạng thái (sắp diễn ra, đang diễn ra, đã hoàn thành, đã huỷ).
+
+6. Xem chi tiết và tham gia chuyến
+Mở trang chi tiết để xem lịch trình từng ngày, danh sách thành viên, hướng dẫn viên đi kèm và chi phí. Bấm Tham gia để gửi yêu cầu; trưởng nhóm (người tạo chuyến) sẽ duyệt. Khi được chấp nhận, bạn trở thành thành viên chính thức và được thêm vào nhóm chat của chuyến. Bạn không thể tham gia chuyến đã huỷ hoặc đã kết thúc.
+
+7. Tạo chuyến đi mới
+Vào mục Tạo chuyến, nhập tiêu đề, mô tả, điểm đến, loại hình, ảnh bìa, ngày khởi hành, ngày kết thúc, số người tối đa và chi phí dự kiến. Bạn có thể thêm lịch trình chi tiết theo từng ngày, mỗi ngày gồm nhiều hoạt động kèm khung giờ. Ngày kết thúc phải sau hoặc bằng ngày bắt đầu; số ngày được hệ thống tự tính theo khoảng ngày. Hệ thống sẽ chặn việc tạo chuyến nếu bạn đang tham gia một chuyến khác trùng khoảng ngày, nhằm tránh xung đột lịch. Sau khi tạo, bạn là trưởng nhóm, có quyền duyệt yêu cầu tham gia, chỉnh sửa lịch trình và huỷ chuyến.
+
+8. Quản lý chuyến và huỷ chuyến
+Trưởng nhóm có thể chỉnh sửa lịch trình qua trình soạn lịch trình, duyệt hoặc từ chối yêu cầu tham gia, và mời thành viên vào nhóm chat. Chỉ chủ chuyến hoặc quản trị viên mới được huỷ chuyến, và chỉ khi chuyến chưa khởi hành. Khi huỷ, hệ thống thông báo cho mọi thành viên kèm lý do, đồng thời tự giải phóng hướng dẫn viên đã thuê cho chuyến đó và hoàn tiền cho khách. Trang cá nhân chia chuyến của bạn thành ba nhóm: Đang tham gia, Đã hoàn thành và Đã huỷ.
+
+9. Trò chuyện nhóm trong chuyến
+Mỗi chuyến đi có một nhóm chat riêng chỉ dành cho thành viên và trưởng nhóm. Nhóm chat được nhúng ngay trong trang chi tiết chuyến và cập nhật tin nhắn theo thời gian thực, giúp cả nhóm trao đổi kế hoạch trước và trong chuyến. Người không phải thành viên không thể xem nội dung nhóm chat này.
+
+PHẦN C — ĐỊA ĐIỂM
+
+10. Khám phá địa điểm du lịch
+Mục Địa điểm cho phép duyệt các điểm du lịch theo tỉnh thành và theo danh mục như biển, núi, văn hoá, ẩm thực, thành phố, đảo, thiên nhiên, di tích lịch sử và phiêu lưu. Mỗi địa điểm có mô tả chi tiết, hình ảnh, đánh giá thật từ cộng đồng, giá vé tham khảo và các điểm nổi bật. Số sao và số lượt đánh giá được tính từ review thật, hiển thị "Chưa có đánh giá" khi địa điểm mới chưa ai đánh giá.
+
+11. Đánh giá địa điểm
+Tại trang chi tiết địa điểm, bạn có thể viết đánh giá kèm số sao, thích và trả lời đánh giá của người khác. Khi bạn gửi hoặc xoá đánh giá, số sao trung bình và số lượt đánh giá của địa điểm được tính lại ngay lập tức. Bạn cũng có thể lưu địa điểm yêu thích để xem lại sau.
+
+PHẦN D — HƯỚNG DẪN VIÊN
+
+12. Tìm và thuê hướng dẫn viên
+Vào mục Hướng dẫn viên để tìm HDV địa phương theo khu vực, chuyên môn và ngôn ngữ. Mỗi HDV có hồ sơ gồm kinh nghiệm, đánh giá thật từ khách, số tour đã hoàn thành, giá theo ngày và tình trạng nhận khách (đang rảnh, bận, kín lịch). Trang chi tiết HDV có tab Lịch làm việc hiển thị những ngày HDV đã bận. Bạn có thể đặt lịch với HDV và, nếu muốn, gắn booking với một chuyến đi sắp diễn ra mà bạn đang tham gia.
+
+13. Quy trình đặt và thanh toán HDV
+Khi bạn gửi yêu cầu đặt, HDV sẽ nhận thông báo và quyết định chấp nhận hay từ chối. Nếu HDV chấp nhận, booking chuyển sang trạng thái chờ thanh toán; bạn cần thanh toán trong vòng 24 giờ, nếu quá hạn booking sẽ tự hết hạn. Sau khi thanh toán, tiền được giữ tạm (đóng băng) và HDV được gắn vào chuyến đi. Khi tour hoàn tất, bạn xác nhận hoàn thành để hệ thống quyết toán tiền cho HDV. Theo dõi mọi booking trong mục Đặt chỗ của tôi.
+
+14. Trở thành hướng dẫn viên
+Nếu bạn muốn làm HDV, vào mục Đăng ký làm HDV và nộp hồ sơ gồm khu vực hoạt động, chuyên môn, ngôn ngữ, kinh nghiệm, giá theo ngày và giấy tờ tuỳ thân (số căn cước, ảnh căn cước, ảnh chứng chỉ). Quản trị viên sẽ xét duyệt. Khi được duyệt, bạn có quyền truy cập Trang quản lý HDV.
+
+15. Trang quản lý hướng dẫn viên
+Trang quản lý HDV có các mục: Tổng quan, Doanh thu, Đặt chỗ, Lịch làm việc, Tour của tôi, Đánh giá và Hồ sơ HDV. Mục Lịch làm việc cho phép bạn xem lịch bận tổng hợp và tự đánh dấu ngày nghỉ: chọn ngày bắt đầu rồi ngày kết thúc để đăng ký một khoảng nghỉ. Ngày nghỉ tự đánh dấu hiển thị màu cam và có thể gỡ; ngày bận vì booking hoặc chuyến đi hiển thị màu đỏ và do hệ thống quản lý. Khi bạn đã đăng ký nghỉ một khoảng ngày, khách sẽ không thể đặt tour trùng khoảng đó. Bạn không thể đăng ký nghỉ vào ngày đã có booking đang hoạt động.
+
+PHẦN E — VÍ ĐIỆN TỬ
+
+16. Ví và nạp tiền qua SePay
+Mục Ví hiển thị số dư và lịch sử giao dịch. Để nạp tiền, bạn chọn nạp qua cổng SePay, quét mã QR ngân hàng và chuyển khoản đúng nội dung gợi ý. Sau khi ngân hàng xác nhận, hệ thống tự động ghi nhận và cộng tiền vào ví. Số dư trong ví dùng để thanh toán các dịch vụ như đặt HDV.
+
+17. Rút tiền (dành cho HDV)
+Hướng dẫn viên có thể tạo yêu cầu rút tiền từ ví. Yêu cầu rút sẽ được quản trị viên duyệt; bạn xem trạng thái (chờ duyệt, đã duyệt, từ chối) trong lịch sử rút tiền. Tiền chỉ thực sự rời ví khi yêu cầu được duyệt.
+
+PHẦN F — MẠNG XÃ HỘI VÀ TIN NHẮN
+
+18. Bảng tin và bài viết
+Mục Bảng tin (Social) là nơi cộng đồng chia sẻ bài viết, hình ảnh và trải nghiệm du lịch. Bạn có thể đăng bài kèm ảnh, gắn thẻ, đặt chế độ hiển thị công khai hoặc chỉ bạn bè, thích và bình luận bài viết của người khác, và lưu bài để đọc lại. Bạn cũng có thể theo dõi người dùng khác, xem trang cá nhân, danh sách người theo dõi và đang theo dõi.
+
+19. Tin nhắn trực tiếp
+Mục Tin nhắn cho phép trò chuyện thời gian thực với thành viên khác hoặc trong nhóm chuyến đi. Tin nhắn cập nhật ngay lập tức nhờ kết nối thời gian thực, phù hợp để trao đổi kế hoạch trước và trong chuyến đi.
+
+PHẦN G — TRỢ LÝ AI VÀ TIỆN ÍCH
+
+20. Trợ lý AI và gợi ý lộ trình
+TripMate có trợ lý du lịch AI giúp tìm chuyến phù hợp và gợi ý lộ trình mới dựa trên điểm đến, số ngày, ngân sách và sở thích. Khi trợ lý đề xuất một lộ trình, bạn có thể yêu cầu thay địa điểm, chốt ngày và số người, rồi bấm Tạo chuyến để biến lộ trình thành một chuyến đi thật. Trợ lý chỉ dùng địa danh và đặc sản có trong dữ liệu thật của hệ thống nên thông tin đáng tin cậy.
+
+21. Gợi ý chuyến đi cá nhân hoá
+Hệ thống gợi ý chuyến đi cho bạn dựa trên ba yếu tố kết hợp: mức độ phù hợp với sở thích bạn khai báo, lịch sử tương tác của bạn (các chuyến bạn xem và quan tâm), và độ phổ biến của chuyến trong cộng đồng. Cập nhật sở thích trong phần Chỉnh sửa hồ sơ để nhận gợi ý hợp gu hơn.
+
+22. Lưu mục yêu thích
+Hầu hết thẻ chuyến đi, hướng dẫn viên và bài viết đều có nút lưu hình trái tim. Những mục đã lưu được gom trong trang cá nhân ở tab Đã lưu, chia thành ba nhóm: Chuyến đi, Hướng dẫn viên và Bài viết.
+
+23. Thông báo
+Mục Thông báo tập hợp các sự kiện liên quan đến bạn: yêu cầu tham gia chuyến, kết quả duyệt, cập nhật chuyến đi, booking mới, booking bị huỷ và các thông báo hệ thống. Bạn có thể đánh dấu đã đọc và xem số thông báo chưa đọc.

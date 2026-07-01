@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, EntityManager, Repository } from 'typeorm';
 import { GuideProfile, GuideStatus } from './entities/guide-profile.entity';
 import { BookingStatus, GuideBooking } from './entities/guide-booking.entity';
+import { GuideUnavailability } from './entities/guide-unavailability.entity';
 import { Wallet } from './entities/wallet.entity';
 import {
   WalletTransaction,
@@ -74,6 +75,8 @@ export class GuidesService {
   constructor(
     @InjectRepository(GuideProfile) private readonly profiles: Repository<GuideProfile>,
     @InjectRepository(GuideBooking) private readonly bookings: Repository<GuideBooking>,
+    @InjectRepository(GuideUnavailability)
+    private readonly unavailability: Repository<GuideUnavailability>,
     @InjectRepository(Wallet) private readonly wallets: Repository<Wallet>,
     @InjectRepository(WalletTransaction)
     private readonly txns: Repository<WalletTransaction>,
@@ -449,10 +452,102 @@ export class GuidesService {
       startDate: toIsoDate(r.startDate),
       endDate: toIsoDate(r.endDate ?? r.startDate),
     }));
+    // Ngày nghỉ HDV tự đánh dấu (manual block).
+    const offRows = await this.unavailability.find({
+      where: { guideId },
+      select: ['startDate', 'endDate'],
+    });
+    const offRanges = offRows.map((r) => ({
+      startDate: toIsoDate(r.startDate),
+      endDate: toIsoDate(r.endDate ?? r.startDate),
+    }));
     // Gộp thêm các khoảng bận vì chuyến đi (owner/member/guide) của tài khoản HDV.
     const profile = await this.profiles.findOne({ where: { id: guideId } });
     const tripRanges = profile ? await this.tripBusyRanges(profile.userId) : [];
-    return [...bookingRanges, ...tripRanges];
+    return [...bookingRanges, ...offRanges, ...tripRanges];
+  }
+
+  /** Hồ sơ HDV của 1 userId (chính chủ). Ném 404 nếu chưa là HDV. */
+  private async myGuideProfile(userId: string): Promise<GuideProfile> {
+    const profile = await this.profiles.findOne({ where: { userId } });
+    if (!profile) throw new NotFoundException('Bạn chưa có hồ sơ hướng dẫn viên.');
+    return profile;
+  }
+
+  /** Danh sách ngày nghỉ HDV tự đánh dấu (mới nhất trước). */
+  async listMyUnavailability(
+    userId: string,
+  ): Promise<Array<{ id: string; startDate: string; endDate: string; note?: string | null }>> {
+    const profile = await this.myGuideProfile(userId);
+    const rows = await this.unavailability.find({
+      where: { guideId: profile.id },
+      order: { startDate: 'ASC' },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      startDate: toIsoDate(r.startDate),
+      endDate: toIsoDate(r.endDate ?? r.startDate),
+      note: r.note ?? null,
+    }));
+  }
+
+  /**
+   * Thêm 1 khoảng ngày nghỉ. Chặn nếu trùng booking đang sống (pending/confirmed)
+   * — HDV phải xử lý booking đó trước, không thể tự nghỉ khi đã nhận tour.
+   */
+  async addUnavailability(
+    userId: string,
+    dto: { startDate: string; endDate: string; note?: string },
+  ): Promise<{ id: string; startDate: string; endDate: string; note?: string | null }> {
+    const profile = await this.myGuideProfile(userId);
+    const start = toIsoDate(dto.startDate);
+    const end = toIsoDate(dto.endDate || dto.startDate);
+    if (!start || !end) throw new BadRequestException('Ngày không hợp lệ.');
+    if (end < start) {
+      throw new BadRequestException('Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.');
+    }
+
+    // Chặn trùng booking đang hoạt động.
+    const ACTIVE = [
+      BookingStatus.PENDING_ACCEPTANCE,
+      BookingStatus.PENDING_PAYMENT,
+      BookingStatus.CONFIRMED,
+    ];
+    const bookingClash = await this.bookings
+      .createQueryBuilder('b')
+      .where('b.guide_id = :gid', { gid: profile.id })
+      .andWhere('b.status IN (:...st)', { st: ACTIVE })
+      .andWhere('b.start_date <= :end', { end })
+      .andWhere('COALESCE(b.end_date, b.start_date) >= :start', { start })
+      .getOne();
+    if (bookingClash) {
+      throw new BadRequestException(
+        'Bạn đã có booking trong khoảng ngày này. Hãy xử lý booking đó trước khi đăng ký nghỉ.',
+      );
+    }
+
+    const saved = await this.unavailability.save(
+      this.unavailability.create({
+        guideId: profile.id,
+        startDate: start,
+        endDate: end,
+        note: dto.note?.trim() || null,
+      }),
+    );
+    return {
+      id: saved.id,
+      startDate: toIsoDate(saved.startDate),
+      endDate: toIsoDate(saved.endDate),
+      note: saved.note ?? null,
+    };
+  }
+
+  /** Gỡ 1 khoảng ngày nghỉ của chính HDV. */
+  async removeUnavailability(userId: string, id: string): Promise<void> {
+    const profile = await this.myGuideProfile(userId);
+    const row = await this.unavailability.findOne({ where: { id, guideId: profile.id } });
+    if (!row) throw new NotFoundException('Không tìm thấy ngày nghỉ.');
+    await this.unavailability.delete({ id });
   }
 
   /**
@@ -606,6 +701,19 @@ export class GuidesService {
       );
     }
 
+    // Lớp chặn thứ 3: HDV đã tự đánh dấu nghỉ trong khoảng ngày yêu cầu.
+    const offConflict = await this.unavailability
+      .createQueryBuilder('u')
+      .where('u.guide_id = :gid', { gid: dto.guideId })
+      .andWhere('u.start_date <= :be', { be: bookingEnd })
+      .andWhere('u.end_date >= :bs', { bs: bookingStart })
+      .getOne();
+    if (offConflict) {
+      throw new BadRequestException(
+        'Hướng dẫn viên đã đăng ký nghỉ trong khoảng ngày bạn chọn. Vui lòng chọn ngày khác.',
+      );
+    }
+
     const saved = await this.bookings.save(
       this.bookings.create({
         ...dto,
@@ -695,6 +803,12 @@ export class GuidesService {
         case 'cancel': {
           if (!isGuide && !isTraveler) throw new ForbiddenException();
           await this.handleCancel(m, booking, isGuide);
+          // Gỡ HDV khỏi chuyến đi để giải phóng lịch bận. HDV chỉ được gắn vào
+          // trip sau khi CONFIRMED (attachGuideToTrip ở bước 'pay'), nên chỉ cần
+          // gỡ khi booking đã từng xác nhận thanh toán.
+          if (booking.status === BookingStatus.CONFIRMED && booking.tripId) {
+            await this.detachGuideFromTrip(m, booking.tripId, guideUserId);
+          }
           booking.status = BookingStatus.CANCELLED;
           booking.cancelReason = dto.reason;
           break;
@@ -866,6 +980,38 @@ export class GuidesService {
       }),
     );
     await tripRepo.increment({ id: tripId }, 'memberCount', 1);
+  }
+
+  /**
+   * Đảo ngược attachGuideToTrip: gỡ HDV khỏi chuyến đi khi booking bị huỷ.
+   * Xoá guide_id của trip (nếu đang trỏ về HDV này) + xoá bản ghi TripMember
+   * role GUIDE + giảm memberCount. Nếu không gỡ, tripBusyRanges vẫn coi HDV
+   * bận vì t.guide_id còn trỏ tới họ → lịch không được giải phóng.
+   * Chỉ tác động khi HDV thực sự đang gắn với chuyến (idempotent).
+   */
+  private async detachGuideFromTrip(
+    m: EntityManager,
+    tripId: string | null | undefined,
+    guideUserId: string,
+  ): Promise<void> {
+    if (!tripId) return;
+    const tripRepo = m.getRepository(Trip);
+    const memberRepo = m.getRepository(TripMember);
+
+    const trip = await tripRepo.findOne({ where: { id: tripId } });
+    if (!trip) return;
+    if (trip.guideId === guideUserId) {
+      trip.guideId = null;
+      await tripRepo.save(trip);
+    }
+
+    const member = await memberRepo.findOne({
+      where: { tripId, userId: guideUserId, role: TripMemberRole.GUIDE },
+    });
+    if (member) {
+      await memberRepo.delete({ id: member.id });
+      await tripRepo.decrement({ id: tripId }, 'memberCount', 1);
+    }
   }
 
   /* ────────────────────────── Wallet helpers ────────────────────────── */

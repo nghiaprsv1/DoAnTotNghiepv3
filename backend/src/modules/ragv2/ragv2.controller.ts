@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
   IsArray,
@@ -11,6 +11,10 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { Public } from '@/common/decorators/public.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { UserRole } from '@/common/enums/user-role.enum';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
 import { RagV2Service } from './ragv2.service';
 
 class HistoryTurnDto {
@@ -52,7 +56,8 @@ class RagIngestDto {
 
 /**
  * API cho chatbot RAG v2 — ĐỘC LẬP với module ai/chatbot hiện tại.
- * Tất cả endpoint @Public để trang thử nghiệm /chatbot-v2 dùng được không cần auth.
+ * status + ask để @Public cho trang thử nghiệm /chatbot-v2 dùng không cần auth.
+ * Riêng ingest (nạp/re-index tài liệu) CHỈ admin được gọi.
  */
 @ApiTags('RAG v2 (thử nghiệm)')
 @Controller('rag-v2')
@@ -66,8 +71,9 @@ export class RagV2Controller {
     return this.svc.status();
   }
 
-  /** Nạp / re-index tài liệu trong documemtRAG/. */
-  @Public()
+  /** Nạp / re-index tài liệu trong documemtRAG/. Chỉ admin. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Post('ingest')
   ingest(@Body() dto: RagIngestDto) {
     return this.svc.ingest(dto.files);

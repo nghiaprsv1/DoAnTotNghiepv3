@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TripMate — Tài liệu Kiến trúc &amp; Thiết kế Hệ thống</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #1a2230; --body: #33404f; --muted: #6b7787; --faint: #95a0ad;
+    --line: #e3e8ef; --line-soft: #eef1f5; --bg: #f6f8fa; --card: #ffffff;
+    --navy: #1f3a5f; --navy-soft: #2d527e; --accent: #2563a8; --accent-bg: #eef4fb;
+    --code-bg: #1b2433; --code-ink: #d6e2f0; --ok: #1f7a52; --warn: #9a6a00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--body); background: var(--bg); line-height: 1.72; font-size: 15.5px; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4 { font-family: 'IBM Plex Serif', Georgia, serif; color: var(--ink); line-height: 1.3; }
+  a { color: var(--accent); text-decoration: none; }
+  code { font-family: 'IBM Plex Mono', ui-monospace, Consolas, monospace; }
+  .shell { display: grid; grid-template-columns: 296px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  aside { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; background: var(--card); border-right: 1px solid var(--line); padding: 30px 22px; }
+  .brand { display: flex; align-items: center; gap: 11px; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+  .brand .mark { width: 34px; height: 34px; border-radius: 8px; background: var(--navy); color: #fff; display: grid; place-items: center; font-family: 'IBM Plex Serif'; font-weight: 700; font-size: 17px; }
+  .brand b { font-family: 'IBM Plex Serif'; font-size: 16px; font-weight: 700; color: var(--ink); display: block; }
+  .brand span { font-size: 11.5px; color: var(--muted); }
+  nav { counter-reset: navnum; }
+  nav a { display: flex; gap: 9px; padding: 7px 11px; border-radius: 7px; color: var(--muted); font-size: 13.5px; font-weight: 500; transition: .15s; }
+  nav a::before { counter-increment: navnum; content: counter(navnum, decimal-leading-zero); color: var(--faint); font-family: 'IBM Plex Mono'; font-size: 11.5px; font-weight: 500; flex: none; }
+  nav a:hover { background: var(--accent-bg); color: var(--accent); }
+  nav a.active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+  nav a.active::before { color: var(--accent); }
+
+  /* Main */
+  main { max-width: 880px; padding: 0 0 100px; }
+  .doc-head { background: var(--navy); color: #fff; padding: 52px 60px 44px; }
+  .doc-head .tag { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #9fc0e4; font-weight: 600; }
+  .doc-head h1 { color: #fff; font-size: 33px; font-weight: 700; margin: 14px 0 12px; max-width: 640px; }
+  .doc-head p { color: #cdd9e7; font-size: 15.5px; max-width: 600px; }
+  .doc-head .facts { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 26px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.16); }
+  .doc-head .facts div { font-size: 13px; color: #9fc0e4; }
+  .doc-head .facts b { display: block; color: #fff; font-family: 'IBM Plex Serif'; font-size: 16px; font-weight: 600; margin-top: 2px; }
+
+  .wrap { padding: 16px 60px 0; counter-reset: sec; }
+  section { padding: 34px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+  section:last-child { border-bottom: none; }
+  section > h2 { counter-increment: sec; font-size: 24px; font-weight: 700; display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  section > h2::before { content: counter(sec, decimal-leading-zero); font-family: 'IBM Plex Mono'; font-size: 16px; font-weight: 500; color: var(--accent); flex: none; }
+  section > .lead { color: var(--muted); font-size: 15px; margin: 0 0 20px 38px; font-style: italic; }
+  h3 { font-size: 17.5px; font-weight: 600; margin: 26px 0 10px; padding-left: 14px; border-left: 3px solid var(--accent); }
+  p { margin-bottom: 13px; }
+  ul, ol { margin: 0 0 14px 24px; } li { margin-bottom: 7px; }
+  strong { color: var(--ink); font-weight: 600; }
+  .inline { background: #eef1f5; color: var(--navy); padding: 1.5px 7px; border-radius: 5px; font-size: 13px; font-family: 'IBM Plex Mono'; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; margin: 6px 0 16px; }
+  .card.note { border-left: 3px solid var(--accent); background: var(--accent-bg); }
+  .card.note .t { color: var(--accent); font-weight: 700; font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 18px; font-size: 14px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  th { background: #f0f3f7; text-align: left; padding: 11px 15px; font-family: 'IBM Plex Sans'; font-weight: 600; font-size: 12.5px; letter-spacing: .03em; text-transform: uppercase; color: #54616f; }
+  td { padding: 11px 15px; border-top: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  td .inline { font-size: 12.5px; }
+
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 9px; padding: 16px 18px; overflow-x: auto; font-size: 13px; line-height: 1.7; margin: 8px 0 16px; font-family: 'IBM Plex Mono'; }
+  .c-com { color: #7d8ba0; } .c-key { color: #6db3f2; } .c-num { color: #f0a868; } .c-op { color: #b8c4d4; }
+
+  /* Diagrams */
+  .diagram { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 26px 24px; margin: 12px 0 18px; }
+  .tier { border: 1.5px solid var(--line); border-radius: 9px; padding: 16px 18px; margin-bottom: 14px; position: relative; }
+  .tier:last-child { margin-bottom: 0; }
+  .tier .tl { font-family: 'IBM Plex Serif'; font-weight: 600; font-size: 13px; color: var(--navy); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; }
+  .tier .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .box { flex: 1; min-width: 130px; background: #f7f9fb; border: 1px solid var(--line); border-radius: 7px; padding: 11px 13px; font-size: 13px; }
+  .box b { display: block; color: var(--ink); font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  .box span { color: var(--muted); font-size: 12px; }
+  .tier.t-client { border-color: #b9d2ec; } .tier.t-client .tl { color: var(--accent); }
+  .tier.t-app { border-color: #c4cfd9; }
+  .tier.t-data { border-color: #c1d8c9; } .tier.t-data .tl { color: var(--ok); }
+  .arrow { text-align: center; color: var(--faint); font-size: 18px; margin: 2px 0; }
+
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; gap: 14px; align-items: flex-start; }
+  .step .idx { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: #fff; display: grid; place-items: center; font-family: 'IBM Plex Mono'; font-size: 13px; font-weight: 500; }
+  .step .con { flex: 1; padding-bottom: 18px; }
+  .step .con b { font-family: 'IBM Plex Serif'; font-size: 15px; color: var(--ink); }
+  .step .con p { margin: 3px 0 0; font-size: 13.5px; color: var(--body); }
+  .step:not(:last-child) .idx-wrap { position: relative; }
+  .flow .step:not(:last-child) .idx::after { content: ""; position: absolute; left: 50%; top: 30px; width: 2px; height: calc(100% - 30px); background: var(--line); transform: translateX(-50%); }
+  .step .idx-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
+
+  footer { padding: 30px 60px; color: var(--faint); font-size: 12.5px; }
+  @media (max-width: 860px) { .shell { grid-template-columns: 1fr; } aside { display: none; } .doc-head, .wrap, footer { padding-left: 26px; padding-right: 26px; } }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+  <div class="brand"><span class="mark">T</span><div><b>TripMate</b><span>Tài liệu kỹ thuật</span></div></div>
+  <nav id="nav">
+    <a href="#gioithieu">Giới thiệu &amp; bối cảnh</a>
+    <a href="#kientruc">Kiến trúc tổng thể</a>
+    <a href="#csdl">Thiết kế cơ sở dữ liệu</a>
+    <a href="#congnghe">Công nghệ sử dụng</a>
+    <a href="#recommend">Hệ thống gợi ý lai</a>
+    <a href="#agentic">Luồng Agentic RAG</a>
+    <a href="#searchdoc">Quy trình search_documents</a>
+  </nav>
+</aside>
+<main>
+  <div class="doc-head">
+    <div class="tag">Đồ án tốt nghiệp · Tài liệu hệ thống</div>
+    <h1>Xây dựng hệ thống hỗ trợ du lịch cá nhân và chia sẻ trải nghiệm — TripMate</h1>
+    <p>Tài liệu mô tả kiến trúc tổng thể, thiết kế cơ sở dữ liệu, ngăn xếp công nghệ, mô hình gợi ý lai và hệ thống AI Agentic RAG của nền tảng TripMate.</p>
+    <div class="facts">
+      <div>Kiến trúc<b>3 lớp (Three-tier)</b></div>
+      <div>Backend<b>NestJS · 14 module</b></div>
+      <div>AI<b>Agentic RAG</b></div>
+      <div>Gợi ý<b>Weighted Hybrid</b></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <!-- ===== 1. Giới thiệu ===== -->
+    <section id="gioithieu">
+      <h2>Giới thiệu &amp; bối cảnh</h2>
+      <p class="lead">Đề tài: "Xây dựng hệ thống hỗ trợ du lịch cá nhân và chia sẻ trải nghiệm du lịch giữa người dùng — TripMate".</p>
+      <p>Hiện nay nhu cầu du lịch tự túc ngày càng phổ biến. Tuy nhiên, người dùng thường phải sử dụng nhiều nền tảng khác nhau để tìm địa điểm, lập kế hoạch, tìm bạn đồng hành, thuê hướng dẫn viên và chia sẻ trải nghiệm sau chuyến đi. Sự phân mảnh này gây mất thời gian và thiếu liên kết giữa các dịch vụ.</p>
+      <p>TripMate được xây dựng như một <strong>nền tảng tích hợp</strong>, cho phép người dùng thực hiện trọn vẹn hành trình trong một hệ thống duy nhất:</p>
+      <ul>
+        <li>Tạo và tham gia các chuyến đi.</li>
+        <li>Thuê hướng dẫn viên du lịch.</li>
+        <li>Chia sẻ bài viết và hình ảnh trải nghiệm qua các chuyến đi.</li>
+        <li>Nhận gợi ý du lịch được cá nhân hoá.</li>
+        <li>Được hỗ trợ lập kế hoạch và giải đáp thắc mắc về hệ thống thông qua chatbot AI.</li>
+      </ul>
+      <div class="card note"><span class="t">Phạm vi tài liệu</span>Tài liệu trình bày lần lượt: kiến trúc tổng thể, thiết kế cơ sở dữ liệu, ngăn xếp công nghệ, mô hình gợi ý lai và hệ thống AI Agentic RAG — bao gồm cả quy trình truy hồi tài liệu.</div>
+    </section>
+
+    <!-- ===== 2. Kiến trúc ===== -->
+    <section id="kientruc">
+      <h2>Kiến trúc tổng thể</h2>
+      <p class="lead">Hệ thống thiết kế theo mô hình 3 lớp (Three-tier Architecture): Client — Application — Data.</p>
+      <p>Việc phân chia theo lớp giúp hệ thống có <strong>tính mô-đun cao</strong>, dễ bảo trì, dễ mở rộng và giảm sự phụ thuộc giữa giao diện, xử lý nghiệp vụ và lưu trữ dữ liệu.</p>
+
+      <div class="diagram">
+        <div class="tier t-client">
+          <div class="tl">Client Layer</div>
+          <div class="row">
+            <div class="box"><b>Web Browser</b><span>React 18 chạy trên Chrome, Edge…</span></div>
+            <div class="box"><b>Android</b><span>Đóng gói React thành APK qua Capacitor</span></div>
+          </div>
+        </div>
+        <div class="arrow">↕ &nbsp; HTTP/HTTPS · REST API &nbsp;|&nbsp; WebSocket (thời gian thực)</div>
+        <div class="tier t-app">
+          <div class="tl">Application Layer — NestJS (14 module)</div>
+          <div class="row">
+            <div class="box"><b>Controller</b><span>Tiếp nhận yêu cầu, trả kết quả</span></div>
+            <div class="box"><b>Service</b><span>Xử lý nghiệp vụ, xác thực quyền, điều phối</span></div>
+            <div class="box"><b>Repository</b><span>TypeORM giao tiếp cơ sở dữ liệu</span></div>
+          </div>
+        </div>
+        <div class="arrow">↕</div>
+        <div class="tier t-data">
+          <div class="tl">Data Layer</div>
+          <div class="row">
+            <div class="box"><b>PostgreSQL + pgvector</b><span>CSDL chính + vector embedding</span></div>
+            <div class="box"><b>Firebase Storage</b><span>Lưu trữ hình ảnh</span></div>
+            <div class="box"><b>Agentic RAG</b><span>AI hỗ trợ người dùng</span></div>
+            <div class="box"><b>SePay Webhook</b><span>Thanh toán tự động</span></div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Client Layer</h3>
+      <p>Hệ thống hỗ trợ hai nền tảng. Phiên bản web truy cập qua trình duyệt; thiết bị di động dùng <strong>Capacitor</strong> để đóng gói ứng dụng React thành APK Android. Cách tiếp cận này cho phép web và mobile dùng <strong>chung một mã nguồn giao diện</strong>, giảm thời gian phát triển và chi phí bảo trì. Hai nền tảng giao tiếp với máy chủ qua <strong>REST API</strong> (HTTP/HTTPS) cho các yêu cầu thông thường, và <strong>WebSocket</strong> cho các chức năng thời gian thực như nhắn tin và thông báo.</p>
+
+      <h3>Application Layer</h3>
+      <p>Backend dùng <strong>NestJS</strong> nhờ kiến trúc module rõ ràng, hỗ trợ Dependency Injection, dễ mở rộng và phù hợp hệ thống quy mô lớn. Hệ thống chia thành <strong>14 module</strong>, mỗi module phụ trách một nhóm chức năng: xác thực người dùng, quản lý tài khoản, chuyến đi, bài viết, hướng dẫn viên, đặt dịch vụ, ví điện tử, thanh toán, trò chuyện, AI Assistant và các chức năng quản trị. Bên trong mỗi module tách ba thành phần — <strong>Controller</strong> (tiếp nhận/trả kết quả), <strong>Service</strong> (xử lý nghiệp vụ, kiểm tra dữ liệu, xác thực quyền, điều phối) và <strong>Repository</strong> (dùng TypeORM thao tác CSDL) — theo nguyên tắc phân tách trách nhiệm, giúp mã nguồn rõ ràng và dễ kiểm thử.</p>
+
+      <h3>Data Layer</h3>
+      <p><strong>PostgreSQL</strong> là cơ sở dữ liệu chính, lưu toàn bộ dữ liệu người dùng, chuyến đi, bài viết, bình luận, đặt HDV, ví điện tử và kho tri thức 63 tỉnh thành. Nó được mở rộng bằng <strong>pgvector</strong> để lưu vector embedding, phục vụ tìm kiếm ngữ nghĩa trong mô hình RAG.</p>
+      <p><strong>Firebase Storage</strong> lưu toàn bộ ảnh đại diện, ảnh bìa, ảnh chuyến đi và bài viết thay vì lưu trực tiếp trong CSDL, giúp giảm tải máy chủ, tăng tốc truy cập và dễ mở rộng dung lượng.</p>
+      <p><strong>Agentic RAG</strong> là hệ thống AI hỗ trợ người dùng. Thay vì để mô hình ngôn ngữ trả lời trực tiếp, hệ thống dùng AI Agent phân tích yêu cầu và lựa chọn công cụ phù hợp (truy vấn CSDL hoặc tìm kiếm tài liệu bằng RAG), sau đó tổng hợp để sinh câu trả lời chính xác hơn, giảm thông tin sai lệch.</p>
+      <p><strong>SePay Webhook</strong> xử lý thanh toán tự động: khi người dùng chuyển khoản, SePay gửi webhook về Backend; hệ thống đối chiếu giao dịch đang chờ và tự cập nhật số dư ví hoặc trạng thái thanh toán mà không cần quản trị viên xác nhận thủ công.</p>
+    </section>
+
+    <!-- ===== 3. CSDL ===== -->
+    <section id="csdl">
+      <h2>Thiết kế cơ sở dữ liệu</h2>
+      <p class="lead">PostgreSQL được tổ chức theo các cụm nghiệp vụ, chuẩn hoá để giảm dư thừa và kết hợp dữ liệu quan hệ với dữ liệu vector.</p>
+      <p>Hệ thống dùng <strong>PostgreSQL</strong> làm CSDL chính vì hiệu năng cao, hỗ trợ tốt ràng buộc toàn vẹn, giao dịch ACID, và đặc biệt mở rộng được với pgvector cho hệ thống AI/RAG. Để dễ quản lý, CSDL được chia thành các cụm nghiệp vụ thay vì trình bày từng bảng riêng lẻ.</p>
+
+      <table>
+        <tr><th>Cụm nghiệp vụ</th><th>Bảng chính</th><th>Vai trò</th></tr>
+        <tr><td>Quản lý người dùng</td><td><span class="inline">users</span>, <span class="inline">guide_profiles</span>, <span class="inline">wallets</span>, <span class="inline">wallet_transactions</span></td><td>Tài khoản, hồ sơ HDV, ví và lịch sử giao dịch</td></tr>
+        <tr><td>Quản lý chuyến đi</td><td><span class="inline">trips</span>, <span class="inline">trip_members</span>, <span class="inline">itinerary_days</span></td><td>Chuyến đi, thành viên, lịch trình theo ngày</td></tr>
+        <tr><td>Thuê hướng dẫn viên</td><td><span class="inline">guide_bookings</span></td><td>Yêu cầu đặt HDV, chi phí, trạng thái</td></tr>
+        <tr><td>Mạng xã hội</td><td><span class="inline">posts</span>, <span class="inline">reviews</span>, <span class="inline">conversations</span>, <span class="inline">chat_messages</span>, <span class="inline">notifications</span></td><td>Bài viết, đánh giá, hội thoại, thông báo</td></tr>
+        <tr><td>Dữ liệu du lịch</td><td><span class="inline">provinces</span>, <span class="inline">places</span>, <span class="inline">categories</span></td><td>Kho 63 tỉnh thành, địa điểm, danh mục</td></tr>
+        <tr><td>Tri thức AI</td><td><span class="inline">rag_knowledge_chunks</span></td><td>Vector Store cho RAG</td></tr>
+      </table>
+
+      <h3>Cụm quản lý người dùng</h3>
+      <p>Bảng <span class="inline">users</span> là trung tâm của toàn hệ thống. Mỗi người dùng có thể đăng ký làm hướng dẫn viên — khi đó phát sinh một bản ghi trong <span class="inline">guide_profiles</span> (khu vực hoạt động, mức giá, trạng thái xét duyệt). Mỗi người dùng chỉ sở hữu <strong>một ví</strong> trong <span class="inline">wallets</span> (quan hệ 1–1), còn toàn bộ lịch sử nạp, thanh toán và hoàn tiền lưu trong <span class="inline">wallet_transactions</span>.</p>
+
+      <h3>Cụm quản lý chuyến đi</h3>
+      <p>Bảng <span class="inline">trips</span> lưu thông tin từng chuyến (người tạo, HDV, địa điểm, thời gian, trạng thái). Vì một chuyến có nhiều thành viên và một người dùng cũng tham gia nhiều chuyến, hệ thống dùng bảng trung gian <span class="inline">trip_members</span> để biểu diễn quan hệ <strong>nhiều–nhiều</strong>. Lịch trình chi tiết tách thành <span class="inline">itinerary_days</span>, giúp mỗi chuyến linh hoạt mở rộng số ngày mà không dư thừa dữ liệu.</p>
+
+      <h3>Thuê hướng dẫn viên</h3>
+      <p>Bảng <span class="inline">guide_bookings</span> liên kết khách du lịch, hướng dẫn viên và chuyến đi (nếu có), lưu chi phí và trạng thái đặt dịch vụ. Thiết kế này cho phép thuê HDV cho một chuyến cụ thể hoặc thuê độc lập.</p>
+
+      <h3>Cụm mạng xã hội</h3>
+      <p>Bảng <span class="inline">posts</span> lưu bài viết chia sẻ trải nghiệm (có thể gắn với chuyến đi hoặc địa điểm). Hệ thống cho phép đánh giá nhiều đối tượng (địa điểm, chuyến đi, HDV, thành viên); để tránh tạo nhiều bảng riêng, áp dụng <strong>mô hình đa hình (Polymorphic Association)</strong> qua hai trường <span class="inline">target_type</span> và <span class="inline">target_id</span> trong bảng <span class="inline">reviews</span> — dễ mở rộng đối tượng đánh giá mà không đổi cấu trúc. Bảng <span class="inline">conversations</span> và <span class="inline">chat_messages</span> phục vụ trò chuyện; <span class="inline">notifications</span> lưu thông báo sự kiện.</p>
+
+      <h3>Cụm dữ liệu du lịch &amp; tri thức AI</h3>
+      <p>Các bảng <span class="inline">provinces</span>, <span class="inline">places</span>, <span class="inline">categories</span> là kho dữ liệu 63 tỉnh thành, địa điểm và danh mục — vừa phục vụ tìm kiếm/gợi ý, vừa làm nguồn tri thức cho AI Assistant.</p>
+      <p>Bảng <span class="inline">rag_knowledge_chunks</span> phục vụ riêng cho RAG. Khác các bảng còn lại, nó <strong>không có khóa ngoại</strong> mà hoạt động như một <strong>Vector Store</strong>: mỗi tài liệu được chia thành nhiều đoạn nhỏ, mỗi đoạn lưu kèm vector embedding. Khi người dùng đặt câu hỏi, hệ thống tìm các đoạn có độ tương đồng ngữ nghĩa cao nhất qua pgvector rồi cung cấp cho mô hình ngôn ngữ.</p>
+
+      <div class="card note"><span class="t">Nguyên tắc thiết kế</span>CSDL được chuẩn hoá để giảm dư thừa, dùng bảng trung gian cho quan hệ nhiều–nhiều, áp dụng mô hình đa hình ở nơi cần mở rộng linh hoạt, và kết hợp dữ liệu quan hệ với dữ liệu vector — đáp ứng nghiệp vụ hiện tại lẫn mở rộng tương lai.</div>
+    </section>
+
+    <!-- ===== 4. Công nghệ ===== -->
+    <section id="congnghe">
+      <h2>Công nghệ sử dụng</h2>
+      <p class="lead">Ngăn xếp công nghệ chia theo ba mảng: Client, Backend, và Data/AI.</p>
+      <table>
+        <tr><th>Mảng</th><th>Công nghệ</th><th>Vai trò</th></tr>
+        <tr><td rowspan="5">Client</td><td>React 18 + TypeScript</td><td>Giao diện theo component, dễ tái sử dụng, hạn chế lỗi</td></tr>
+        <tr><td>Vite</td><td>Tăng tốc build, cập nhật giao diện gần như tức thì</td></tr>
+        <tr><td>Zustand</td><td>Quản lý trạng thái phía client</td></tr>
+        <tr><td>TanStack Query</td><td>Tối ưu việc lấy và cache dữ liệu từ server</td></tr>
+        <tr><td>TailwindCSS · Capacitor</td><td>Phát triển giao diện nhanh, đồng nhất · đóng gói APK Android</td></tr>
+        <tr><td rowspan="3">Backend</td><td>NestJS 10</td><td>Kiến trúc module, Dependency Injection</td></tr>
+        <tr><td>JWT (Access + Refresh Token)</td><td>Xác thực cân bằng bảo mật và trải nghiệm</td></tr>
+        <tr><td>Socket.IO</td><td>Chức năng cập nhật thời gian thực</td></tr>
+        <tr><td rowspan="5">Data &amp; AI</td><td>PostgreSQL + TypeORM</td><td>Quản lý dữ liệu</td></tr>
+        <tr><td>OpenAI</td><td>Xây dựng trợ lý AI hỗ trợ người dùng</td></tr>
+        <tr><td>Firebase Storage</td><td>Lưu trữ hình ảnh</td></tr>
+        <tr><td>OpenStreetMap</td><td>Dữ liệu bản đồ và địa điểm</td></tr>
+        <tr><td>SePay (webhook)</td><td>Tự động xử lý và xác nhận thanh toán</td></tr>
+      </table>
+    </section>
+
+    <!-- ===== 5. Recommend ===== -->
+    <section id="recommend">
+      <h2>Hệ thống gợi ý lai (Weighted Hybrid Recommendation)</h2>
+      <p class="lead">Kết hợp ba phương pháp gợi ý để tận dụng ưu điểm và giảm thiểu nhược điểm của từng thuật toán riêng lẻ.</p>
+
+      <h3>Đặt vấn đề &amp; lý do lựa chọn mô hình lai</h3>
+      <p>Trong thực tế, không có một thuật toán gợi ý đơn lẻ nào đáp ứng tốt mọi tình huống:</p>
+      <table>
+        <tr><th>Phương pháp</th><th>Ưu điểm</th><th>Hạn chế</th></tr>
+        <tr><td>Popularity-based Filtering</td><td>Đơn giản, gợi ý chuyến/địa điểm đang phổ biến</td><td>Không cá nhân hoá theo sở thích từng người</td></tr>
+        <tr><td>Content-based Filtering</td><td>Gợi ý theo đặc điểm người dùng từng quan tâm</td><td>Dễ gây <em>Filter Bubble</em> — khó khám phá trải nghiệm mới</td></tr>
+        <tr><td>Collaborative Filtering</td><td>Khai thác hành vi cộng đồng</td><td>Gặp bài toán <em>Cold Start</em> với người dùng/chuyến mới</td></tr>
+      </table>
+      <p>Vì vậy, hệ thống lựa chọn <strong>Weighted Hybrid Recommendation</strong> — kết hợp cả ba phương pháp. Mỗi thuật toán tính điểm độc lập, sau đó hệ thống tổng hợp các điểm theo trọng số.</p>
+
+      <h3>Công thức tổng hợp</h3>
+      <p>Trước khi tổng hợp, toàn bộ điểm số được chuẩn hoá về cùng khoảng [0; 1] bằng <strong>Min-Max Scaling</strong>, sau đó kết hợp theo trọng số:</p>
+      <pre><span class="c-key">final</span> <span class="c-op">=</span> <span class="c-num">0.3</span> <span class="c-op">·</span> match <span class="c-op">+</span> <span class="c-num">0.3</span> <span class="c-op">·</span> interaction <span class="c-op">+</span> <span class="c-num">0.4</span> <span class="c-op">·</span> hot
+<span class="c-com"># match       — độ hợp sở thích (Content-based): cosine similarity TF-IDF trên token danh mục/tag/tỉnh</span>
+<span class="c-com"># interaction — tương tác của chính người dùng với chuyến (xem/bấm/lưu/xin tham gia)</span>
+<span class="c-com"># hot         — độ phổ biến toàn hệ thống (Popularity-based)</span></pre>
+      <p>Trọng số <strong>hot (0.4)</strong> cao nhất giúp chuyến được cộng đồng ưa chuộng dễ nổi lên, nhưng <strong>match + interaction (0.6)</strong> vẫn chiếm phần lớn, đảm bảo gợi ý mang tính cá nhân hoá thay vì chỉ chạy theo số đông.</p>
+
+      <h3>Điểm match — Cosine Similarity với trọng số TF-IDF</h3>
+      <p>Thành phần <strong>match</strong> đo độ hợp sở thích theo mô hình <strong>Vector Space Model</strong> kinh điển trong truy hồi thông tin. Mỗi chuyến đi được biểu diễn thành một vector đặc trưng, mỗi chiều là một token: danh mục (<span class="inline">cat:</span>), tag (<span class="inline">tag:</span>) và tỉnh (<span class="inline">prov:</span>). Tương tự, sở thích người dùng cũng là một vector trên cùng không gian token.</p>
+      <p>Mỗi token được gắn trọng số <strong>TF-IDF</strong>: token càng hiếm trong tập chuyến ứng viên thì <strong>IDF</strong> càng cao, đóng góp nhiều hơn token phổ biến. Ví dụ một tỉnh ít chuyến quan trọng hơn tag "biển" xuất hiện ở hầu hết chuyến.</p>
+      <pre><span class="c-com"># IDF làm trơn — token hiếm điểm cao, luôn dương</span>
+idf(t) <span class="c-op">=</span> ln( (1 + N) / (1 + df(t)) ) <span class="c-op">+</span> <span class="c-num">1</span>
+        <span class="c-com"># N = số chuyến ứng viên, df(t) = số chuyến chứa token t</span>
+
+<span class="c-com"># Cosine similarity giữa vector sở thích u và vector chuyến d</span>
+match <span class="c-op">=</span> cos(u, d) <span class="c-op">=</span> (u · d) / (‖u‖ · ‖d‖)  ∈ [0, 1]</pre>
+      <p>Vì các vector không âm nên cosine luôn nằm trong [0; 1] và <strong>không cần Min-Max</strong> như hai thành phần kia. Cosine <strong>tự chuẩn hoá theo độ dài vector</strong> (‖d‖), nên một chuyến "nhồi nhiều tag" không bị lợi thế bất công — đây là ưu điểm so với cách đếm khớp đơn thuần.</p>
+
+      <div class="card note"><span class="t">Phân biệt với cosine ở chatbot</span>Cosine ở đây tính trên <strong>vector đặc trưng thủ công</strong> (danh mục / tag / tỉnh) có trọng số TF-IDF, phục vụ gợi ý chuyến đi. Khác với cosine trên <strong>vector embedding ngữ nghĩa</strong> ở phần Agentic RAG (Dense Search) — cùng công thức nhưng khác nguồn vector và khác mục đích.</p></div>
+
+      <div class="card note"><span class="t">Vì sao cần Min-Max Scaling</span>Hai thành phần <em>interaction</em> và <em>hot</em> có đơn vị và độ lớn rất khác nhau (số lượt xem, click, request…). Chuẩn hoá về [0; 1] bằng công thức <span class="inline">(x − min) / (max − min)</span> giúp chúng cộng được với match một cách công bằng theo trọng số.</div>
+    </section>
+
+
+    <!-- ===== 6. Agentic RAG ===== -->
+    <section id="agentic">
+      <h2>Luồng hoạt động của Agentic RAG</h2>
+      <p class="lead">Thành phần AI cốt lõi: thay vì truy xuất tài liệu một lần, AI Agent tự quyết định công cụ và lặp suy luận nhiều bước.</p>
+      <p>Luồng bắt đầu khi người dùng nhập câu hỏi du lịch trên giao diện chatbot — ví dụ "Hãy gợi ý cho tôi lịch trình du lịch Đà Lạt 3 ngày" hoặc "Chính sách hoàn tiền khi hủy chuyến là gì?". Frontend gửi yêu cầu đến Backend qua API <span class="inline">POST /rag-v2/ask</span>.</p>
+      <p>Khi nhận yêu cầu, <span class="inline">RagV2Service</span> không trả lời trực tiếp mà khởi tạo AI Agent qua hàm <span class="inline">runRagAgent()</span>. Đây là điểm khác biệt giữa Agentic RAG và RAG truyền thống: thay vì chỉ truy xuất tài liệu rồi đưa vào mô hình ngôn ngữ, Agent <strong>phân tích ý định người dùng</strong> và quyết định công cụ cần dùng.</p>
+
+      <h3>Cơ chế ReAct (Reasoning + Acting)</h3>
+      <p>Agent lặp lại hai bước: mô hình <strong>suy luận</strong> cần làm gì, rồi <strong>gọi công cụ</strong> phù hợp. Sau khi công cụ trả kết quả, Agent quan sát dữ liệu nhận được và đánh giá đã đủ chưa — nếu chưa, tiếp tục gọi công cụ khác. Quá trình lặp đến khi đủ dữ liệu để tạo câu trả lời hoàn chỉnh.</p>
+      <div class="diagram">
+        <div class="flow">
+          <div class="step"><div class="idx-wrap"><div class="idx">1</div></div><div class="con"><b>Reasoning</b><p>Mô hình ngôn ngữ suy luận xem cần thực hiện hành động gì.</p></div></div>
+          <div class="step"><div class="idx-wrap"><div class="idx">2</div></div><div class="con"><b>Acting</b><p>Agent gọi công cụ phù hợp (truy vấn CSDL, tra tài liệu, dựng lộ trình).</p></div></div>
+          <div class="step"><div class="idx-wrap"><div class="idx">3</div></div><div class="con"><b>Observation</b><p>Quan sát kết quả công cụ trả về, đánh giá thông tin đã đủ hay chưa.</p></div></div>
+          <div class="step"><div class="idx-wrap"><div class="idx">↻</div></div><div class="con"><b>Lặp hoặc kết thúc</b><p>Chưa đủ → quay lại bước 1 gọi thêm công cụ. Đủ → tổng hợp và sinh câu trả lời.</p></div></div>
+        </div>
+      </div>
+
+      <h3>Các nhóm công cụ</h3>
+      <table>
+        <tr><th>Công cụ</th><th>Mục đích</th><th>Nguồn dữ liệu</th></tr>
+        <tr><td><span class="inline">search_trips</span></td><td>Truy vấn dữ liệu nghiệp vụ: chuyến đi, địa điểm, HDV, bài viết</td><td>PostgreSQL (trực tiếp)</td></tr>
+        <tr><td><span class="inline">search_documents</span></td><td>Tra cứu tài liệu / chính sách bằng quy trình Hybrid RAG</td><td><span class="inline">rag_knowledge_chunks</span> (vector)</td></tr>
+        <tr><td><span class="inline">create / revise_itinerary</span></td><td>Tạo mới hoặc chỉnh sửa lịch trình du lịch theo yêu cầu</td><td>—</td></tr>
+      </table>
+      <p>Sau khi hoàn thành quá trình suy luận và thu thập dữ liệu, mô hình ngôn ngữ tổng hợp thông tin đã truy xuất để sinh ra <strong>grounded answer</strong> — câu trả lời dựa trên dữ liệu thực tế của hệ thống thay vì chỉ dựa vào kiến thức sẵn có của mô hình. Backend trả về câu trả lời kèm các <strong>thẻ thông tin trực quan</strong> (địa điểm, chuyến đi liên quan) và gợi ý câu hỏi tiếp theo.</p>
+      <div class="card note"><span class="t">Điểm nổi bật</span>Agent tự quyết định công cụ, kết hợp nhiều nguồn dữ liệu và thực hiện nhiều bước suy luận trước khi trả lời — giúp câu trả lời chính xác hơn, giảm hiện tượng hallucination và linh hoạt hơn nhiều so với RAG truyền thống chỉ truy xuất tài liệu một lần.</div>
+    </section>
+
+    <!-- ===== 7. search_documents ===== -->
+    <section id="searchdoc">
+      <h2>Quy trình hoạt động của search_documents</h2>
+      <p class="lead">Công cụ Agent dùng khi cần tra cứu tài liệu trong kho tri thức: chính sách, hướng dẫn sử dụng, thông tin địa điểm.</p>
+      <div class="diagram">
+        <div class="flow">
+          <div class="step"><div class="idx-wrap"><div class="idx">1</div></div><div class="con"><b>Rewrite Query</b><p>Dùng mô hình ngôn ngữ viết lại câu hỏi rõ ràng, đầy đủ hơn: chuẩn hoá, bổ sung từ khoá còn thiếu, làm rõ ngữ cảnh và xác định bộ lọc nếu có.</p></div></div>
+          <div class="step"><div class="idx-wrap"><div class="idx">2</div></div><div class="con"><b>Embedding</b><p>Chuyển câu hỏi đã tối ưu thành vector biểu diễn ngữ nghĩa để tìm tài liệu tương đồng về ý nghĩa.</p></div></div>
+          <div class="step"><div class="idx-wrap"><div class="idx">3</div></div><div class="con"><b>Hybrid Search</b><p>Kết hợp <strong>Dense Search</strong> (vector embedding + Cosine — tìm theo ngữ nghĩa) và <strong>Sparse Search</strong> (BM25 — tìm theo từ khoá, hiệu quả với tên riêng, địa danh).</p></div></div>
+          <div class="step"><div class="idx-wrap"><div class="idx">4</div></div><div class="con"><b>RRF Fusion</b><p>Hợp nhất kết quả Dense và BM25 bằng Reciprocal Rank Fusion thành một danh sách ứng viên chung.</p></div></div>
+          <div class="step"><div class="idx-wrap"><div class="idx">5</div></div><div class="con"><b>Cross-Encoder Rerank</b><p>Đánh giá trực tiếp từng cặp (câu hỏi – tài liệu), sắp xếp lại theo mức độ liên quan và chọn Top-K tài liệu chất lượng cao nhất.</p></div></div>
+          <div class="step"><div class="idx-wrap"><div class="idx">6</div></div><div class="con"><b>Observation</b><p>Các đoạn tài liệu được chọn tổng hợp thành ngữ cảnh, trả về cho Agent để sinh grounded answer.</p></div></div>
+        </div>
+      </div>
+
+      <h3>Vì sao kết hợp Dense + Sparse</h3>
+      <p><strong>Dense Search</strong> tìm tài liệu gần nghĩa với câu hỏi ngay cả khi không trùng từ khoá; <strong>Sparse Search (BM25)</strong> bắt chính xác tên riêng, địa danh, thuật ngữ chuyên biệt. Kết hợp cả hai giúp hệ thống vừa khai thác được ngữ nghĩa, vừa không bỏ sót tài liệu chứa từ khoá quan trọng.</p>
+      <div class="card note"><span class="t">Tổng kết</span>Nhờ quy trình <strong>Rewrite → Embedding → Hybrid Search → RRF Fusion → Cross-Encoder Rerank → Observation</strong>, công cụ search_documents truy xuất các tài liệu vừa có độ bao phủ cao vừa có độ chính xác cao — góp phần giảm hiện tượng hallucination và nâng cao chất lượng câu trả lời của AI Assistant.</div>
+    </section>
+
+
+
+
+  </div>
+  <footer>TripMate — Tài liệu Kiến trúc &amp; Thiết kế Hệ thống.</footer>
+</main>
+</div>
+<script>
+  const links = [...document.querySelectorAll('#nav a')];
+  const map = {};
+  links.forEach(a => { const id = a.getAttribute('href').slice(1); const el = document.getElementById(id); if (el) map[id] = a; });
+  const obs = new IntersectionObserver((es) => {
+    es.forEach(e => { if (e.isIntersecting) { links.forEach(l => l.classList.remove('active')); const a = map[e.target.id]; if (a) a.classList.add('active'); } });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(map).forEach(id => obs.observe(document.getElementById(id)));
+</script>
+</body>
+</html>

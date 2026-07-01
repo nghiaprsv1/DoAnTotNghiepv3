@@ -23,7 +23,8 @@
     "seed:ai-trips": "ts-node -r tsconfig-paths/register src/seed-ai-trips.ts",
     "seed:provinces": "ts-node -r tsconfig-paths/register src/seed-provinces.ts",
     "rag:ingest": "ts-node -r tsconfig-paths/register src/rag-ingest.script.ts",
-    "model:download": "node scripts/download-model.cjs"
+    "model:download": "node scripts/download-model.cjs",
+    "rerank:download": "node scripts/download-reranker.cjs"
   },
   "dependencies": {
     "@nestjs/cli": "^10.4.9",
@@ -46,9 +47,11 @@
     "@types/nodemailer": "^8.0.1",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
+    "@xenova/transformers": "^2.17.2",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "cloudinary": "^2.10.0",
     "dotenv": "^16.4.5",
     "firebase-admin": "^14.0.0",
     "node-llama-cpp": "^3.18.1",

@@ -32,7 +32,9 @@ export function useSavedGuides(enabled = true) {
 
 /**
  * Toggle a bookmark on a post / trip / guide. Invalidates the relevant saved
- * list so the Profile tab refreshes. Returns the mutation so callers can read
+ * list AND the domain queries (trips/trip detail, places, guides, posts) so the
+ * `isSaved` flag refreshes everywhere the item is shown — list cards, detail
+ * pages, recommendations. Returns the mutation so callers can read
  * `isPending` / await the result for optimistic UI.
  */
 export function useToggleSaved() {
@@ -40,8 +42,17 @@ export function useToggleSaved() {
   return useMutation({
     mutationFn: ({ type, id }: { type: SavedType; id: string }) =>
       savedService.toggle(type, id),
-    onSuccess: (_data, { type }) => {
+    onSuccess: (_data, { type, id }) => {
+      // Danh sách "Đã lưu" trong Profile.
       qc.invalidateQueries({ queryKey: ['saved', `${type}s`] })
+      // Cờ isSaved nằm trong dữ liệu domain → làm mới để thẻ/chi tiết đồng bộ.
+      const domainKey = { trip: 'trips', place: 'places', guide: 'guides', post: 'posts' }[
+        type
+      ]
+      if (domainKey) {
+        qc.invalidateQueries({ queryKey: [domainKey] })
+        qc.invalidateQueries({ queryKey: [domainKey.slice(0, -1), id] }) // ['trip', id] / ['place', id]…
+      }
     },
   })
 }

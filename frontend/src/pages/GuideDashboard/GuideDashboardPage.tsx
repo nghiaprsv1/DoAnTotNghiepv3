@@ -9,6 +9,7 @@ import { OverviewTab } from './OverviewTab'
 import { RevenueTab } from './RevenueTab'
 import { BookingsTab } from './BookingsTab'
 import { ToursTab } from './ToursTab'
+import { ScheduleTab } from './ScheduleTab'
 import { ReviewsManageTab } from './ReviewsManageTab'
 import { GuideProfileTab } from './GuideProfileTab'
 
@@ -16,6 +17,7 @@ const TABS = [
   { key: 'overview', label: 'Tổng quan', icon: 'dashboard' },
   { key: 'revenue', label: 'Doanh thu', icon: 'payments' },
   { key: 'bookings', label: 'Đặt chỗ', icon: 'event_available' },
+  { key: 'schedule', label: 'Lịch làm việc', icon: 'calendar_month' },
   { key: 'tours', label: 'Tour của tôi', icon: 'tour' },
   { key: 'reviews', label: 'Đánh giá', icon: 'reviews' },
   { key: 'profile', label: 'Hồ sơ HDV', icon: 'badge' },
@@ -118,6 +120,7 @@ export function GuideDashboardPage() {
           {tab === 'overview' && <OverviewTab />}
           {tab === 'revenue' && <RevenueTab />}
           {tab === 'bookings' && <BookingsTab />}
+          {tab === 'schedule' && <ScheduleTab />}
           {tab === 'tours' && <ToursTab />}
           {tab === 'reviews' && <ReviewsManageTab />}
           {tab === 'profile' && <GuideProfileTab />}

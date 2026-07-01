@@ -54,16 +54,14 @@ export function ProfilePage() {
     ...(myCreated ?? []).map((t) => ({ ...t, _isCreator: true })),
     ...joinedOnly.map((t) => ({ ...t, _isCreator: false })),
   ]
-  // Split "Chuyến đi của tôi" into ongoing (upcoming + đang diễn ra) vs đã
-  // hoàn thành, based on the live computed status from the trip dates.
+  // Split "Chuyến đi của tôi" thành 3 nhóm theo trạng thái suy ra từ ngày:
+  // đang tham gia (sắp diễn ra + đang diễn ra), đã hoàn thành, và đã huỷ.
   const ongoingTrips = allTrips.filter((t) => {
     const s = computeTripStatus(t)
     return s === 'upcoming' || s === 'ongoing'
   })
-  const completedTrips = allTrips.filter((t) => {
-    const s = computeTripStatus(t)
-    return s === 'completed' || s === 'cancelled'
-  })
+  const completedTrips = allTrips.filter((t) => computeTripStatus(t) === 'completed')
+  const cancelledTrips = allTrips.filter((t) => computeTripStatus(t) === 'cancelled')
   // Stats: count only joined trips that aren't ones you created so the
   // sidebar doesn't double-count "Đã tham gia" + "Đã tạo".
   const stats = [
@@ -194,6 +192,14 @@ export function ProfilePage() {
               trips={completedTrips}
               emptyHint="Bạn chưa có chuyến đi nào hoàn thành."
             />
+            {cancelledTrips.length > 0 && (
+              <TripSection
+                title="Đã huỷ"
+                icon="cancel"
+                trips={cancelledTrips}
+                emptyHint="Không có chuyến đi nào bị huỷ."
+              />
+            )}
           </div>
         )}
         {/* Tab "Đã lưu" — bookmarked posts, trips, guides */}

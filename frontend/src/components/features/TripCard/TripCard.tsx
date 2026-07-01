@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from '@components/ui/Icon'
 import { Avatar } from '@components/ui/Avatar'
 import { Badge } from '@components/ui/Badge'
@@ -25,6 +25,11 @@ export function TripCard({ trip }: TripCardProps) {
   const status = computeTripStatus(trip)
   const [saved, setSaved] = useState(!!trip.isSaved)
   const toggleSaved = useToggleSaved()
+
+  // Đồng bộ khi dữ liệu trip refetch (vd bỏ lưu ở trang chi tiết → list mới về).
+  useEffect(() => {
+    setSaved(!!trip.isSaved)
+  }, [trip.isSaved])
 
   const onToggleSave = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -68,7 +73,11 @@ export function TripCard({ trip }: TripCardProps) {
         <button
           type="button"
           onClick={onToggleSave}
-          className="absolute top-4 right-4 bg-surface-container-lowest/80 backdrop-blur-md p-2 rounded-full text-on-surface hover:text-primary transition-colors"
+          className={`absolute top-4 right-4 backdrop-blur-md p-2 rounded-full transition-colors ${
+            saved
+              ? 'bg-white text-rose-500 shadow-editorial'
+              : 'bg-surface-container-lowest/80 text-on-surface hover:text-rose-500'
+          }`}
           aria-label={saved ? 'Bỏ lưu chuyến đi' : 'Lưu chuyến đi'}
         >
           <Icon name="favorite" size={20} filled={saved} />

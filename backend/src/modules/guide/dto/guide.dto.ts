@@ -88,3 +88,9 @@ export class WithdrawDecisionDto {
   @IsString() action!: string;
   @IsOptional() @IsString() reason?: string;
 }
+
+export class CreateUnavailabilityDto {
+  @IsDateString() startDate!: string;
+  @IsDateString() endDate!: string;
+  @IsOptional() @IsString() note?: string;
+}

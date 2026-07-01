@@ -9,10 +9,13 @@ import { Post } from '@/modules/post/entities/post.entity';
 import { RagV2Service } from './ragv2.service';
 import { RagV2Controller } from './ragv2.controller';
 import { RagEmbeddings, RagChat } from './lib/rag-llm.interface';
+import { RagReranker } from './lib/rag-reranker.interface';
 import { GeminiEmbeddings } from './lib/gemini-embeddings';
 import { GeminiChat } from './lib/gemini-chat';
 import { OpenAiEmbeddings } from './lib/openai-embeddings';
 import { OpenAiChat } from './lib/openai-chat';
+import { CrossEncoderReranker } from './lib/cross-encoder-reranker';
+import { LlmReranker } from './lib/llm-reranker';
 import { TripRetriever } from './lib/retrievers/trip.retriever';
 import { PlaceRetriever } from './lib/retrievers/place.retriever';
 import { GuideRetriever } from './lib/retrievers/guide.retriever';
@@ -51,6 +54,16 @@ import { PostRetriever } from './lib/retrievers/post.retriever';
       inject: [ConfigService, GeminiChat, OpenAiChat],
       useFactory: (config: ConfigService, gemini: GeminiChat, openai: OpenAiChat) =>
         config.get<string>('RAGV2_LLM_PROVIDER') === 'openai' ? openai : gemini,
+    },
+    // Reranker: CROSS-ENCODER local mặc định (đúng bản chất reranker IR); đổi
+    // sang LLM (cách cũ) qua env RAGV2_RERANK_PROVIDER=llm để so sánh trong báo cáo.
+    CrossEncoderReranker,
+    LlmReranker,
+    {
+      provide: RagReranker,
+      inject: [ConfigService, CrossEncoderReranker, LlmReranker],
+      useFactory: (config: ConfigService, cross: CrossEncoderReranker, llm: LlmReranker) =>
+        config.get<string>('RAGV2_RERANK_PROVIDER') === 'llm' ? llm : cross,
     },
     TripRetriever,
     PlaceRetriever,

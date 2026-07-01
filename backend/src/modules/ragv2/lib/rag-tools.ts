@@ -29,7 +29,9 @@ export interface DocSearchDetail {
   dimensions: number;
   totalChunks: number;
   candidateK: number;
-  rerankVia: 'llm' | 'fallback' | 'disabled';
+  rerankVia: 'cross-encoder' | 'llm' | 'fallback' | 'disabled';
+  /** Tên model rerank (cross-encoder: Xenova/bge-reranker-base; llm: gpt-4o-mini…). */
+  rerankModel?: string;
   /** Ứng viên sau RRF (rộng hơn topK) — kèm mọi điểm thành phần. */
   candidates: {
     docName: string;
@@ -40,7 +42,7 @@ export interface DocSearchDetail {
     rrf: number;
     denseRank?: number | null;
     sparseRank?: number | null;
-    relevance?: number; // điểm rerank LLM (0–10)
+    relevance?: number; // điểm rerank cross-encoder/LLM (0–10)
     kept: boolean; // có lọt top-K sau rerank không
   }[];
 }

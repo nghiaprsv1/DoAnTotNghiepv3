@@ -56,3 +56,7 @@ models/
 
 # LAN dev env (machine-specific IP)
 .env.lan
+
+# Office temp / lock files
+~$*
+*.tmp

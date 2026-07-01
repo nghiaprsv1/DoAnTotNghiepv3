@@ -15,6 +15,14 @@ export interface GuideTourHistory {
   category: string
 }
 
+/** Khoảng ngày nghỉ HDV tự đánh dấu (manual block). */
+export interface GuideUnavailability {
+  id: string
+  startDate: string
+  endDate: string
+  note?: string | null
+}
+
 export interface GuideReview {
   id: string
   authorId: string

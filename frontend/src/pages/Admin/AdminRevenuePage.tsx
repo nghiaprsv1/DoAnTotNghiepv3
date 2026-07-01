@@ -10,6 +10,7 @@ import { useGuides } from '@hooks/useGuides'
 import { bookingDetailPath, userProfilePath } from '@constants/routes'
 import { cn } from '@utils/cn'
 import { GuideRevenueDialog } from './components/GuideRevenueDialog'
+import { AdminDetailDialog, AdminSection, AdminRow } from './components/AdminDetailDialog'
 
 const formatVnd = (n: number) => `₫${Math.round(Number(n)).toLocaleString('vi-VN')}`
 
@@ -36,6 +37,13 @@ export function AdminRevenuePage() {
   const [guideQuery, setGuideQuery] = useState('')
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null)
   const { data: guideList = [] } = useGuides()
+  // Booking được mở trong modal chi tiết (dùng data sẵn trong breakdown, không
+  // fetch thêm endpoint).
+  const [viewBookingId, setViewBookingId] = useState<string | null>(null)
+  const viewBooking = useMemo(
+    () => data?.breakdown.find((r) => r.bookingId === viewBookingId) ?? null,
+    [data, viewBookingId],
+  )
 
   const matchedGuides = useMemo(() => {
     const q = guideQuery.trim().toLowerCase()
@@ -316,12 +324,15 @@ export function AdminRevenuePage() {
                           {formatVnd(r.net)}
                         </td>
                         <td className="p-2 text-right">
-                          <Link
-                            to={bookingDetailPath(r.bookingId)}
-                            className="inline-flex items-center text-xs font-bold text-primary hover:underline"
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            rounded="full"
+                            onClick={() => setViewBookingId(r.bookingId)}
                           >
-                            Xem
-                          </Link>
+                            <Icon name="visibility" size={16} />
+                            Chi tiết
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -331,6 +342,68 @@ export function AdminRevenuePage() {
             )}
           </section>
         </>
+      )}
+
+      {viewBooking && (
+        <AdminDetailDialog
+          title={viewBooking.tourTitle}
+          subtitle={`Hoàn thành ${new Date(viewBooking.completedAt).toLocaleString('vi-VN')}`}
+          media={
+            <span className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <Icon name="receipt_long" />
+            </span>
+          }
+          onClose={() => setViewBookingId(null)}
+          footer={
+            <Link
+              to={bookingDetailPath(viewBooking.bookingId)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-on-primary text-sm font-headline font-bold hover:opacity-90 transition"
+            >
+              <Icon name="open_in_new" size={16} />
+              Mở trang booking
+            </Link>
+          }
+        >
+          <div className="grid grid-cols-3 gap-3 py-2">
+            <MoneyStat label="Gross" value={formatVnd(viewBooking.gross)} tone="text-on-surface" />
+            <MoneyStat label="Hoa hồng 10%" value={`+${formatVnd(viewBooking.commission)}`} tone="text-primary" />
+            <MoneyStat label="Net chuyển HDV" value={formatVnd(viewBooking.net)} tone="text-on-surface" />
+          </div>
+          <AdminSection title="Các bên liên quan">
+            <AdminRow
+              label="Hướng dẫn viên"
+              value={
+                <Link
+                  to={viewBooking.guide.id ? userProfilePath(viewBooking.guide.id) : '#'}
+                  className="inline-flex items-center gap-2 hover:opacity-80"
+                >
+                  <Avatar src={viewBooking.guide.avatar ?? ''} alt={viewBooking.guide.name} size="xs" />
+                  <span className="text-on-surface">{viewBooking.guide.name}</span>
+                </Link>
+              }
+            />
+            <AdminRow
+              label="Khách hàng"
+              value={
+                <Link
+                  to={viewBooking.traveler.id ? userProfilePath(viewBooking.traveler.id) : '#'}
+                  className="inline-flex items-center gap-2 hover:opacity-80"
+                >
+                  <Avatar src={viewBooking.traveler.avatar ?? ''} alt={viewBooking.traveler.name} size="xs" />
+                  <span className="text-on-surface">{viewBooking.traveler.name}</span>
+                </Link>
+              }
+            />
+          </AdminSection>
+          <AdminSection title="Thông tin booking">
+            <AdminRow label="Tên tour" value={viewBooking.tourTitle} />
+            <AdminRow
+              label="Ngày hoàn thành"
+              value={new Date(viewBooking.completedAt).toLocaleString('vi-VN')}
+            />
+            <AdminRow label="Mã booking" value={<span className="font-mono text-xs">{viewBooking.bookingId}</span>} />
+          </AdminSection>
+        </AdminDetailDialog>
       )}
 
       <GuideRevenueDialog
@@ -380,6 +453,15 @@ function PartyCell({ name, avatar }: { name?: string; avatar?: string }) {
       <Avatar src={avatar ?? ''} alt={name ?? '—'} size="xs" />
       <span className="text-on-surface text-sm truncate max-w-[10rem]">{name ?? '—'}</span>
     </span>
+  )
+}
+
+function MoneyStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="bg-surface-container-low rounded-2xl px-3 py-3 text-center">
+      <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">{label}</p>
+      <p className={cn('font-headline font-extrabold text-lg mt-1', tone)}>{value}</p>
+    </div>
   )
 }
 

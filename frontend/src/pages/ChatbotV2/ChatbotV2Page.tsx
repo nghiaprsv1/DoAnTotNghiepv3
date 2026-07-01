@@ -41,6 +41,7 @@ const SAMPLE_QUESTIONS = [
  * (cosine) → ghép ngữ cảnh → sinh câu trả lời, kèm điểm similarity & thời gian.
  */
 export function ChatbotV2Page() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin')
   const [messages, setMessages] = useState<ChatItem[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
@@ -171,6 +172,7 @@ export function ChatbotV2Page() {
         ingesting={ingesting}
         onIngest={handleIngest}
         notice={notice}
+        canIngest={isAdmin}
       />
 
       {/* Body */}
@@ -248,11 +250,13 @@ function StatusBar({
   ingesting,
   onIngest,
   notice,
+  canIngest,
 }: {
   status: RagStatus | null
   ingesting: boolean
   onIngest: () => void
   notice: string | null
+  canIngest: boolean
 }) {
   const geminiOk = status?.geminiConfigured
   return (
@@ -280,6 +284,7 @@ function StatusBar({
           disabled={ingesting || !geminiOk}
           className={cn(
             'ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition',
+            !canIngest && 'hidden',
             ingesting || !geminiOk
               ? 'bg-surface-container-high text-on-surface-variant cursor-not-allowed'
               : 'bg-primary text-on-primary hover:scale-[1.02]',
@@ -803,7 +808,13 @@ function renderStepDetail(step: RagStep) {
   if (step.key === 'rerank') {
     const results = (d.results as VectorResult[]) ?? []
     const viaLabel =
-      d.via === 'llm' ? 'LLM chấm điểm' : d.via === 'disabled' ? 'đã tắt (giữ RRF)' : 'fallback (giữ RRF)'
+      d.via === 'cross-encoder'
+        ? 'Cross-Encoder chấm điểm'
+        : d.via === 'llm'
+          ? 'LLM chấm điểm'
+          : d.via === 'disabled'
+            ? 'đã tắt (giữ RRF)'
+            : 'fallback (giữ RRF)'
     return (
       <div className="text-[12px] text-on-surface-variant space-y-2">
         <div className="flex flex-wrap gap-1.5">
@@ -957,7 +968,13 @@ function AgentToolDetail({ d }: { d: Record<string, unknown> }) {
 /** Chi tiết pipeline search_documents: embedding + cosine + BM25 → RRF + rerank. */
 function DocSearchDetailView({ d }: { d: DocSearchDetail }) {
   const rerankLabel =
-    d.rerankVia === 'llm' ? 'LLM chấm 0–10' : d.rerankVia === 'disabled' ? 'tắt (giữ RRF)' : 'fallback (RRF)'
+    d.rerankVia === 'cross-encoder'
+      ? 'Cross-Encoder'
+      : d.rerankVia === 'llm'
+        ? 'LLM chấm 0–10'
+        : d.rerankVia === 'disabled'
+          ? 'tắt (giữ RRF)'
+          : 'fallback (RRF)'
   return (
     <details className="mt-1 rounded-lg border border-primary/25 bg-primary/5 overflow-hidden" open>
       <summary className="cursor-pointer select-none px-2.5 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/10 flex items-center gap-1.5">
@@ -971,10 +988,12 @@ function DocSearchDetailView({ d }: { d: DocSearchDetail }) {
           <KV k="Kho chunk" v={String(d.totalChunks)} />
           <KV k="Ứng viên" v={String(d.candidateK)} />
           <KV k="Rerank" v={rerankLabel} />
+          {d.rerankModel && <KV k="Model rerank" v={d.rerankModel} />}
         </div>
         <p className="text-[10px] text-on-surface-variant leading-relaxed">
           Mỗi ứng viên chấm 2 điểm độc lập: <b>cosine</b> (vector ngữ nghĩa) + <b>BM25</b> (từ khoá),
-          hợp nhất bằng <b>RRF</b>, rồi <b>rerank</b> lọc top-K. Hàng <span className="text-primary font-bold">xanh</span> = được giữ.
+          hợp nhất bằng <b>RRF</b>, rồi <b>rerank</b> (cross-encoder chấm cặp câu hỏi–đoạn) lọc top-K.
+          Hàng <span className="text-primary font-bold">xanh</span> = được giữ.
         </p>
         <div className="space-y-1">
           {d.candidates.map((c, i) => (

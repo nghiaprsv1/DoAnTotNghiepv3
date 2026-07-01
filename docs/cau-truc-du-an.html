@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cấu trúc thư mục & file · TripMate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --primary: #ab2d00; --primary-soft: #c2410c; --ink: #1c1410; --muted: #6b5d54;
+    --line: #ece4dd; --bg: #fbf7f3; --card: #ffffff; --code-bg: #2a1d15; --code-ink: #f4e9df;
+    --accent: #f0c808; --grad: linear-gradient(135deg, #ab2d00 0%, #d8541f 55%, #f0921f 100%);
+    --be: #2a4b8d; --fe: #166534;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); background: var(--bg); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4 { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; line-height: 1.25; }
+  a { color: var(--primary); text-decoration: none; }
+  code { font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  .shell { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  aside { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--line); padding: 28px 20px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .brand .dot { width: 30px; height: 30px; border-radius: 9px; background: var(--grad); box-shadow: 0 4px 14px rgba(171,45,0,.35); }
+  .brand b { font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 800; }
+  .brand-sub { font-size: 12px; color: var(--muted); margin-bottom: 22px; padding-left: 2px; }
+  nav a { display: block; padding: 7px 12px; border-radius: 9px; color: var(--muted); font-size: 13.5px; font-weight: 500; transition: .15s; }
+  nav a:hover { background: #faf2ec; color: var(--primary); }
+  nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #b6a99f; margin: 18px 0 6px 12px; font-weight: 700; }
+  main { padding: 0 0 90px; max-width: 1000px; }
+  .hero { background: var(--grad); color: #fff; padding: 56px 56px 48px; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; right: -80px; top: -80px; width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,.10); }
+  .hero .kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; opacity: .9; }
+  .hero h1 { font-size: 36px; font-weight: 800; margin: 12px 0 14px; max-width: 680px; }
+  .hero p { font-size: 16px; max-width: 660px; opacity: .95; }
+  .hero .meta { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .hero .meta span { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); padding: 5px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 500; }
+  .wrap { padding: 44px 56px 0; }
+  section { margin-bottom: 52px; scroll-margin-top: 24px; }
+  section > h2 { font-size: 25px; font-weight: 800; display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  section > h2 .num { flex: none; width: 34px; height: 34px; border-radius: 10px; background: #fdeee6; color: var(--primary); font-size: 15px; display: grid; place-items: center; font-weight: 800; }
+  section > .lead { color: var(--muted); margin: 0 0 22px 46px; font-size: 15px; }
+  h3 { font-size: 18px; font-weight: 700; margin: 30px 0 12px; display:flex; align-items:center; gap:9px; }
+  h3 .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; flex:none; }
+  p { margin-bottom: 12px; }
+  .inline { background: #f3ebe4; color: #8a3310; padding: 1.5px 7px; border-radius: 6px; font-size: 12.5px; font-family: 'JetBrains Mono', monospace; }
+  strong { color: var(--ink); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 18px; font-size: 13.6px; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); }
+  th { background: #f7efe9; text-align: left; padding: 10px 14px; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 12.5px; color: #5b4a40; }
+  td { padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: #fdfaf7; }
+  td code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #f3ebe4; padding: 1px 6px; border-radius: 5px; color: #8a3310; white-space: nowrap; }
+  .path { font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--ink); white-space: nowrap; }
+  .path.dir::before { content: "📁 "; } .path.file::before { content: "📄 "; }
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px; letter-spacing: .03em; }
+  .b-be { background: #e7edf9; color: var(--be); } .b-fe { background: #e3f3e9; color: var(--fe); } .b-doc { background: #fdeee6; color: var(--primary); }
+  .tree { background: var(--code-bg); color: var(--code-ink); border-radius: 14px; padding: 22px 24px; overflow-x: auto; font-size: 13px; line-height: 1.8; margin: 0 0 18px; font-family: 'JetBrains Mono', monospace; }
+  .tree .d { color: #ffd166; } .tree .c { color: #9c8a7a; } .tree .f { color: #cfc3b6; }
+  .note { background: #fffdf3; border-left: 4px solid var(--accent); border-radius: 12px; padding: 16px 20px; margin: 6px 0 20px; font-size: 14px; }
+  .note b { color: #9a7b00; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 14px 0 26px; }
+  .legend span { font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><div class="dot"></div><b>TripMate</b></div>
+    <div class="brand-sub">Cấu trúc thư mục &amp; file</div>
+    <nav>
+      <div class="grp">Tổng quan</div>
+      <a href="#root">Thư mục gốc</a>
+      <div class="grp">Backend (NestJS)</div>
+      <a href="#be-src">backend/src</a>
+      <a href="#be-common">common — dùng chung</a>
+      <a href="#be-modules">modules — nghiệp vụ</a>
+      <a href="#be-ragv2">modules/ragv2 — chatbot</a>
+      <a href="#be-scripts">scripts &amp; seed</a>
+      <div class="grp">Frontend (React)</div>
+      <a href="#fe-src">frontend/src</a>
+      <a href="#fe-pages">pages — trang</a>
+      <a href="#fe-comp">components</a>
+      <div class="grp">Khác</div>
+      <a href="#docs">docs &amp; cấu hình</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="hero">
+      <div class="kicker">Tài liệu kiến trúc dự án</div>
+      <h1>Cấu trúc thư mục &amp; file của TripMate</h1>
+      <p>Giải thích vai trò của từng thư mục và file chính trong dự án — mạng xã hội du lịch + đặt chuyến/HDV + chatbot RAG. Monorepo gồm <b>backend/</b> (NestJS) và <b>frontend/</b> (React).</p>
+      <div class="meta"><span>NestJS 10 + PostgreSQL</span><span>React 18 + Vite</span><span>RAG v2 (Agentic)</span></div>
+    </div>
+    <div class="wrap">
+      <div class="legend">
+        <span><span class="badge b-be">BE</span> Backend</span>
+        <span><span class="badge b-fe">FE</span> Frontend</span>
+        <span><span class="badge b-doc">DOC</span> Tài liệu/cấu hình</span>
+      </div>
+      <!-- PLACEHOLDER_SECTIONS -->
+      <section id="root">
+        <h2><span class="num">1</span> Thư mục gốc</h2>
+        <p class="lead">Monorepo: 2 ứng dụng tách biệt + tài liệu, cấu hình deploy.</p>
+        <div class="tree"><span class="d">DoAnTotNghiepv3/</span>
+├─ <span class="d">backend/</span>      <span class="c"># API server NestJS (port 8080)</span>
+├─ <span class="d">frontend/</span>     <span class="c"># Web app React + Vite (port 3000)</span>
+├─ <span class="d">documemtRAG/</span>  <span class="c"># Tài liệu .txt cho chatbot RAG học</span>
+├─ <span class="d">docs/</span>         <span class="c"># Báo cáo, sơ đồ, trang HTML lý thuyết</span>
+├─ <span class="f">render.yaml</span>   <span class="c"># Cấu hình deploy backend lên Render</span>
+└─ <span class="f">CLAUDE.md</span>     <span class="c"># Sổ tay dự án (nguồn sự thật cho AI agent)</span></div>
+        <table>
+          <tr><th style="width:230px">Thư mục / File</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path dir">backend/</span></td><td>Toàn bộ API: xác thực, chuyến đi, HDV, ví, chatbot… Chạy độc lập với frontend.</td></tr>
+          <tr><td><span class="path dir">frontend/</span></td><td>Giao diện người dùng (web + đóng gói Android qua Capacitor). Gọi API của backend.</td></tr>
+          <tr><td><span class="path dir">documemtRAG/</span></td><td>Kho tài liệu du lịch dạng văn bản. Lệnh <span class="inline">rag:ingest</span> đọc các file này, cắt nhỏ rồi tạo vector cho chatbot.</td></tr>
+          <tr><td><span class="path dir">docs/</span></td><td>Tài liệu báo cáo, sơ đồ kiến trúc (.drawio), và các trang HTML cơ sở lý thuyết.</td></tr>
+          <tr><td><span class="path file">render.yaml</span></td><td>Blueprint deploy: khai báo web service + PostgreSQL + biến môi trường cho Render.</td></tr>
+          <tr><td><span class="path file">CLAUDE.md</span></td><td>Ghi chú toàn bộ kiến trúc, quy ước, trạng thái tính năng — đọc trước khi sửa code.</td></tr>
+        </table>
+      </section>
+
+      <section id="be-src">
+        <h2><span class="num">2</span> backend/src <span class="badge b-be" style="font-size:12px;margin-left:8px">BE</span></h2>
+        <p class="lead">Gốc mã nguồn backend: điểm khởi động, module gốc, cấu hình DB.</p>
+        <table>
+          <tr><th style="width:230px">File / Thư mục</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path file">main.ts</span></td><td>Điểm khởi động ứng dụng: tạo app NestJS, bật CORS, mở Swagger tại <span class="inline">/docs</span>, lắng nghe cổng 8080.</td></tr>
+          <tr><td><span class="path file">app.module.ts</span></td><td>Module gốc — gom tất cả module nghiệp vụ + cấu hình toàn cục (TypeORM, scheduler, interceptor, guard).</td></tr>
+          <tr><td><span class="path file">datasource.ts</span></td><td>Cấu hình TypeORM cho CLI (chạy migration độc lập với app).</td></tr>
+          <tr><td><span class="path dir">database/</span></td><td>Hàm dựng cấu hình kết nối PostgreSQL từ biến môi trường (dùng chung cho app + CLI).</td></tr>
+          <tr><td><span class="path dir">common/</span></td><td>Thành phần dùng chung mọi module: decorator, guard, filter, interceptor, DTO, enum.</td></tr>
+          <tr><td><span class="path dir">data/</span></td><td>Dữ liệu tĩnh — kho kiến thức 63 tỉnh thành cho trợ lý AI tra cứu.</td></tr>
+          <tr><td><span class="path dir">modules/</span></td><td>Toàn bộ nghiệp vụ, mỗi tính năng là một module riêng (xem mục 4).</td></tr>
+          <tr><td><span class="path file">rag-ingest.script.ts</span></td><td>Script nạp tài liệu vào vector store: đọc <span class="inline">documemtRAG/</span> → cắt chunk → tạo embedding → lưu DB.</td></tr>
+          <tr><td><span class="path file">seed-curated-trips.ts</span></td><td>Script tạo sẵn 20 chuyến đi mẫu (idempotent theo tiêu đề) để demo.</td></tr>
+        </table>
+      </section>
+
+      <section id="be-common">
+        <h2><span class="num">3</span> common — thành phần dùng chung <span class="badge b-be" style="font-size:12px;margin-left:8px">BE</span></h2>
+        <p class="lead">Code tái sử dụng xuyên suốt mọi module, đặt một chỗ để nhất quán.</p>
+        <table>
+          <tr><th style="width:200px">Thư mục</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path dir">decorators/</span></td><td><span class="inline">@Public()</span> (bỏ qua xác thực), <span class="inline">@CurrentUser()</span> (lấy user từ token), <span class="inline">@Roles()</span> (phân quyền).</td></tr>
+          <tr><td><span class="path dir">guards/</span></td><td>JwtAuthGuard (bắt buộc đăng nhập), RolesGuard (chặn theo vai trò), OptionalJwtAuthGuard (đăng nhập tuỳ chọn).</td></tr>
+          <tr><td><span class="path dir">filters/</span></td><td>GlobalExceptionFilter — chuẩn hoá mọi lỗi trả về cùng một định dạng.</td></tr>
+          <tr><td><span class="path dir">interceptors/</span></td><td>ResponseInterceptor — bọc mọi response vào <span class="inline">{ data, message, success, statusCode }</span>.</td></tr>
+          <tr><td><span class="path dir">dto/</span></td><td>DTO dùng chung (vd phân trang).</td></tr>
+          <tr><td><span class="path dir">enums/</span></td><td>Hằng liệt kê dùng nhiều nơi, vd vai trò người dùng (UserRole).</td></tr>
+          <tr><td><span class="path dir">types/</span></td><td>Kiểu TypeScript dùng chung, vd payload JWT.</td></tr>
+        </table>
+      </section>
+      <!-- NEXT -->
+      <section id="be-modules">
+        <h2><span class="num">4</span> modules — nghiệp vụ <span class="badge b-be" style="font-size:12px;margin-left:8px">BE</span></h2>
+        <p class="lead">Mỗi tính năng = 1 module, thường gồm: <span class="inline">*.controller.ts</span> (route HTTP), <span class="inline">*.service.ts</span> (logic), <span class="inline">entities/</span> (bảng DB), <span class="inline">dto/</span> (kiểm tra dữ liệu vào), <span class="inline">*.module.ts</span> (lắp ghép).</p>
+        <table>
+          <tr><th style="width:160px">Module</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path dir">auth/</span></td><td>Đăng ký / đăng nhập, JWT access + refresh, xác thực email bằng OTP 6 số.</td></tr>
+          <tr><td><span class="path dir">user/</span></td><td>Hồ sơ người dùng, theo dõi (follow), sở thích du lịch để cá nhân hoá gợi ý.</td></tr>
+          <tr><td><span class="path dir">trip/</span></td><td>Chuyến đi: tạo/sửa, lịch trình, thành viên, yêu cầu tham gia, gợi ý (recommend), huỷ chuyến.</td></tr>
+          <tr><td><span class="path dir">guide/</span></td><td>Hướng dẫn viên: hồ sơ, đặt tour (booking), ví tiền, giao dịch, rút tiền, lịch sử tour.</td></tr>
+          <tr><td><span class="path dir">place/</span></td><td>Địa điểm du lịch + danh mục + tỉnh thành; admin quản lý CRUD.</td></tr>
+          <tr><td><span class="path dir">post/</span></td><td>Bài viết mạng xã hội: đăng, thích, bình luận, feed.</td></tr>
+          <tr><td><span class="path dir">review/</span></td><td>Đánh giá đa hình (địa điểm / chuyến / HDV / thành viên) — tính lại rating thật.</td></tr>
+          <tr><td><span class="path dir">message/</span></td><td>Nhắn tin: hội thoại 1-1 + nhóm (chat nhóm chuyến đi) qua WebSocket + REST.</td></tr>
+          <tr><td><span class="path dir">notification/</span></td><td>Thông báo đẩy + đánh dấu đã đọc.</td></tr>
+          <tr><td><span class="path dir">payment/</span></td><td>Nạp tiền qua SePay (tạo QR + webhook xác nhận).</td></tr>
+          <tr><td><span class="path dir">saved/</span></td><td>Lưu (bookmark) chuyến / HDV / bài viết.</td></tr>
+          <tr><td><span class="path dir">upload/</span></td><td>Tải ảnh: ưu tiên Firebase Storage, không có thì lưu local <span class="inline">uploads/</span>.</td></tr>
+          <tr><td><span class="path dir">mail/</span></td><td>Gửi email OTP (Nodemailer); chưa cấu hình SMTP thì in mã ra console.</td></tr>
+          <tr><td><span class="path dir">admin/</span></td><td>Bảng điều khiển quản trị: thống kê, khoá user, duyệt HDV, nạp tiền hàng loạt.</td></tr>
+          <tr><td><span class="path dir">ai/</span></td><td>Trợ lý AI v1 (pipeline 3 bước HIỂU→LÀM→TRẢ) + tạo chuyến từ hội thoại.</td></tr>
+          <tr><td><span class="path dir">ragv2/</span></td><td>Chatbot RAG v2 — kiến trúc agent tool-calling (xem mục 5).</td></tr>
+        </table>
+        <div class="note"><b>Mẫu một module</b> — ví dụ <span class="inline">trip/</span>: <span class="inline">trips.controller.ts</span> nhận request → <span class="inline">trips.service.ts</span> xử lý nghiệp vụ + truy vấn → <span class="inline">entities/trip.entity.ts</span> ánh xạ bảng <span class="inline">trips</span> → <span class="inline">dto/trip.dto.ts</span> kiểm tra dữ liệu gửi lên → <span class="inline">trips.module.ts</span> khai báo và kết nối tất cả.</div>
+      </section>
+
+      <section id="be-ragv2">
+        <h2><span class="num">5</span> modules/ragv2 — chatbot RAG <span class="badge b-be" style="font-size:12px;margin-left:8px">BE</span></h2>
+        <p class="lead">Trái tim chatbot: agent tự gọi tool truy hồi đa nguồn (DB thật + tài liệu vector).</p>
+        <table>
+          <tr><th style="width:240px">File</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path file">ragv2.controller.ts</span></td><td>Route công khai <span class="inline">/rag-v2/ask|status|ingest</span>.</td></tr>
+          <tr><td><span class="path file">ragv2.service.ts</span></td><td>Điều phối: nạp tài liệu (ingest), chọn provider LLM, rẽ nhánh agent / pipeline.</td></tr>
+          <tr><td><span class="path file">ragv2.agent.ts</span></td><td>Vòng lặp ReAct: LLM tự quyết gọi tool nào → nhận kết quả → trả lời. Có lớp chống bịa.</td></tr>
+          <tr><td><span class="path dir">entities/</span></td><td><span class="inline">knowledge-chunk.entity.ts</span> — bảng <span class="inline">rag_knowledge_chunks</span> lưu nội dung + vector.</td></tr>
+          <tr><td><span class="path file">lib/rag-tools.ts</span></td><td>6 tool agent: tìm trip/place/guide/post, tra tài liệu, dựng lộ trình.</td></tr>
+          <tr><td><span class="path dir">lib/retrievers/</span></td><td>Mỗi nguồn DB một retriever (trip/place/guide/post) — query trực tiếp bằng SQL.</td></tr>
+          <tr><td><span class="path file">lib/chunker.ts</span></td><td>Cắt tài liệu thành đoạn theo câu trọn vẹn (có gối đầu).</td></tr>
+          <tr><td><span class="path file">lib/gemini-* / openai-*</span></td><td>2 nhà cung cấp embedding + chat (Gemini / OpenAI), đổi qua biến môi trường.</td></tr>
+          <tr><td><span class="path file">lib/cosine.ts · fusion.ts · lexical.ts</span></td><td>Toán truy hồi: cosine (dense), RRF (hợp nhất), BM25 + tokenizer tiếng Việt (sparse).</td></tr>
+        </table>
+      </section>
+
+      <section id="be-scripts">
+        <h2><span class="num">6</span> scripts &amp; seed <span class="badge b-be" style="font-size:12px;margin-left:8px">BE</span></h2>
+        <p class="lead">Công cụ phụ trợ — không phải API, chạy thủ công khi cần.</p>
+        <table>
+          <tr><th style="width:280px">File</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path file">scripts/seed-danang-places.mjs</span></td><td>Nạp 15 địa điểm Đà Nẵng qua API admin (idempotent theo slug).</td></tr>
+          <tr><td><span class="path file">scripts/seed-past-bookings.cjs</span></td><td>Tạo booking quá khứ (đã hoàn tất) + giao dịch ví để demo lịch sử/doanh thu.</td></tr>
+          <tr><td><span class="path file">scripts/seed-bookings-for-guide.cjs</span></td><td>Tạo booking cho một HDV cụ thể (theo email) — demo dashboard HDV.</td></tr>
+          <tr><td><span class="path file">scripts/reset-bookings.js</span></td><td>Xoá booking seed + giao dịch liên quan, đưa số dư ví về 0.</td></tr>
+          <tr><td><span class="path file">scripts/check-db.cjs</span></td><td>Kiểm tra kết nối Postgres, tạo database nếu chưa có.</td></tr>
+        </table>
+      </section>
+      <!-- NEXT2 -->
+      <section id="fe-src">
+        <h2><span class="num">7</span> frontend/src <span class="badge b-fe" style="font-size:12px;margin-left:8px">FE</span></h2>
+        <p class="lead">Mã nguồn web app: trang, component, gọi API, state, kiểu dữ liệu.</p>
+        <table>
+          <tr><th style="width:190px">File / Thư mục</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path file">main.tsx</span></td><td>Điểm khởi động React: gắn App vào DOM, bọc các provider (React Query…).</td></tr>
+          <tr><td><span class="path file">App.tsx</span></td><td>Component gốc — dựng router và bố cục chung.</td></tr>
+          <tr><td><span class="path dir">routes/</span></td><td>Khai báo router (createBrowserRouter): nhóm layout chính / auth / admin + ProtectedRoute.</td></tr>
+          <tr><td><span class="path dir">pages/</span></td><td>Mỗi màn hình là một trang (xem mục 8).</td></tr>
+          <tr><td><span class="path dir">components/</span></td><td>Thành phần UI tái dùng: primitive, layout, theo domain (mục 9).</td></tr>
+          <tr><td><span class="path dir">layouts/</span></td><td>Khung trang: MainLayout (có nav), AuthLayout, AdminLayout.</td></tr>
+          <tr><td><span class="path dir">services/</span></td><td>Mỗi domain một file gọi <span class="inline">axiosInstance</span> → bóc dữ liệu → chuyển sang kiểu FE. Có <span class="inline">axiosInstance.ts</span> tự gắn token + tự refresh.</td></tr>
+          <tr><td><span class="path dir">hooks/</span></td><td>Wrapper React Query cho mỗi domain: <span class="inline">useTrips</span>, <span class="inline">useGuides</span>, <span class="inline">useAdmin</span>…</td></tr>
+          <tr><td><span class="path dir">store/</span></td><td>State client bằng Zustand: authStore, currentUserStore, aiAssistantStore…</td></tr>
+          <tr><td><span class="path dir">types/</span></td><td>Định nghĩa interface domain (User, Trip, Place, Post…).</td></tr>
+          <tr><td><span class="path dir">constants/</span></td><td>Hằng số: đường dẫn route, cấu hình app, bộ lọc.</td></tr>
+          <tr><td><span class="path dir">utils/</span></td><td>Hàm tiện ích: <span class="inline">cn()</span> gộp class, format ngày, tính trạng thái chuyến.</td></tr>
+          <tr><td><span class="path dir">styles/</span></td><td>CSS toàn cục + cấu hình Tailwind.</td></tr>
+        </table>
+      </section>
+
+      <section id="fe-pages">
+        <h2><span class="num">8</span> pages — màn hình <span class="badge b-fe" style="font-size:12px;margin-left:8px">FE</span></h2>
+        <p class="lead">Mỗi thư mục là một trang: <span class="inline">&lt;Name&gt;Page.tsx</span> + <span class="inline">index.ts</span> re-export, đôi khi kèm <span class="inline">components/</span> / <span class="inline">tabs/</span> riêng.</p>
+        <table>
+          <tr><th style="width:200px">Trang</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path dir">Home/</span></td><td>Trang chủ — giới thiệu, gợi ý chuyến nổi bật.</td></tr>
+          <tr><td><span class="path dir">Login · Register · VerifyEmail · ForgotPassword</span></td><td>Luồng xác thực: đăng nhập, đăng ký, nhập OTP, quên mật khẩu.</td></tr>
+          <tr><td><span class="path dir">Trips · TripDetail · CreateTrip · EditTrip</span></td><td>Danh sách, chi tiết, tạo, sửa chuyến đi.</td></tr>
+          <tr><td><span class="path dir">Guides · GuideDetail · GuideApply · GuideDashboard</span></td><td>Danh sách HDV, hồ sơ HDV (giới thiệu / lịch / lịch sử tour / đánh giá), đăng ký làm HDV, bảng điều khiển HDV.</td></tr>
+          <tr><td><span class="path dir">Places</span></td><td>Khám phá địa điểm + chi tiết.</td></tr>
+          <tr><td><span class="path dir">Social</span></td><td>Mạng xã hội: feed bài viết.</td></tr>
+          <tr><td><span class="path dir">MyBookings · BookingDetail</span></td><td>Lịch sử đặt tour của khách + chi tiết.</td></tr>
+          <tr><td><span class="path dir">Wallet</span></td><td>Ví: số dư, nạp tiền (SePay), rút tiền, lịch sử giao dịch.</td></tr>
+          <tr><td><span class="path dir">Messages · Notifications</span></td><td>Nhắn tin realtime + thông báo.</td></tr>
+          <tr><td><span class="path dir">ChatbotV2/</span></td><td>Trang chatbot RAG v2 độc lập (<span class="inline">/chatbot-v2</span>) có TracePanel hiển thị từng bước.</td></tr>
+          <tr><td><span class="path dir">Admin/</span></td><td>Khu quản trị: tổng quan, người dùng, HDV, rút tiền, doanh thu, bài viết, chuyến, địa điểm.</td></tr>
+          <tr><td><span class="path dir">Profile · EditProfile · UserProfile</span></td><td>Hồ sơ cá nhân, chỉnh sửa, xem hồ sơ người khác.</td></tr>
+        </table>
+      </section>
+
+      <section id="fe-comp">
+        <h2><span class="num">9</span> components <span class="badge b-fe" style="font-size:12px;margin-left:8px">FE</span></h2>
+        <p class="lead">Phân tầng theo mức tái dùng và mức gắn với domain.</p>
+        <table>
+          <tr><th style="width:160px">Thư mục</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path dir">ui/</span></td><td>Primitive thuần giao diện: Button, Input, Badge, Avatar, Icon.</td></tr>
+          <tr><td><span class="path dir">common/</span></td><td>Layout / tiện ích: TopNav, BottomNav, Footer, AIChatBubble (bong bóng chat), ImageUpload, RichText (render markdown), EmptyState, LoadingState.</td></tr>
+          <tr><td><span class="path dir">features/</span></td><td>Gắn với domain: TripCard, GuideCard, PostCard, FilterBar, ReviewModal, ReviewList.</td></tr>
+        </table>
+      </section>
+
+      <section id="docs">
+        <h2><span class="num">10</span> docs &amp; cấu hình <span class="badge b-doc" style="font-size:12px;margin-left:8px">DOC</span></h2>
+        <p class="lead">Tài liệu, sơ đồ và các file cấu hình quan trọng.</p>
+        <table>
+          <tr><th style="width:260px">File / Thư mục</th><th>Tác dụng</th></tr>
+          <tr><td><span class="path dir">docs/</span></td><td>Báo cáo + trang HTML lý thuyết (chatbot, recommender, tiền xử lý RAG, cấu trúc dự án) + sơ đồ <span class="inline">.drawio</span>.</td></tr>
+          <tr><td><span class="path dir">documemtRAG/</span></td><td>Tài liệu nguồn cho chatbot học (file <span class="inline">.txt</span>).</td></tr>
+          <tr><td><span class="path file">render.yaml</span></td><td>Blueprint deploy backend + Postgres + biến môi trường lên Render.</td></tr>
+          <tr><td><span class="path file">backend/.env</span></td><td>Biến môi trường backend: DB, JWT, khoá AI (Gemini/OpenAI), SePay, Firebase. <strong>Không commit lên Git.</strong></td></tr>
+          <tr><td><span class="path file">backend/package.json</span></td><td>Thư viện + lệnh npm (<span class="inline">start:dev</span>, <span class="inline">build</span>, <span class="inline">seed</span>, <span class="inline">rag:ingest</span>…).</td></tr>
+          <tr><td><span class="path file">frontend/.env.*</span></td><td>Cấu hình theo môi trường (dev / production / lan): chủ yếu <span class="inline">VITE_API_BASE_URL</span> trỏ tới backend.</td></tr>
+          <tr><td><span class="path file">frontend/vite.config.ts · tailwind.config.js</span></td><td>Cấu hình build Vite + bảng màu/animation Tailwind (design "Saffron Horizon").</td></tr>
+          <tr><td><span class="path file">frontend/capacitor.config.ts</span></td><td>Cấu hình đóng gói ứng dụng Android (appId, webDir).</td></tr>
+        </table>
+        <div class="note"><b>Quy ước chung</b>: Backend tổ chức theo <i>module nghiệp vụ</i> (controller → service → entity → dto). Frontend tách <i>page</i> (màn hình) và <i>service/hook</i> (gọi API) — không để logic gọi API lẫn trong giao diện. Mọi response API đều có dạng thống nhất <span class="inline">{ data, message, success, statusCode }</span>.</div>
+      </section>
+      <!-- END -->
+
+
+
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Câu hỏi thường gặp (FAQ) · TripMate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --primary: #ab2d00; --primary-soft: #c2410c; --ink: #1c1410; --muted: #6b5d54;
+    --line: #ece4dd; --bg: #fbf7f3; --card: #ffffff; --code-bg: #2a1d15; --code-ink: #f4e9df;
+    --accent: #f0c808; --grad: linear-gradient(135deg, #ab2d00 0%, #d8541f 55%, #f0921f 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); background: var(--bg); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4 { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; line-height: 1.25; }
+  a { color: var(--primary); text-decoration: none; }
+  code { font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  .shell { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  aside { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--line); padding: 28px 20px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .brand .dot { width: 30px; height: 30px; border-radius: 9px; background: var(--grad); box-shadow: 0 4px 14px rgba(171,45,0,.35); }
+  .brand b { font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 800; }
+  .brand-sub { font-size: 12px; color: var(--muted); margin-bottom: 22px; padding-left: 2px; }
+  nav a { display: block; padding: 7px 12px; border-radius: 9px; color: var(--muted); font-size: 13.5px; font-weight: 500; transition: .15s; }
+  nav a:hover { background: #faf2ec; color: var(--primary); }
+  nav a.active { background: #fdeee6; color: var(--primary); font-weight: 700; }
+  nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #b6a99f; margin: 18px 0 6px 12px; font-weight: 700; }
+  main { padding: 0 0 90px; max-width: 940px; }
+  .hero { background: var(--grad); color: #fff; padding: 56px 56px 48px; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; right: -80px; top: -80px; width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,.10); }
+  .hero .kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; opacity: .9; }
+  .hero h1 { font-size: 36px; font-weight: 800; margin: 12px 0 14px; max-width: 680px; }
+  .hero p { font-size: 16px; max-width: 640px; opacity: .95; }
+  .hero .meta { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .hero .meta span { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); padding: 5px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 500; }
+  .wrap { padding: 44px 56px 0; }
+  section { margin-bottom: 48px; scroll-margin-top: 24px; }
+  section > h2 { font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  section > h2 .num { flex: none; width: 34px; height: 34px; border-radius: 10px; background: #fdeee6; color: var(--primary); font-size: 15px; display: grid; place-items: center; font-weight: 800; }
+  .inline { background: #f3ebe4; color: #8a3310; padding: 1.5px 7px; border-radius: 6px; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+  strong { color: var(--ink); font-weight: 700; }
+  details.faq { background: var(--card); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 12px; overflow: hidden; transition: .15s; }
+  details.faq[open] { box-shadow: 0 4px 18px rgba(28,20,16,.06); border-color: #e0c4b4; }
+  details.faq summary { list-style: none; cursor: pointer; padding: 17px 22px; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15.5px; display: flex; align-items: center; gap: 12px; color: var(--ink); }
+  details.faq summary::-webkit-details-marker { display: none; }
+  details.faq summary .q { flex: none; width: 24px; height: 24px; border-radius: 7px; background: var(--grad); color: #fff; font-size: 13px; display: grid; place-items: center; font-weight: 800; }
+  details.faq summary .chev { margin-left: auto; transition: .2s; color: var(--muted); font-size: 20px; }
+  details.faq[open] summary .chev { transform: rotate(180deg); }
+  details.faq .a { padding: 0 22px 20px 58px; color: #3d322b; font-size: 14.5px; }
+  details.faq .a p { margin-bottom: 10px; }
+  details.faq .a ul, details.faq .a ol { margin: 0 0 12px 20px; } details.faq .a li { margin-bottom: 5px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin: 4px 0 14px; }
+  .card.tip { border-left: 4px solid var(--accent); background: #fffdf3; }
+  .card.warn { border-left: 4px solid var(--primary); background: #fff6f2; }
+  .card .tag { font-weight: 700; font-size: 12.5px; display: block; margin-bottom: 5px; }
+  .card.tip .tag { color: #9a7b00; } .card.warn .tag { color: var(--primary); }
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 12px; padding: 16px 18px; overflow-x: auto; font-size: 12.5px; line-height: 1.6; margin: 8px 0 12px; }
+  .c-com { color: #9c8a7a; font-style: italic; } .c-key { color: #f0921f; } .c-num { color: #ff9e64; } .c-fn { color: #ffd166; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; font-size: 13.5px; overflow: hidden; border-radius: 10px; border: 1px solid var(--line); }
+  th { background: #f7efe9; text-align: left; padding: 10px 13px; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 12.5px; color: #5b4a40; }
+  td { padding: 10px 13px; border-top: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: #fdfaf7; }
+  .pill { display: inline-block; background: #fdeee6; color: var(--primary); font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; margin-left: 6px; }
+  @media (max-width: 820px) { .shell { grid-template-columns: 1fr; } aside { display: none; } .hero, .wrap { padding-left: 24px; padding-right: 24px; } }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+  <div class="brand"><span class="dot"></span><b>TripMate</b></div>
+  <div class="brand-sub">Câu hỏi thường gặp</div>
+  <nav>
+    <div class="grp">Tổng quan</div>
+    <a href="#chung">Về TripMate</a>
+    <a href="#taikhoan">Tài khoản &amp; bắt đầu</a>
+    <div class="grp">Tính năng</div>
+    <a href="#chuyendi">Chuyến đi</a>
+    <a href="#hdv">Hướng dẫn viên</a>
+    <a href="#vi">Ví &amp; thanh toán</a>
+    <div class="grp">Trí tuệ nhân tạo</div>
+    <a href="#ai">Trợ lý AI</a>
+    <a href="#recommend">Gợi ý chuyến đi</a>
+    <div class="grp">Khác</div>
+    <a href="#khac">Riêng tư &amp; sự cố</a>
+  </nav>
+</aside>
+<main>
+  <div class="hero">
+    <div class="kicker">Trung tâm trợ giúp</div>
+    <h1>Câu hỏi thường gặp về TripMate</h1>
+    <p>Giải đáp nhanh các thắc mắc khi dùng nền tảng du lịch TripMate — từ tài khoản, chuyến đi, hướng dẫn viên đến cách trợ lý AI và hệ thống gợi ý chuyến đi hoạt động.</p>
+    <div class="meta"><span>Cập nhật 07/2026</span><span>Trợ lý AI</span><span>Gợi ý cá nhân hoá</span></div>
+  </div>
+  <div class="wrap">
+    <!-- ===== Tổng quan ===== -->
+    <section id="chung">
+      <h2><span class="num">01</span> Về TripMate</h2>
+      <details class="faq" open><summary><span class="q">?</span>TripMate là gì?<span class="chev">⌄</span></summary>
+        <div class="a"><p>TripMate (còn gọi TravelSocial) là nền tảng mạng xã hội du lịch của Việt Nam, kết hợp đặt và khám phá chuyến đi, thuê hướng dẫn viên (HDV) địa phương và tìm hiểu địa điểm theo 63 tỉnh thành. Bạn vừa có thể tham gia chuyến do người khác tổ chức, tự tạo chuyến mới, vừa chia sẻ trải nghiệm với cộng đồng.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>TripMate dành cho ai?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Ba nhóm người dùng chính:</p><ul><li><strong>Khách du lịch:</strong> tìm chuyến, khám phá địa điểm, thuê HDV, chia sẻ bài viết.</li><li><strong>Hướng dẫn viên:</strong> người địa phương nhận khách, dẫn tour và kiếm thu nhập.</li><li><strong>Quản trị viên:</strong> vận hành nền tảng, duyệt hồ sơ HDV, kiểm duyệt nội dung, duyệt rút tiền.</li></ul></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>TripMate có gì khác các ứng dụng đặt tour khác?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Điểm khác biệt là <strong>tính cộng đồng và dữ liệu thật</strong>. Số sao và đánh giá của địa điểm, chuyến đi, HDV đều tính từ review thật của người dùng, không phải con số quảng cáo. Trợ lý AI chỉ giới thiệu địa danh và đặc sản có trong dữ liệu thật của hệ thống, không bịa thông tin.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Tôi có cần đăng nhập để dùng không?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Xem chuyến đi, địa điểm, hồ sơ HDV và bảng tin thì khách chưa đăng nhập vẫn xem được. Nhưng để <strong>tham gia chuyến, tạo chuyến, nhắn tin, thuê HDV hay dùng ví</strong> thì cần đăng nhập bằng tài khoản đã xác thực email.</p></div>
+      </details>
+    </section>
+
+    <!-- ===== Tài khoản ===== -->
+    <section id="taikhoan">
+      <h2><span class="num">02</span> Tài khoản &amp; bắt đầu</h2>
+      <details class="faq"><summary><span class="q">?</span>Đăng ký tài khoản như thế nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Vào trang Đăng ký, nhập họ tên, email và mật khẩu. Hệ thống gửi một mã OTP gồm 6 chữ số đến email của bạn. Nhập mã này vào trang Xác thực email để kích hoạt tài khoản.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Mã OTP có hiệu lực bao lâu? Không nhận được mã thì sao?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Mã OTP có hiệu lực <strong>15 phút</strong> và được thử tối đa <strong>5 lần</strong>. Nếu chưa nhận được hoặc mã hết hạn, bấm <em>Gửi lại mã</em>; giữa hai lần gửi phải chờ <strong>60 giây</strong>. Kiểm tra cả hộp thư rác (spam) nếu không thấy email.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Tại sao tôi không đăng nhập được dù nhập đúng mật khẩu?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Tài khoản chỉ đăng nhập được sau khi <strong>email đã xác thực</strong>. Nếu chưa xác thực, hệ thống báo lỗi và yêu cầu xác thực trước. Hãy hoàn tất bước nhập OTP, hoặc bấm gửi lại mã nếu mã cũ đã hết hạn.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Quên mật khẩu thì làm sao?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Vào trang Quên mật khẩu để đặt lại. Phiên đăng nhập được tự động duy trì và làm mới nên bạn không phải đăng nhập lại thường xuyên.</p></div>
+      </details>
+    </section>
+
+    <!-- ===== Chuyến đi ===== -->
+    <section id="chuyendi">
+      <h2><span class="num">03</span> Chuyến đi</h2>
+      <details class="faq"><summary><span class="q">?</span>Làm sao tìm và tham gia một chuyến đi?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Vào mục Chuyến đi, lọc theo điểm đến, loại hình (biển, núi, ẩm thực, văn hoá, thành phố, đảo, phiêu lưu), số ngày và mức giá. Mở trang chi tiết để xem lịch trình từng ngày rồi bấm <em>Tham gia</em> để gửi yêu cầu. Trưởng nhóm (người tạo chuyến) sẽ duyệt; khi được chấp nhận bạn thành thành viên chính thức và được thêm vào nhóm chat của chuyến.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Tạo chuyến đi mới cần những gì?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Vào mục Tạo chuyến, nhập tiêu đề, mô tả, điểm đến, loại hình, ảnh bìa, ngày khởi hành, ngày kết thúc, số người tối đa và chi phí dự kiến; có thể thêm lịch trình từng ngày kèm khung giờ. Lưu ý: <strong>ngày kết thúc phải sau hoặc bằng ngày bắt đầu</strong> và hệ thống tự tính số ngày theo khoảng ngày.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Vì sao tôi không tạo được chuyến trùng ngày?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Hệ thống <strong>chặn tạo chuyến trùng khoảng ngày</strong> với một chuyến khác mà bạn đang tham gia, để tránh xung đột lịch cá nhân. Hãy chọn ngày khác hoặc rời chuyến cũ trước.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Ai được huỷ chuyến và điều gì xảy ra khi huỷ?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Chỉ <strong>chủ chuyến hoặc quản trị viên</strong> được huỷ, và chỉ khi chuyến <strong>chưa khởi hành</strong>. Khi huỷ: hệ thống lưu lý do, thông báo cho mọi thành viên, tự giải phóng HDV đã thuê cho chuyến và hoàn tiền 100% cho khách của booking liên quan. Sau khi huỷ, chuyến không nhận thêm yêu cầu tham gia.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Chuyến đi trong trang cá nhân được phân loại thế nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Trang cá nhân chia chuyến của bạn thành ba nhóm theo ngày: <strong>Đang tham gia</strong> (sắp diễn ra + đang diễn ra), <strong>Đã hoàn thành</strong> và <strong>Đã huỷ</strong>. Mỗi thẻ chuyến có nhãn trạng thái màu phân biệt.</p></div>
+      </details>
+    </section>
+
+    <!-- ===== HDV ===== -->
+    <section id="hdv">
+      <h2><span class="num">04</span> Hướng dẫn viên</h2>
+      <details class="faq"><summary><span class="q">?</span>Quy trình đặt và thanh toán HDV ra sao?<span class="chev">⌄</span></summary>
+        <div class="a"><ol><li>Bạn gửi yêu cầu đặt; HDV nhận thông báo và <strong>chấp nhận hoặc từ chối</strong>.</li><li>Nếu chấp nhận, booking chuyển sang <em>chờ thanh toán</em>; bạn phải thanh toán trong <strong>24 giờ</strong>, quá hạn booking tự hết hạn.</li><li>Thanh toán xong, tiền được <strong>giữ tạm (đóng băng)</strong> và HDV được gắn vào chuyến.</li><li>Tour xong, bạn xác nhận hoàn thành để hệ thống quyết toán tiền cho HDV.</li></ol></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Chính sách huỷ booking HDV thế nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Cả khách và HDV đều có thể huỷ booking đã xác nhận:</p><ul><li><strong>HDV huỷ:</strong> khách được hoàn 100%, HDV không bị phạt.</li><li><strong>Khách huỷ sớm</strong> (trước 48 giờ tính đến ngày bắt đầu): hoàn toàn bộ.</li><li><strong>Khách huỷ trễ</strong> (trong vòng 48 giờ): bị giữ lại 20% giá trị booking để bù cho HDV, phần còn lại hoàn về ví.</li></ul><p>Khi huỷ, lịch của HDV được giải phóng tự động để nhận tour khác.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Lịch bận của HDV được tính từ đâu?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Lịch bận tổng hợp từ ba nguồn: <strong>booking đang hoạt động</strong>, <strong>chuyến đi HDV tham gia</strong>, và <strong>ngày HDV tự đăng ký nghỉ</strong>. Khách không thể đặt tour trùng bất kỳ khoảng bận nào. HDV tự đánh dấu ngày nghỉ trong tab Lịch làm việc ở trang quản lý (chọn ngày bắt đầu rồi ngày kết thúc); không thể đăng ký nghỉ vào ngày đã có booking đang hoạt động.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Làm sao để trở thành hướng dẫn viên?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Vào mục Đăng ký làm HDV, nộp hồ sơ gồm khu vực, chuyên môn, ngôn ngữ, kinh nghiệm, giá theo ngày và giấy tờ tuỳ thân (số căn cước, ảnh căn cước, ảnh chứng chỉ). Quản trị viên xét duyệt; được duyệt thì bạn có quyền vào Trang quản lý HDV.</p></div>
+      </details>
+    </section>
+
+    <!-- ===== Ví ===== -->
+    <section id="vi">
+      <h2><span class="num">05</span> Ví &amp; thanh toán</h2>
+      <details class="faq"><summary><span class="q">?</span>Nạp tiền vào ví bằng cách nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Mục Ví hiển thị số dư và lịch sử giao dịch. Nạp tiền qua cổng <strong>SePay</strong>: quét mã QR ngân hàng và chuyển khoản đúng nội dung gợi ý. Sau khi ngân hàng xác nhận, hệ thống tự cộng tiền vào ví. Số dư dùng để thanh toán dịch vụ như đặt HDV.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Nền tảng thu phí hoa hồng bao nhiêu?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Khi tour hoàn tất và quyết toán, nền tảng thu <strong>hoa hồng 10%</strong> trên giá trị booking; phần còn lại chuyển vào số dư khả dụng của HDV.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>HDV rút tiền thế nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>HDV tạo yêu cầu rút tiền từ số dư khả dụng. Mọi yêu cầu phải được <strong>quản trị viên duyệt</strong> trước khi tiền rời ví. Trạng thái yêu cầu gồm: chờ duyệt, đã duyệt, bị từ chối. Tiền chỉ thực sự bị trừ khi yêu cầu được duyệt.</p></div>
+      </details>
+    </section>
+
+    <!-- ===== Trợ lý AI ===== -->
+    <section id="ai">
+      <h2><span class="num">06</span> Trợ lý AI <span class="pill">chi tiết</span></h2>
+      <details class="faq" open><summary><span class="q">?</span>Trợ lý AI của TripMate làm được gì?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Trợ lý du lịch AI giúp bạn <strong>tìm chuyến phù hợp</strong>, <strong>tra cứu thông tin địa điểm / hướng dẫn viên</strong> và <strong>gợi ý lộ trình mới</strong> theo điểm đến, số ngày, ngân sách và sở thích. Khi trợ lý đề xuất một lộ trình, bạn có thể yêu cầu thay địa điểm, chốt ngày và số người, rồi bấm <em>Tạo chuyến</em> để biến lộ trình thành một chuyến đi thật.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>RAG là gì và TripMate dùng RAG thế nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p><strong>RAG (Retrieval-Augmented Generation)</strong> nghĩa là "sinh câu trả lời có truy hồi dữ liệu". Thay vì để mô hình ngôn ngữ tự "nhớ", hệ thống <strong>truy hồi (retrieve)</strong> các đoạn tài liệu và dữ liệu thật liên quan tới câu hỏi, rồi <strong>đưa cho mô hình</strong> làm căn cứ trả lời. Nhờ vậy câu trả lời bám vào dữ liệu thật của TripMate (tài liệu hướng dẫn, kho 63 tỉnh, chuyến đi, địa điểm, HDV) và hạn chế bịa.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Trợ lý AI lấy câu trả lời từ đâu? Có bịa không?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Trợ lý <strong>chỉ dùng dữ liệu thật</strong>: tài liệu trong kho tri thức (giới thiệu, hướng dẫn tính năng, chính sách, lưu ý du lịch, kho 63 tỉnh) và các bản ghi thật trong cơ sở dữ liệu (chuyến đi đã đăng, địa điểm, hồ sơ HDV). Hệ thống có nhiều lớp chống bịa: chỉ khẳng định khi có bằng chứng, không gán nhầm địa danh tỉnh này cho tỉnh khác, không tự nâng mô tả chung thành tuyên bố tuyệt đối ("dài nhất thế giới"), và giữ nguyên số liệu/đơn vị tiền trong dữ liệu.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Pipeline RAG gồm những bước nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Khi câu hỏi cần tra tài liệu, hệ thống chạy chuỗi bước:</p><ol><li><strong>Viết lại &amp; định tuyến (router):</strong> làm rõ câu hỏi, tách từ khoá, chọn nguồn dữ liệu phù hợp (tài liệu, chuyến, địa điểm, HDV, bài viết).</li><li><strong>Embed câu hỏi:</strong> chuyển câu hỏi thành vector số.</li><li><strong>Tìm kiếm lai (hybrid search):</strong> kết hợp <em>tìm theo ngữ nghĩa</em> (cosine trên vector) và <em>tìm theo từ khoá</em> (BM25), rồi hợp nhất bằng RRF.</li><li><strong>Rerank (xếp hạng lại):</strong> mô hình cross-encoder chấm lại độ liên quan từng đoạn với câu hỏi, giữ top tốt nhất.</li><li><strong>Ghép ngữ cảnh &amp; sinh trả lời:</strong> gộp các đoạn giữ lại + dữ liệu thật, đưa cho mô hình viết câu trả lời.</li></ol></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>"Embedding", "cosine", "BM25", "rerank" nghĩa là gì?<span class="chev">⌄</span></summary>
+        <div class="a"><ul><li><strong>Embedding:</strong> biến một đoạn văn thành dãy số (vector) sao cho hai đoạn có ý nghĩa gần nhau thì vector gần nhau.</li><li><strong>Cosine similarity:</strong> đo độ giống nhau giữa hai vector — càng gần 1 càng giống về ngữ nghĩa.</li><li><strong>BM25:</strong> cách chấm điểm cổ điển theo <em>mức độ trùng từ khoá</em>, mạnh khi câu hỏi và tài liệu dùng đúng từ.</li><li><strong>RRF (Reciprocal Rank Fusion):</strong> cách hợp nhất hai bảng xếp hạng (ngữ nghĩa + từ khoá) thành một danh sách chung.</li><li><strong>Rerank cross-encoder:</strong> mô hình đọc <em>cặp</em> (câu hỏi, đoạn) cùng lúc để chấm độ liên quan chính xác hơn, lọc bỏ đoạn lạc đề dù trùng từ khoá.</li></ul></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Kiến trúc "agent" (tool-calling) của chatbot là gì?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Phiên bản chatbot RAG v2 chạy theo <strong>kiến trúc agent</strong>: thay vì làm cứng từng bước, mô hình <strong>tự quyết định gọi công cụ nào</strong> theo vòng lặp suy luận → hành động → quan sát (ReAct). Có 6 công cụ: tìm chuyến đi, tìm địa điểm, tìm HDV, tìm bài viết, tra cứu tài liệu (chạy đủ pipeline RAG ở trên), và dựng/chỉnh lộ trình. Agent gọi công cụ, nhận kết quả, rồi lặp tới khi trả lời thẳng được.</p>
+        <p>Ví dụ: hỏi "giá vé Bà Nà bao nhiêu" → agent gọi công cụ <span class="inline">search_places</span> (chứa giá vé, giờ mở cửa, đặc điểm); hỏi "đặc sản Cao Bằng" → agent gọi <span class="inline">search_documents</span> để tra kho tài liệu.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Trợ lý dùng mô hình AI nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Hệ thống thiết kế <strong>đa nhà cung cấp</strong>, đổi qua cấu hình mà không phải sửa pipeline. Cấu hình hiện tại của RAG v2:</p>
+        <table><tr><th>Thành phần</th><th>Mô hình</th></tr>
+        <tr><td>Embedding (vector hoá)</td><td><span class="inline">text-embedding-3-small</span> (OpenAI)</td></tr>
+        <tr><td>Sinh câu trả lời (chat)</td><td><span class="inline">gpt-4o-mini</span> (OpenAI)</td></tr>
+        <tr><td>Rerank</td><td><span class="inline">bge-reranker-base</span> (cross-encoder, chạy cục bộ)</td></tr></table>
+        <p>Reranker chạy <strong>cục bộ</strong> bằng thư viện JS (ONNX) nên không tốn lượt gọi mô hình ngoài. Khi tải mô hình lỗi, hệ thống tự lùi về xếp hạng RRF để chatbot không bị gián đoạn.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Trợ lý có nhớ ngữ cảnh cuộc trò chuyện không?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Có. Trợ lý nhận <strong>lịch sử các lượt gần nhất</strong> để hiểu câu nối tiếp (ví dụ "thêm địa điểm khác đi"). Đồng thời nó tự phát hiện khi bạn <strong>đổi chủ đề</strong> (hỏi điểm đến khác) để không bám lộ trình cũ. Khi tạo lộ trình mà bạn chưa nói số ngày, trợ lý sẽ <strong>hỏi lại số ngày</strong> thay vì tự chọn.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Ai được nạp / cập nhật tài liệu cho trợ lý?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Chỉ <strong>quản trị viên</strong> mới nạp/re-index tài liệu (đưa tài liệu vào kho vector). Người dùng thường và khách có thể hỏi đáp bình thường nhưng không thấy và không gọi được chức năng nạp tài liệu.</p></div>
+      </details>
+    </section>
+
+    <!-- ===== Recommend ===== -->
+    <section id="recommend">
+      <h2><span class="num">07</span> Gợi ý chuyến đi <span class="pill">chi tiết</span></h2>
+      <details class="faq" open><summary><span class="q">?</span>Hệ thống gợi ý chuyến đi cho tôi dựa trên gì?<span class="chev">⌄</span></summary>
+        <div class="a"><p>TripMate dùng <strong>hybrid recommender</strong> (gợi ý lai) chấm điểm mỗi chuyến theo ba yếu tố kết hợp, rồi xếp hạng:</p>
+        <ul><li><strong>Match (độ hợp gu):</strong> chuyến khớp sở thích bạn khai báo tới đâu.</li><li><strong>Interaction (tương tác cá nhân):</strong> bạn từng xem / bấm / lưu / xin tham gia chuyến đó chưa.</li><li><strong>Hot (độ phổ biến):</strong> mức độ được cả cộng đồng quan tâm.</li></ul></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Công thức tính điểm gợi ý cụ thể ra sao?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Điểm cuối là tổng có trọng số của ba thành phần (mỗi thành phần đã chuẩn hoá về [0, 1]):</p>
+        <pre><span class="c-fn">final</span> = <span class="c-num">0.3</span> · match + <span class="c-num">0.3</span> · interaction + <span class="c-num">0.4</span> · hot</pre>
+        <p>Trọng số <strong>hot (0.4)</strong> cao nhất để chuyến chất lượng được cộng đồng ưa chuộng dễ nổi lên, nhưng <strong>match + interaction (0.3 + 0.3 = 0.6)</strong> vẫn chiếm phần lớn, đảm bảo gợi ý mang tính cá nhân hoá chứ không chỉ chạy theo số đông.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Điểm "match" (độ hợp gu) tính thế nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Match dùng <strong>cosine similarity với trọng số TF-IDF</strong> — đo độ giống nhau giữa vector sở thích của bạn và vector đặc trưng của chuyến. Mỗi chiều vector là một token đặc trưng:</p>
+        <ol><li><strong>Loại hình</strong> chuyến (vd "biển", "văn hoá").</li><li><strong>Tag</strong> của chuyến.</li><li><strong>Điểm đến</strong> (tỉnh/thành).</li></ol>
+        <p>Mỗi token có trọng số <strong>TF-IDF</strong>: token càng hiếm trong tập chuyến thì càng quan trọng (vd một tỉnh ít chuyến quan trọng hơn tag "biển" xuất hiện khắp nơi). Điểm cosine ∈ [0, 1], càng gần 1 càng hợp gu. Vì cosine <strong>tự chuẩn hoá theo độ dài vector</strong> nên chuyến "nhồi nhiều tag" không bị lợi thế bất công. Hệ thống còn ghi "lý do gợi ý" như <em>"Hợp gu Biển"</em>, <em>"Đúng nơi bạn thích: Đà Nẵng"</em>.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Điểm "interaction" và "hot" tính thế nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Cả hai dùng <strong>log-saturation</strong> (lợi ích giảm dần) rồi <strong>chuẩn hoá min–max</strong> về [0, 1] trên tập chuyến ứng viên:</p>
+        <pre><span class="c-com">// interaction — tương tác của CHÍNH bạn với chuyến</span>
+interRaw = log(1+views) + log(1+clicks)·<span class="c-num">1.5</span>
+         + (favorited? <span class="c-num">2</span>) + (requested? <span class="c-num">2.5</span>)
+
+<span class="c-com">// hot — độ quan tâm của TOÀN hệ thống</span>
+hotRaw = log(1+view_count) + log(1+click_count)·<span class="c-num">1.5</span>
+       + log(1+request_count)·<span class="c-num">2</span> + member_count·<span class="c-num">0.3</span></pre>
+        <p>Dùng log để việc mở/bấm một chuyến nhiều lần không làm điểm tăng vô hạn. Hành vi thể hiện <strong>ý định mạnh</strong> (lưu, xin tham gia) được cộng thẳng trọng số cao hơn lượt xem.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Chuẩn hoá min–max là gì và tại sao cần?<span class="chev">⌄</span></summary>
+        <div class="a"><p><strong>Min–max</strong> co mọi giá trị thô về thang chung [0, 1] bằng công thức <span class="inline">(x − min) / (max − min)</span> trên tập ứng viên. Nhờ vậy interaction và hot — vốn có đơn vị và độ lớn rất khác nhau — mới <strong>cộng được với nhau một cách công bằng</strong> theo trọng số 0.3 và 0.4. (Riêng <em>match</em> là cosine similarity nên đã nằm sẵn trong [0, 1], không cần min–max.)</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Làm sao để nhận gợi ý hợp gu hơn?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Vào <strong>Chỉnh sửa hồ sơ</strong> và cập nhật sở thích du lịch (loại hình, điểm đến yêu thích). Càng tương tác thật (xem, lưu, tham gia các chuyến bạn thích), thành phần <em>interaction</em> càng phản ánh đúng gu của bạn, giúp gợi ý ngày càng sát hơn.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Người dùng mới chưa có lịch sử thì gợi ý kiểu gì?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Khi bạn chưa có tương tác nào, thành phần <em>interaction</em> ≈ 0, nên gợi ý chủ yếu dựa vào <strong>match</strong> (sở thích khai báo) và <strong>hot</strong> (chuyến phổ biến). Đây là cách xử lý vấn đề "khởi đầu lạnh" (cold-start) — vẫn đưa ra gợi ý hợp lý ngay cả khi chưa biết nhiều về bạn.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Gợi ý chuyến đi và trợ lý AI có phải một không?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Không. <strong>Gợi ý chuyến đi</strong> là thuật toán chấm điểm (không dùng mô hình ngôn ngữ) chạy trên dữ liệu tương tác và sở thích để xếp hạng các chuyến <em>đã có</em>. <strong>Trợ lý AI</strong> là chatbot dùng mô hình ngôn ngữ + RAG để trả lời câu hỏi và <em>dựng lộ trình mới</em>. Hai tính năng bổ trợ nhau nhưng độc lập.</p></div>
+      </details>
+    </section>
+
+    <!-- ===== Khác ===== -->
+    <section id="khac">
+      <h2><span class="num">08</span> Riêng tư &amp; sự cố</h2>
+      <details class="faq"><summary><span class="q">?</span>Dữ liệu cá nhân của tôi được bảo vệ thế nào?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Mật khẩu được lưu dưới dạng <strong>mã hoá</strong> (không lưu văn bản gốc). Mã OTP và token phiên đăng nhập đều lưu dưới dạng <strong>băm (hash)</strong>. Phiên đăng nhập dùng token ngắn hạn kèm token làm mới có xoay vòng để tăng an toàn. Bạn nên đăng xuất khi dùng thiết bị chung.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Đánh giá và bài viết của tôi hiển thị cho ai?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Bài viết có thể đặt chế độ <strong>công khai</strong> hoặc <strong>chỉ bạn bè</strong>. Đánh giá bạn để lại hiển thị công khai kèm tên và ảnh đại diện. Số sao của địa điểm/chuyến/HDV được tính lại ngay từ các đánh giá thật.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>Tôi gặp lỗi hoặc thấy nội dung vi phạm thì báo ở đâu?<span class="chev">⌄</span></summary>
+        <div class="a"><p>Quản trị viên có quyền kiểm duyệt và gỡ nội dung vi phạm (bài viết, chuyến đi, địa điểm, đánh giá). Nếu gặp sự cố kỹ thuật, thử tải lại trang hoặc đăng nhập lại; nếu vẫn lỗi, liên hệ quản trị viên của nền tảng.</p></div>
+      </details>
+      <details class="faq"><summary><span class="q">?</span>TripMate có chịu trách nhiệm về chất lượng tour không?<span class="chev">⌄</span></summary>
+        <div class="a"><p>TripMate là <strong>nền tảng trung gian</strong> kết nối người dùng với nhau và với HDV. Chất lượng thực tế của tour do người tổ chức và HDV cung cấp; TripMate không trực tiếp tổ chức tour. Hãy trao đổi rõ ràng, kiểm tra thông tin và tuân thủ các lưu ý an toàn khi đi du lịch.</p></div>
+      </details>
+    </section>
+
+
+
+
+  </div>
+</main>
+</div>
+<script>
+  const links = [...document.querySelectorAll('aside nav a')];
+  const map = {};
+  links.forEach(a => { const id = a.getAttribute('href').slice(1); const el = document.getElementById(id); if (el) map[id] = a; });
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { links.forEach(l => l.classList.remove('active')); const a = map[e.target.id]; if (a) a.classList.add('active'); } });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  Object.keys(map).forEach(id => obs.observe(document.getElementById(id)));
+</script>
+</body>
+</html>

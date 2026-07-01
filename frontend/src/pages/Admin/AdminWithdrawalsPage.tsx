@@ -88,13 +88,20 @@ export function AdminWithdrawalsPage() {
             description="Khi HDV gửi yêu cầu rút, các giao dịch sẽ xuất hiện tại đây."
           />
         ) : (
-          <div className="space-y-3">
+          <div className="bg-surface-container-lowest rounded-3xl shadow-editorial overflow-hidden">
+            {/* Header cột (ẩn trên mobile) */}
+            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_10rem_minmax(0,14rem)_auto] gap-4 px-5 py-3 border-b border-outline-variant/15 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">
+              <span>Người yêu cầu</span>
+              <span className="text-right">Số tiền</span>
+              <span>Tài khoản nhận</span>
+              <span className="text-right">Hành động</span>
+            </div>
             {list.map((t) => (
               <article
                 key={t.id}
-                className="bg-surface-container-lowest rounded-3xl shadow-editorial p-5 flex flex-col md:flex-row md:items-center gap-4"
+                className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_10rem_minmax(0,14rem)_auto] gap-3 md:gap-4 px-5 py-4 md:items-center border-b border-outline-variant/10 last:border-0"
               >
-                <div className="flex items-center gap-3 md:flex-1 min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
                   <Avatar src={t.user?.avatar} alt={t.user?.name ?? ''} size="md" />
                   <div className="min-w-0">
                     <p className="font-headline font-extrabold text-on-surface truncate">
@@ -104,23 +111,26 @@ export function AdminWithdrawalsPage() {
                   </div>
                 </div>
 
-                <div className="text-right md:text-left">
-                  <p className="font-headline font-extrabold text-2xl text-on-surface">
+                <div className="md:text-right">
+                  <p className="font-headline font-extrabold text-xl text-on-surface tabular-nums">
                     {formatVnd(t.amount)}
                   </p>
-                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant md:hidden">
                     {new Date(t.createdAt).toLocaleString('vi-VN')}
                   </p>
                 </div>
 
-                <div className="md:max-w-xs text-sm text-on-surface-variant">
-                  <p className="text-[10px] uppercase tracking-widest">Tài khoản nhận</p>
-                  <p className="text-on-surface truncate">
-                    {t.bankAccount || 'Chưa cung cấp'}
+                <div className="text-sm min-w-0">
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant md:hidden">
+                    Tài khoản nhận
+                  </p>
+                  <p className="text-on-surface truncate">{t.bankAccount || 'Chưa cung cấp'}</p>
+                  <p className="text-[10px] text-on-surface-variant hidden md:block">
+                    {new Date(t.createdAt).toLocaleString('vi-VN')}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 md:ml-auto">
+                <div className="flex items-center gap-2 md:justify-end">
                   <Button size="sm" variant="outline" rounded="full" onClick={() => setViewId(t.id)}>
                     <Icon name="visibility" size={16} />
                     Chi tiết
@@ -158,13 +168,20 @@ export function AdminWithdrawalsPage() {
           description="Các yêu cầu đã duyệt hoặc từ chối sẽ hiển thị tại đây."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="bg-surface-container-lowest rounded-3xl shadow-editorial overflow-hidden">
+          {/* Header cột (ẩn trên mobile) */}
+          <div className="hidden md:grid grid-cols-[minmax(0,1fr)_10rem_minmax(0,14rem)_auto] gap-4 px-5 py-3 border-b border-outline-variant/15 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">
+            <span>Người yêu cầu</span>
+            <span className="text-right">Số tiền</span>
+            <span>Tài khoản nhận</span>
+            <span className="text-right">Trạng thái</span>
+          </div>
           {history.map((h) => (
             <article
               key={h.id}
-              className="bg-surface-container-lowest rounded-3xl shadow-editorial p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-4"
+              className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_10rem_minmax(0,14rem)_auto] gap-3 md:gap-4 px-5 py-4 md:items-center border-b border-outline-variant/10 last:border-0"
             >
-              <div className="flex items-center gap-3 md:flex-1 min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <Avatar src={h.user?.avatar} alt={h.user?.name ?? ''} size="md" />
                 <div className="min-w-0">
                   <p className="font-headline font-extrabold text-on-surface truncate">
@@ -174,30 +191,37 @@ export function AdminWithdrawalsPage() {
                 </div>
               </div>
 
-              <div className="text-right md:text-left">
-                <p className="font-headline font-extrabold text-xl text-on-surface">
+              <div className="md:text-right">
+                <p className="font-headline font-extrabold text-xl text-on-surface tabular-nums">
                   {formatVnd(h.amount)}
                 </p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant md:hidden">
                   {new Date(h.createdAt).toLocaleString('vi-VN')}
                 </p>
               </div>
 
-              <div className="md:max-w-xs text-sm text-on-surface-variant min-w-0">
-                <p className="text-[10px] uppercase tracking-widest">Tài khoản nhận</p>
+              <div className="text-sm min-w-0">
+                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant md:hidden">
+                  Tài khoản nhận
+                </p>
                 <p className="text-on-surface truncate">{h.bankAccount || '—'}</p>
+                <p className="text-[10px] text-on-surface-variant hidden md:block">
+                  {new Date(h.createdAt).toLocaleString('vi-VN')}
+                </p>
               </div>
 
-              <span
-                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold md:ml-auto ${
-                  h.status === 'success'
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-error/10 text-error'
-                }`}
-              >
-                <Icon name={h.status === 'success' ? 'check_circle' : 'cancel'} size={14} />
-                {h.status === 'success' ? 'Đã duyệt' : 'Đã từ chối'}
-              </span>
+              <div className="md:flex md:justify-end">
+                <span
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
+                    h.status === 'success'
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-error/10 text-error'
+                  }`}
+                >
+                  <Icon name={h.status === 'success' ? 'check_circle' : 'cancel'} size={14} />
+                  {h.status === 'success' ? 'Đã duyệt' : 'Đã từ chối'}
+                </span>
+              </div>
             </article>
           ))}
         </div>

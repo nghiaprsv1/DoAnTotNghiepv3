@@ -7,6 +7,7 @@ import * as path from 'path';
 import { KnowledgeChunk } from './entities/knowledge-chunk.entity';
 import { RagEmbeddings } from './lib/rag-llm.interface';
 import { RagChat } from './lib/rag-llm.interface';
+import { RagReranker } from './lib/rag-reranker.interface';
 import { chunkText } from './lib/chunker';
 import { cosineSimilarity } from './lib/cosine';
 import { bm25Scores, tokenize, type LexicalDoc } from './lib/lexical';
@@ -131,6 +132,7 @@ export class RagV2Service {
     private readonly dataSource: DataSource,
     private readonly embeddings: RagEmbeddings,
     private readonly chat: RagChat,
+    private readonly reranker: RagReranker,
     private readonly config: ConfigService,
     private readonly tripRetriever: TripRetriever,
     private readonly placeRetriever: PlaceRetriever,
@@ -170,7 +172,7 @@ export class RagV2Service {
     return this.config.get<string>('RAGV2_QUERY_REWRITE') !== 'false';
   }
 
-  /** Bật/tắt rerank bằng LLM. Mặc định bật (có fallback điểm RRF nếu lỗi). */
+  /** Bật/tắt rerank. Mặc định bật (có fallback điểm RRF nếu model/LLM lỗi). */
   private rerankEnabled(): boolean {
     return this.config.get<string>('RAGV2_RERANK') !== 'false';
   }
@@ -232,6 +234,8 @@ export class RagV2Service {
     geminiConfigured: boolean;
     embeddingModel: string;
     chatModel: string;
+    rerankProvider: string;
+    rerankModel: string;
     totalChunks: number;
     documents: { docName: string; chunks: number }[];
     availableFiles: string[];
@@ -263,6 +267,8 @@ export class RagV2Service {
       geminiConfigured: this.embeddings.isReady(),
       embeddingModel: this.embeddings.model,
       chatModel: this.chat.model,
+      rerankProvider: this.reranker.providerName,
+      rerankModel: this.reranker.model,
       totalChunks,
       documents,
       availableFiles,
@@ -900,6 +906,7 @@ QUY TẮC:
       totalChunks: all.length,
       candidateK: this.candidateK(),
       rerankVia: reranked.via,
+      rerankModel: this.reranker.model,
       candidates: candidates.map((c) => ({
         docName: c.chunk.docName,
         chunkIndex: c.chunk.chunkIndex,
@@ -1250,16 +1257,18 @@ Yêu cầu chỉnh sửa: ${q}`;
   }
 
   /**
-   * BƯỚC 4 — Rerank ứng viên bằng LLM (chấm điểm liên quan 0–10), lọc còn top-K.
-   * Đây là điểm mấu chốt GIẢM RÁC: nhiều chunk lọt hybrid nhờ trùng từ khoá nhưng
-   * không thực sự trả lời được câu hỏi — rerank loại chúng trước khi tốn token sinh.
-   * Fallback (tắt rerank / LLM lỗi): giữ nguyên thứ tự RRF, cắt top-K.
+   * BƯỚC 4 — Rerank ứng viên, lọc còn top-K. Mặc định dùng CROSS-ENCODER local
+   * (mô hình chấm cặp câu hỏi–đoạn, đúng bản chất reranker IR); đổi sang LLM qua
+   * env `RAGV2_RERANK_PROVIDER=llm`. Đây là điểm mấu chốt GIẢM RÁC: nhiều chunk
+   * lọt hybrid nhờ trùng từ khoá nhưng không thực sự trả lời câu hỏi — rerank loại
+   * chúng trước khi tốn token sinh. Fallback (tắt rerank / model lỗi): giữ nguyên
+   * thứ tự RRF, cắt top-K.
    */
   private async rerankCandidates(
     question: string,
     candidates: RerankInput[],
     topK: number,
-  ): Promise<{ top: RerankOutput[]; via: 'llm' | 'fallback' | 'disabled' }> {
+  ): Promise<{ top: RerankOutput[]; via: 'cross-encoder' | 'llm' | 'fallback' | 'disabled' }> {
     const byRrf = (): RerankOutput[] =>
       candidates.slice(0, topK).map((c) => ({ ...c, relevance: undefined, reason: undefined }));
 
@@ -1268,46 +1277,35 @@ Yêu cầu chỉnh sửa: ${q}`;
     }
 
     try {
-      // Đánh số ứng viên để LLM tham chiếu bằng index (ngắn gọn, ít token).
-      const list = candidates
-        .map(
-          (c, i) =>
-            `[${i}] (${c.chunk.docName} #${c.chunk.chunkIndex}) ${c.chunk.content.slice(0, 400)}`,
-        )
-        .join('\n\n');
-      const system = `Bạn là bộ xếp hạng độ liên quan cho RAG. Cho CÂU HỎI và danh sách ĐOẠN
-được đánh số. Chấm mỗi đoạn điểm liên quan 0-10 (10 = trả lời trực tiếp câu hỏi,
-0 = không liên quan). TRẢ VỀ DUY NHẤT JSON:
-{"ranked":[{"index":<số>,"score":<0-10>,"reason":"lý do ngắn"}]}
-Chỉ chấm theo nội dung đoạn, không bịa. Sắp theo score giảm dần.`;
-      const parsed = await this.chat.completeJson<{
-        ranked?: { index?: number; score?: number; reason?: string }[];
-      }>({
-        system,
-        prompt: `CÂU HỎI: ${question}\n\nCÁC ĐOẠN:\n${list}`,
-        temperature: 0.1,
-        maxTokens: 1024,
-      });
+      // Reranker (cross-encoder mặc định / llm) chấm điểm 0–10 cho từng cặp.
+      const texts = candidates.map(
+        (c) => `(${c.chunk.docName} #${c.chunk.chunkIndex}) ${c.chunk.content}`,
+      );
+      const scores = await this.reranker.rerank(question, texts);
 
-      const ranked = parsed?.ranked;
-      if (Array.isArray(ranked) && ranked.length) {
+      if (Array.isArray(scores) && scores.length) {
         const minScore = this.rerankMinScore();
-        const scored = ranked
-          .filter((r) => typeof r.index === 'number' && candidates[r.index!])
+        const scored = scores
+          .filter((r) => candidates[r.index])
           .map((r) => ({
-            ...candidates[r.index!],
+            ...candidates[r.index],
             relevance: Number(r.score) || 0,
-            reason: r.reason?.toString().slice(0, 160),
+            reason: undefined as string | undefined,
           }))
           .sort((a, b) => (b.relevance ?? 0) - (a.relevance ?? 0));
         // Lọc theo ngưỡng; nếu lọc sạch (toàn điểm thấp) thì giữ top-K cao nhất
         // để vẫn có ngữ cảnh thay vì rỗng.
         const passed = scored.filter((s) => (s.relevance ?? 0) >= minScore);
         const top = (passed.length ? passed : scored).slice(0, topK);
-        if (top.length) return { top, via: 'llm' };
+        if (top.length) {
+          const via = this.reranker.providerName === 'llm' ? 'llm' : 'cross-encoder';
+          return { top, via };
+        }
       }
     } catch (err) {
-      this.logger.warn(`Rerank lỗi, dùng fallback RRF: ${(err as Error).message}`);
+      this.logger.warn(
+        `Rerank (${this.reranker.providerName}) lỗi, dùng fallback RRF: ${(err as Error).message}`,
+      );
     }
     return { top: byRrf(), via: 'fallback' };
   }

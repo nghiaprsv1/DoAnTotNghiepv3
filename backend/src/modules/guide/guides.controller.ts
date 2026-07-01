@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -21,6 +22,7 @@ import { JwtUserPayload } from '@/common/types/jwt-payload.type';
 import { GuidesService } from './guides.service';
 import {
   CreateBookingDto,
+  CreateUnavailabilityDto,
   GuideApplyDto,
   QueryGuidesDto,
   RespondBookingDto,
@@ -56,6 +58,33 @@ export class GuidesController {
     @Body() dto: UpdateGuideProfileDto,
   ) {
     return this.svc.updateMyProfile(user.sub, dto);
+  }
+
+  /** Ngày nghỉ HDV tự đánh dấu — danh sách của chính mình. */
+  @UseGuards(JwtAuthGuard)
+  @Get('me/unavailability')
+  myUnavailability(@CurrentUser() user: JwtUserPayload) {
+    return this.svc.listMyUnavailability(user.sub);
+  }
+
+  /** Thêm 1 khoảng ngày nghỉ (chặn nếu trùng booking đang sống). */
+  @UseGuards(JwtAuthGuard)
+  @Post('me/unavailability')
+  addUnavailability(
+    @CurrentUser() user: JwtUserPayload,
+    @Body() dto: CreateUnavailabilityDto,
+  ) {
+    return this.svc.addUnavailability(user.sub, dto);
+  }
+
+  /** Gỡ 1 khoảng ngày nghỉ. */
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/unavailability/:id')
+  removeUnavailability(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.svc.removeUnavailability(user.sub, id);
   }
 
   @Public()

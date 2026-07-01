@@ -45,7 +45,8 @@ export interface DocSearchDetail {
   dimensions: number
   totalChunks: number
   candidateK: number
-  rerankVia: 'llm' | 'fallback' | 'disabled'
+  rerankVia: 'cross-encoder' | 'llm' | 'fallback' | 'disabled'
+  rerankModel?: string
   candidates: {
     docName: string
     chunkIndex: number

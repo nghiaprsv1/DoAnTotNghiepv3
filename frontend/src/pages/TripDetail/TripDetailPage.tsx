@@ -6,9 +6,11 @@ import { Badge } from '@components/ui/Badge'
 import { Button } from '@components/ui/Button'
 import { ReviewModal } from '@components/features/ReviewModal'
 import type { ReviewTarget } from '@components/features/ReviewModal'
-import { tripEditPath } from '@constants/routes'
+import { tripEditPath, ROUTES } from '@constants/routes'
 import { useTrip } from '@hooks/useTrips'
+import { useToggleSaved } from '@hooks/useSaved'
 import { useCurrentUserStore } from '@store/currentUserStore'
+import { useAuthStore } from '@store/authStore'
 import { tripService } from '@services/tripService'
 import {
   computeTripStatus,
@@ -42,11 +44,17 @@ export function TripDetailPage() {
   const [itineraryEditorOpen, setItineraryEditorOpen] = useState(false)
   const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null)
 
+  // Trạng thái đã lưu (bookmark) — khởi tạo từ server rồi cập nhật optimistic.
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const [saved, setSaved] = useState<boolean>(false)
+  const toggleSaved = useToggleSaved()
+
   // Sync local state when trip loads / changes
   useEffect(() => {
     if (baseTrip) {
       setJoined(!!baseTrip.isJoined)
       setMemberCount(baseTrip.memberCount)
+      setSaved(!!baseTrip.isSaved)
     }
   }, [baseTrip])
 
@@ -91,6 +99,20 @@ export function TripDetailPage() {
   const tripCompleted = liveStatus === 'completed'
   // Local copy of pending requests so we can optimistically remove on accept/reject.
   const pendingRequests = trip.pendingRequests ?? []
+
+  const handleToggleSaved = () => {
+    if (!isAuthenticated) {
+      navigate(ROUTES.LOGIN)
+      return
+    }
+    if (!id) return
+    const next = !saved
+    setSaved(next) // optimistic
+    toggleSaved.mutate(
+      { type: 'trip', id },
+      { onError: () => setSaved(!next) },
+    )
+  }
 
   const handleJoin = async () => {
     if (isFull || actionPending || !id) return
@@ -197,6 +219,22 @@ export function TripDetailPage() {
       <section className="relative h-[320px] xs:h-[400px] md:h-[500px] lg:h-[614px] w-full overflow-hidden">
         <img src={trip.coverImage} alt={trip.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        {/* Nút lưu / bỏ lưu — góc trên-trái (góc phải dành cho Sửa/Huỷ). */}
+        <button
+          type="button"
+          onClick={handleToggleSaved}
+          disabled={toggleSaved.isPending}
+          className={`absolute top-4 left-4 md:top-6 md:left-6 inline-flex items-center gap-2 px-3 md:px-4 py-2 rounded-full font-headline font-bold shadow-editorial-lg backdrop-blur transition active:scale-95 text-sm md:text-base disabled:opacity-60 ${
+            saved
+              ? 'bg-white text-rose-500 hover:bg-white'
+              : 'bg-black/40 text-white hover:bg-black/55'
+          }`}
+          aria-label={saved ? 'Bỏ lưu chuyến đi' : 'Lưu chuyến đi'}
+        >
+          <Icon name="favorite" size={18} filled={saved} />
+          <span className="hidden sm:inline">{saved ? 'Đã lưu' : 'Lưu'}</span>
+        </button>
 
         {/* Owner shortcut — quick edit access from the cover. */}
         {isOwner && (
