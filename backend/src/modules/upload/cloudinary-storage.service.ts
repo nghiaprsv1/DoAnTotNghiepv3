@@ -69,24 +69,35 @@ export class CloudinaryStorageService {
   async uploadBuffer(buffer: Buffer, _originalName: string): Promise<string> {
     if (!this._enabled) throw new Error('Cloudinary not initialized');
     const publicId = `${Date.now()}-${randomBytes(8).toString('hex')}`;
-    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: this.folder,
-          public_id: publicId,
-          resource_type: 'image',
-          overwrite: false,
-        },
-        (error, res) => {
-          if (error || !res) {
-            reject(error ?? new Error('Cloudinary upload returned empty result'));
-            return;
-          }
-          resolve(res);
-        },
+    try {
+      const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: this.folder,
+            public_id: publicId,
+            resource_type: 'image',
+            overwrite: false,
+          },
+          (error, res) => {
+            if (error || !res) {
+              reject(error ?? new Error('Cloudinary upload returned empty result'));
+              return;
+            }
+            resolve(res);
+          },
+        );
+        stream.end(buffer);
+      });
+      return result.secure_url;
+    } catch (err) {
+      // Cloudinary trả lỗi dạng object thường (không phải Error) → GlobalExceptionFilter
+      // nuốt thành "Internal server error". Chuẩn hoá thành message rõ ràng + log.
+      const e = err as { message?: string; http_code?: number; name?: string };
+      const detail = e?.message || e?.name || 'unknown Cloudinary error';
+      this.logger.error(
+        `Cloudinary upload failed (http_code=${e?.http_code ?? '?'}): ${detail}`,
       );
-      stream.end(buffer);
-    });
-    return result.secure_url;
+      throw new Error(`Cloudinary upload failed: ${detail}`);
+    }
   }
 }
