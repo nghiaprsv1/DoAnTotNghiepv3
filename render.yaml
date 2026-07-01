@@ -75,6 +75,10 @@ services:
         value: text-embedding-3-small
       - key: RAGV2_CHAT_MODEL
         value: gpt-4o-mini
+      # Rerank: dùng LLM thay cross-encoder local — Render free 512MB RAM KHÔNG
+      # đủ nạp model ONNX (~250-400MB). LLM rerank không tốn RAM (gọi API chấm điểm).
+      - key: RAGV2_RERANK_PROVIDER
+        value: llm
       # ── Firebase Storage (service account JSON) ──
       - key: FIREBASE_STORAGE_BUCKET
         value: tripmate-e062f.firebasestorage.app
