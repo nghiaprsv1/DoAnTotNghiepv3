@@ -109,6 +109,9 @@ const AdminTripsPage = lazy(() =>
 const AdminPlacesPage = lazy(() =>
   import('@pages/Admin').then((m) => ({ default: m.AdminPlacesPage }))
 )
+const AdminRagPage = lazy(() =>
+  import('@pages/Admin').then((m) => ({ default: m.AdminRagPage }))
+)
 
 // Chatbot RAG v2 (thử nghiệm) — trang standalone, độc lập với website hiện tại.
 const ChatbotV2Page = lazy(() =>
@@ -204,6 +207,7 @@ export const router = createBrowserRouter([
           { path: ROUTES.ADMIN_POSTS, element: withSuspense(AdminPostsPage) },
           { path: ROUTES.ADMIN_TRIPS, element: withSuspense(AdminTripsPage) },
           { path: ROUTES.ADMIN_PLACES, element: withSuspense(AdminPlacesPage) },
+          { path: ROUTES.ADMIN_RAG, element: withSuspense(AdminRagPage) },
         ],
       },
     ],

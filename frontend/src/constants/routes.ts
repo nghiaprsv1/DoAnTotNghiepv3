@@ -38,6 +38,7 @@ export const ROUTES = {
   ADMIN_POSTS: '/admin/posts',
   ADMIN_TRIPS: '/admin/trips',
   ADMIN_PLACES: '/admin/places',
+  ADMIN_RAG: '/admin/rag',
   DASHBOARD: '/dashboard',
   SETTINGS: '/settings',
   CHATBOT_V2: '/chatbot-v2',

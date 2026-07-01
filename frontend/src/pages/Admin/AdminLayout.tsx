@@ -13,6 +13,7 @@ const NAV = [
   { to: '/admin/posts', icon: 'article', label: 'Bài viết' },
   { to: '/admin/trips', icon: 'travel_explore', label: 'Chuyến đi' },
   { to: '/admin/places', icon: 'place', label: 'Địa điểm' },
+  { to: '/admin/rag', icon: 'smart_toy', label: 'Kho tri thức AI' },
   { to: '/admin/withdrawals', icon: 'payments', label: 'Rút tiền' },
   { to: '/admin/revenue', icon: 'trending_up', label: 'Doanh thu' },
   { to: '/admin/notifications', icon: 'campaign', label: 'Gửi thông báo' },
